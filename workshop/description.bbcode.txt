@@ -1,7 +1,7 @@
 [h1]Scope TDC Controls[/h1]
-SH3-style TDC readouts and controls right in the periscope and UZO views, inspired by the gyro angle displays of GWX and OneAlex. See your firing solution and work the fire-control system without leaving the scope.
+Ever been in the middle of a convoy trying to set up successive shots out of your bow and stern tubes, only to be frustrated by the gyro angle receivers taking forever to synchronize when switching directions, having to switch to the TDC view, and getting your scope moved around when you go back to look through it?  Now you can avoid these frustrations by having all the important information and controls on your scope view, setup both torpedo rooms for zero gyro angle shots in the bow and stern directions ahead of time so that you can launch successive torpedoes in a matter of a seconds.  This mod comes with some "cheats" and critical fixes to the stock torpedo fire control behavior as well.  Details below.
 
-[h2]Rolling drum counters[/h2]
+[h2]Gyro angle indicators (rolling digit style)[/h2]
 Compact mechanical-style counters sit under the bearing tape. Every drum rolls over smoothly, just like a real odometer, including 359 → 000.
 [list]
 [*][b]TDC[/b] – the gyro angle (Schusswinkel) computed by the TDC
@@ -13,7 +13,7 @@ If nobody is manning the TDC, the TDC counter greys out with a "TDC not manned" 
 [b]Double-click a Bow/Stern counter[/b] to switch to that receiver: the scope swings round until the TDC angle matches what those tubes are already set to, so they're ready instantly.
 
 [h2]Fire-control panel[/h2]
-A vertical panel beside the periscope raise/lower control:
+Change TDC or torpedo selector options:
 [list]
 [*][b]Target bearing[/b] – Following / Not following, with a blue lamp while not following
 [*][b]Bearing source[/b] – None, UZO, Observation or Attack periscope
@@ -23,20 +23,35 @@ A vertical panel beside the periscope raise/lower control:
 
 [h2]Settings (saved between sessions)[/h2]
 [list]
-[*][b]Show receiver angle / Show active receivers only / Show parallax[/b]
-[*][b]Auto set receiver[/b] – follows the tubes you check (none = off; bow and stern both checked = the end the scope is looking toward)
-[*][b]Auto set parallax[/b] – follows the checked tubes, then the receiver, then the target bearing
-[*][b]Realistic TDC follower / Realistic receiver sync[/b] – turn off for 10× faster TDC and tube gyro motors
+[*][b]Show receiver angle / Show active receivers only / Show parallax[/b] – Control which gyro and parallax angles you want to see 
+[*][b]Auto set receiver[/b] – automatically sets the selected gyro angle receiver based on what torpedo tubes are flooded and selected (none = off; bow and stern both checked = the direction your scope is viewing)
+[*][b]Auto set parallax[/b] – automatically sets parallax mode (forward/backward) based on your selected tube, gyro receiver, or (when none selected) the direction of your scope.
+[*][b]Realistic TDC follower[/b] – turn off for the TDC gyro angle calculation to update 10x faster when moving your scope around.
+[*][b]Realistic receiver sync[/b] – turn off for your gyro angle receivers to synchronize 10× faster; no more waiting ages for you to use your aft torpedoes.
 [*][b]TDC operator required[/b] – turn off to use the TDC without a crew member at it
 [/list]
 
 [h2]Fixes to the base game[/h2]
 [list]
-[*][b]Single torpedo launch fix[/b] – checking another tube a few seconds after pressing fire no longer launches it too. A fire command fires only the tubes selected when you gave it, like the real firing key.
+[*][b]Single torpedo launch fix[/b] – fixed a bug where, when in single-fire mode, if you selected (checked) another flooded torpedo tube after firing the first torpedo, the game would launch your second torpedo if you didn't wait long enough.  no more wasted torpedoes!
 [*][b]Stern shots from the scope[/b] – the torpedo panel no longer forces the gyro receiver to Bow whenever a bow tube is flooded.
 [*][b]Not following holds[/b] – the game no longer turns bearing follow-up back on every frame while a target is locked.
 [*][b]Tube selection kept[/b] – hiding or showing the torpedo panel no longer changes which tube is selected, and the fire-control box tube selector stays in step with your choice.
 [/list]
+
+[h2]Recommended Torpedo Attack Workflow[/h2]
+[olist]
+[*]Pick a scope to set up your gyros with (UZO/attack periscope/observation periscope)
+[*]Set that scope as your target bearing source
+[*]Turn your scope to a point to a relative bearing of 0 degrees
+[*]Switch to "Bow" on gyro angle receiver selector and allow the gyros fully synchronize.
+[*]Switch to "None" on the gyro receiver selector.
+[*]Turn your scope to a point to a relative bearing of 180 degrees.
+[*]Switch to "Stern" on the gyro angle receiver selector and allow the stern gyro to fully synchronize.
+[*]Select "None" on the gyro receiver selector. 
+[/olist]
+
+Keeping your gyros set to the correct directions, and leaving the gyro angle receiver selector set to "None" when switching directions or when not on an active attack will help save a lot of time and frustration with making rapid successive torpedo launches in both directions (in the middle of a convoy).  The stock system lead to a lot of unnecessary gyro chasing when performing routine scanning with the scopes and made it difficult to optimize attack planning in both directions.
 
 [h2]Details[/h2]
 [list]
@@ -48,6 +63,6 @@ A vertical panel beside the periscope raise/lower control:
 [*]Stores nothing in your save game; all settings live in [i]scope-tdc-controls-config.txt[/i]
 [/list]
 
-Source code: https://github.com/waltailji/scope-tdc-controls
-
 Built for UBOAT 2026.1 patch 21.
+
+This mod was created with AI-assisted agentic coding.
