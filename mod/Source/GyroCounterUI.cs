@@ -30,7 +30,7 @@ namespace ScopeTdcControls
     /// so hiding the game UI (Alt) does not move anything.
     /// </summary>
     [NonSerializedInGameState]
-    public class GyroCounterUI : MonoBehaviour
+    public partial class GyroCounterUI : MonoBehaviour
     {
         // ---- counter layout (reference pixels at 1080p, before Scale) ----
         const float DigitW = 15f;
@@ -114,6 +114,10 @@ namespace ScopeTdcControls
         Btn btnTxNone, btnTxUzo, btnTxObs, btnTxAttack;
         Image unmannedVeil;
         TextMeshProUGUI unmannedNote;
+        RectTransform raiseBtn, lowerBtn;   // raise fully / lower fully, beside the stock raise/lower control
+        Image raiseBg, lowerBg, raiseIcon, lowerIcon;
+        bool raiseHover, lowerHover;
+        static Sprite raiseSprite, lowerSprite;
         TorpedoCalculator stationTdc;
         Interactable tdcStation;
         readonly Vector3[] corners = new Vector3[4];
@@ -173,6 +177,16 @@ namespace ScopeTdcControls
             }
             instance.Build();
             instance.SetVisible(!userHidden);
+            SidebarButton.Ensure(ui, OnSidebarButton);
+        }
+
+        /// <summary>The sidebar button: show or hide the control panel (remembered in the config).</summary>
+        static void OnSidebarButton(bool visible)
+        {
+            GyroConfig.ControlsVisible = visible;
+            GyroConfig.Save("ControlsVisible", visible);
+            SidebarButton.SetState(visible);
+            if (!visible && instance != null) instance.HideTip();
         }
 
         public static void Detach(PeriscopeUI ui)
@@ -184,6 +198,7 @@ namespace ScopeTdcControls
                 instance.SetVisible(false);
             }
             ScopeAim.Stop();
+            PeriscopeTravel.Stop();
         }
 
         public static void ReportCompass(RawImage img)
@@ -213,7 +228,12 @@ namespace ScopeTdcControls
             if (counterPanel != null) Destroy(counterPanel.gameObject);
             if (controlsPanel != null) Destroy(controlsPanel.gameObject);
             if (tipPanel != null) Destroy(tipPanel.gameObject);
-            counterPanel = controlsPanel = tipPanel = null;
+            if (raiseBtn != null) Destroy(raiseBtn.gameObject);
+            if (lowerBtn != null) Destroy(lowerBtn.gameObject);
+            if (dialsPanel != null) Destroy(dialsPanel.gameObject);
+            counterPanel = controlsPanel = tipPanel = raiseBtn = lowerBtn = dialsPanel = null;
+            dialsGroup = null;
+            dials.Clear();
             tdcRow = parRow = rcvRowA = rcvRowB = null;
             btnParFwd = btnParBack = null;
             btnTxNone = btnTxUzo = btnTxObs = btnTxAttack = null;
@@ -228,7 +248,121 @@ namespace ScopeTdcControls
             TMP_FontAsset font = ResolveFont();
             BuildCounter(font);
             if (GyroConfig.ShowControls) BuildControls(font);
+            if (GyroConfig.ElevatorButtons) BuildElevatorButtons();
+            if (GyroConfig.ShowDials) BuildDials(font);
             BuildTooltip(font);
+        }
+
+        // ------------------------------------------------------------------ raise fully / lower fully
+
+        void BuildElevatorButtons()
+        {
+            if (raiseSprite == null) raiseSprite = ArrowToBarSprite(true);
+            if (lowerSprite == null) lowerSprite = ArrowToBarSprite(false);
+            raiseBtn = MakeIconButton("RaiseFully", raiseSprite, () => PeriscopeTravel.Toggle(periscopeUI, +1),
+                                      () => Strings.TipRaiseFully, h => raiseHover = h, out raiseBg, out raiseIcon);
+            lowerBtn = MakeIconButton("LowerFully", lowerSprite, () => PeriscopeTravel.Toggle(periscopeUI, -1),
+                                      () => Strings.TipLowerFully, h => lowerHover = h, out lowerBg, out lowerIcon);
+        }
+
+        RectTransform MakeIconButton(string name, Sprite icon, Action onClick, Func<string> tip, Action<bool> hover,
+                                     out Image bg, out Image iconImage)
+        {
+            var r = NewRect(name, transform);
+            r.anchorMin = r.anchorMax = r.pivot = new Vector2(0.5f, 0.5f);
+            r.sizeDelta = new Vector2(30f, 30f);
+            bg = r.gameObject.AddComponent<Image>();
+            bg.color = BtnIdle;
+            bg.raycastTarget = true;
+            var edge = r.gameObject.AddComponent<Outline>();
+            edge.effectColor = FrameEdge;
+            edge.effectDistance = new Vector2(1f, -1f);
+
+            var ir = NewRect("Icon", r);
+            ir.anchorMin = Vector2.zero; ir.anchorMax = Vector2.one;
+            ir.offsetMin = new Vector2(3f, 2f); ir.offsetMax = new Vector2(-3f, -2f);
+            iconImage = ir.gameObject.AddComponent<Image>();
+            iconImage.sprite = icon;
+            iconImage.color = DigitLight;
+            iconImage.preserveAspect = true;
+            iconImage.raycastTarget = false;
+
+            var button = r.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.None;
+            var nav = new Navigation(); nav.mode = Navigation.Mode.None;
+            button.navigation = nav;
+            button.targetGraphic = bg;
+            button.onClick.AddListener(() =>
+            {
+                try { onClick(); }
+                catch (Exception e) { Debug.LogException(e); }
+                if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
+            });
+            var relay = AddTooltip(r.gameObject, tip);
+            relay.OnHover = hover;
+            return r;
+        }
+
+        /// <summary>Above the stock raise button / below the stock lower button; hidden when that control isn't shown.</summary>
+        void UpdateElevatorButtons(bool uiHidden)
+        {
+            if (raiseBtn == null || lowerBtn == null) return;
+            Vector2 mn = Vector2.zero, mx = Vector2.zero;
+            bool have = !uiHidden && ElevatorRect(out mn, out mx);
+            if (raiseBtn.gameObject.activeSelf != have) { raiseBtn.gameObject.SetActive(have); lowerBtn.gameObject.SetActive(have); }
+            if (!have) return;
+
+            Vector2 lmin = ToLocal(mn), lmax = ToLocal(mx);
+            // as wide as the stock control, half as tall
+            float width = Mathf.Max(lmax.x - lmin.x, 22f);
+            float height = Mathf.Max(width * 0.5f, 12f);
+            float cx = (lmin.x + lmax.x) * 0.5f;
+            const float gap = 4f;
+            raiseBtn.sizeDelta = lowerBtn.sizeDelta = new Vector2(width, height);
+            raiseBtn.anchoredPosition = new Vector2(cx, lmax.y + gap + height * 0.5f);
+            lowerBtn.anchoredPosition = new Vector2(cx, lmin.y - gap - height * 0.5f);
+
+            PaintTravel(raiseBg, raiseIcon, PeriscopeTravel.Direction > 0, raiseHover);
+            PaintTravel(lowerBg, lowerIcon, PeriscopeTravel.Direction < 0, lowerHover);
+        }
+
+        static void PaintTravel(Image bg, Image icon, bool active, bool hover)
+        {
+            bg.color = active ? BtnSelected : (hover ? BtnHover : BtnIdle);
+            icon.color = active ? DigitDark : DigitLight;
+        }
+
+        /// <summary>White arrow to a bar: up (⤒) for raise fully, down (⤓) for lower fully.</summary>
+        static Sprite ArrowToBarSprite(bool up)
+        {
+            const int S = 48, SS = 4;
+            var tex = new Texture2D(S, S, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Clamp;
+            tex.hideFlags = HideFlags.HideAndDontSave;
+            var px = new Color[S * S];
+            for (int y = 0; y < S; y++)
+                for (int x = 0; x < S; x++)
+                {
+                    int hits = 0;
+                    for (int sy = 0; sy < SS; sy++)
+                        for (int sx = 0; sx < SS; sx++)
+                        {
+                            float fx = x + (sx + 0.5f) / SS;
+                            float fy = y + (sy + 0.5f) / SS;
+                            if (!up) fy = S - fy; // draw the "up" shape, mirrored for "down"
+                            bool bar = fx >= 10f && fx <= 38f && fy >= 37f && fy <= 42f;
+                            // arrow head: apex (24, 33), base (9..39) at y 17
+                            bool head = fy >= 17f && fy <= 33f && Mathf.Abs(fx - 24f) <= (33f - fy) * (15f / 16f);
+                            bool stem = fx >= 20f && fx <= 28f && fy >= 6f && fy < 17f;
+                            if (bar || head || stem) hits++;
+                        }
+                    px[y * S + x] = new Color(1f, 1f, 1f, hits / (float)(SS * SS));
+                }
+            tex.SetPixels(px);
+            tex.Apply();
+            var sp = Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f), 100f);
+            sp.hideFlags = HideFlags.HideAndDontSave;
+            return sp;
         }
 
         const float RowLabelFont = 9.5f;
@@ -920,6 +1054,7 @@ namespace ScopeTdcControls
         {
             public GyroCounterUI Owner;
             public bool Controls;
+            public bool Dials;   // the TDC dial window
             bool dragging;
 
             static bool CtrlHeld { get { return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl); } }
@@ -936,7 +1071,8 @@ namespace ScopeTdcControls
                 if (!dragging || Owner == null) return;
                 float k = Owner.canvas != null && Owner.canvas.scaleFactor > 0f ? Owner.canvas.scaleFactor : 1f;
                 Vector2 d = e.delta / k;
-                if (Controls) { GyroConfig.ControlsOffsetX += d.x; GyroConfig.ControlsOffsetY += d.y; }
+                if (Dials) { GyroConfig.DialsOffsetX += d.x; GyroConfig.DialsOffsetY += d.y; }
+                else if (Controls) { GyroConfig.ControlsOffsetX += d.x; GyroConfig.ControlsOffsetY += d.y; }
                 else { GyroConfig.OffsetX += d.x; GyroConfig.OffsetY += d.y; }
             }
 
@@ -944,7 +1080,12 @@ namespace ScopeTdcControls
             {
                 if (!dragging) return;
                 dragging = false;
-                if (Controls)
+                if (Dials)
+                {
+                    GyroConfig.Save("DialsOffsetX", GyroConfig.DialsOffsetX);
+                    GyroConfig.Save("DialsOffsetY", GyroConfig.DialsOffsetY);
+                }
+                else if (Controls)
                 {
                     GyroConfig.Save("ControlsOffsetX", GyroConfig.ControlsOffsetX);
                     GyroConfig.Save("ControlsOffsetY", GyroConfig.ControlsOffsetY);
@@ -965,11 +1106,12 @@ namespace ScopeTdcControls
             return h;
         }
 
-        void AddDrag(GameObject go, bool controls)
+        DragRelay AddDrag(GameObject go, bool controls)
         {
             var d = go.AddComponent<DragRelay>();
             d.Owner = this;
             d.Controls = controls;
+            return d;
         }
 
         void RequestTip(Func<string> tip)
@@ -1212,6 +1354,7 @@ namespace ScopeTdcControls
                 if (periscopeUI == null) ScopeAim.Stop();
                 else ScopeAim.Tick(Tdc());
             }
+            PeriscopeTravel.Tick();
 
             if (GyroConfig.ToggleKey != KeyCode.None && periscopeUI != null && Input.GetKeyDown(GyroConfig.ToggleKey))
             {
@@ -1236,13 +1379,25 @@ namespace ScopeTdcControls
             var tdc = Tdc();
             bool show = tdc != null && !(uiHidden && GyroConfig.HideWithGameUI);
             counterPanel.gameObject.SetActive(show);
-            if (controlsPanel != null) controlsPanel.gameObject.SetActive(show);
+            if (controlsPanel != null)
+            {
+                bool panel = show && GyroConfig.ControlsVisible;
+                if (controlsPanel.gameObject.activeSelf != panel) controlsPanel.gameObject.SetActive(panel);
+            }
+            bool dialsOn = show && GyroConfig.ControlsVisible && dialsPanel != null;
+            if (dialsPanel != null && dialsPanel.gameObject.activeSelf != dialsOn) dialsPanel.gameObject.SetActive(dialsOn);
+            UpdateElevatorButtons(uiHidden);
             if (!show) { HideTip(); return; }
 
             UpdateCounter(tdc);
             UpdateControls(tdc);
             PositionCounter(uiHidden);
             PositionControls(uiHidden);
+            if (dialsOn)
+            {
+                UpdateDials(tdc, IsTdcManned(tdc));
+                PositionDials();
+            }
         }
 
         /// <summary>Same test the game uses for the TDC station: someone working at its Interactable.</summary>
@@ -1514,6 +1669,19 @@ namespace ScopeTdcControls
             return local;
         }
 
+        /// <summary>Store where the bearing tape is (screen fraction), only when it actually moved.</summary>
+        static void RememberTapeAnchor(Vector2 screenPoint)
+        {
+            if (Screen.width <= 0 || Screen.height <= 0) return;
+            float fx = screenPoint.x / Screen.width, fy = screenPoint.y / Screen.height;
+            bool known = !float.IsNaN(GyroConfig.TapeAnchorX) && !float.IsNaN(GyroConfig.TapeAnchorY);
+            if (known && Mathf.Abs(fx - GyroConfig.TapeAnchorX) < 0.001f && Mathf.Abs(fy - GyroConfig.TapeAnchorY) < 0.001f) return;
+            GyroConfig.TapeAnchorX = fx;
+            GyroConfig.TapeAnchorY = fy;
+            GyroConfig.SavePrecise("TapeAnchorX", fx);
+            GyroConfig.SavePrecise("TapeAnchorY", fy);
+        }
+
         void PositionCounter(bool uiHidden)
         {
             Vector2 pivot = new Vector2(0.5f, GyroConfig.Above ? 0f : 1f);
@@ -1535,12 +1703,20 @@ namespace ScopeTdcControls
                         Debug.Log(ScopeTdcControlsMod.Tag + " counter anchored under bearing tape '" + lastCompass.name + "'");
                     }
                     hasCounterLatch = true;
+                    RememberTapeAnchor(edge);
                 }
             }
 
-            Vector2 basePos = (GyroConfig.AnchorToCompass && hasCounterLatch)
-                ? counterLatch
-                : ToLocal(new Vector2(Screen.width * GyroConfig.FallbackX, Screen.height * GyroConfig.FallbackY));
+            Vector2 basePos;
+            if (GyroConfig.AnchorToCompass && hasCounterLatch)
+                basePos = counterLatch;
+            else if (GyroConfig.AnchorToCompass && !float.IsNaN(GyroConfig.TapeAnchorX) && !float.IsNaN(GyroConfig.TapeAnchorY))
+                // after loading a game the tape may not report until the UI is refreshed:
+                // start where it was last seen instead of the fallback spot
+                basePos = ToLocal(new Vector2(Screen.width * GyroConfig.TapeAnchorX, Screen.height * GyroConfig.TapeAnchorY))
+                          + new Vector2(0f, GyroConfig.Above ? GyroConfig.Gap : -GyroConfig.Gap);
+            else
+                basePos = ToLocal(new Vector2(Screen.width * GyroConfig.FallbackX, Screen.height * GyroConfig.FallbackY));
 
             // above the tape: leave room for the rows hanging underneath, always the
             // most there can be, so the TDC row doesn't jump when rows appear/disappear

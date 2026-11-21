@@ -20,6 +20,20 @@ Change TDC or torpedo selector options:
 [*][b]Gyro angle receiver[/b] – Off, Bow or Stern
 [*][b]Parallax mode[/b] – Forward or Backward
 [/list]
+A button in the scope screen's stock left sidebar (next to the chronometer) shows or hides the fire-control panel and the TDC dials.
+
+[h2]TDC dials[/h2]
+Set up your firing solution without leaving the scope: a window on the left of the scope view holds the TDC's [b]AOB[/b], [b]target speed[/b] and [b]target distance[/b] dials, styled after the real ones.
+[list]
+[*]Grab a dial and turn it, just like on the TDC; hold Shift for fine adjustment, or use the mouse wheel to step
+[*][b]AOB[/b] – works like the TDC's own dial: turning it moves a ghost pointer, and on release the TDC's AOB motor turns to it (the readout shows "current > target" meanwhile)
+[*][b]Target speed[/b] – 0–55 kn; [b]Target distance[/b] – 3–100 hm on the TDC's own stretched scale
+[*]Exact readout under each dial; scrolling over the window no longer drops you out of the scope view
+[*]Greyed out and locked while the TDC isn't manned
+[/list]
+
+[h2]Periscope - Raise fully / lower fully[/h2]
+Two buttons above and below the stock periscope raise/lower control run the periscope all the way up or down. Click again (or use a stock raise/lower button) to stop.
 
 [h2]Settings (saved between sessions)[/h2]
 [list]
@@ -57,10 +71,16 @@ Keeping your gyros set to the correct directions, and leaving the gyro angle rec
 [list]
 [*]English and German, following the game's language
 [*]Pop-up description on every element
-[*]Hold Ctrl and drag the counters or panel to move them
+[*]Hold Ctrl and drag the counters, panel or dial window to move them
 [*]Hiding the game UI (Alt) doesn't move them
 [*]Works with or without the Torpedo Room mod
 [*]Stores nothing in your save game; all settings live in [i]scope-tdc-controls-config.txt[/i]
+[/list]
+
+[h2]Version history[/h2]
+[list]
+[*][b]1.1[/b] – TDC dial window (AOB, target speed, target distance); sidebar button to show/hide the panel and dials; raise fully / lower fully buttons; counters now start in the right place right after loading a game
+[*][b]1.0[/b] – first release
 [/list]
 
 Built for UBOAT 2026.1 patch 21.

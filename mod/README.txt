@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.0  (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.1  (UBOAT 2026.1 patch 21)
 =================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -23,6 +23,44 @@ SH3-style TDC readouts and controls in the periscope and UZO views.
 
 Hover over any element for a pop-up description. Hold Ctrl and drag the
 counters or the panel to move them. The new position is saved automatically.
+
+A button in the periscope / UZO screen's left sidebar (counter icon, next to
+the chronometer) shows or hides the control panel and the TDC dials. The
+counters stay visible. The choice is remembered (ControlsVisible in the
+settings file).
+
+TDC dials: a window on the left of the scope with the TDC's three target
+dials, LAGE / GEGNERFAHRT / ENTFERNUNG (AOB / TARGET SPEED / TARGET DISTANCE).
+They work like the dials on the TDC itself: grab a dial and turn it around
+its centre, and the TDC value follows. The readout under each dial shows the
+exact value.
+  AOB        full circle, 0 = bow on, 180 = stern on; starboard half green,
+             port half red; readout S/P (Stb/Bb) 000-180°. As on the TDC,
+             turning it moves a pale ghost pointer; on release the TDC's AOB
+             motor turns the brass pointer there (the game switches AOB
+             tracking off meanwhile). Locked while the TDC's locking
+             mechanism is triggered.
+  Speed      0-55 kn, clockwise from just right of the top, like the TDC
+  Distance   3-100 hm (300 m - 10 km) on the TDC's stretched scale,
+             clockwise from just right of the top
+  Hold Shift for 10x finer turning. The mouse wheel steps 1° / 0.5 kn /
+  100 m (with Shift a tenth of that). Ctrl+drag moves the window. Greyed out
+  and locked while the TDC is not manned. (ShowDials=false removes it.)
+
+Raise fully / lower fully: two small buttons just above and below the stock
+periscope raise/lower control. Click one to run the periscope all the way up
+or down at its normal speed; click it again, or use a stock raise/lower
+button, to stop. Hidden in the UZO and while the game UI is hidden.
+(ElevatorButtons=false in the settings file removes them.)
+
+Version history
+  1.1  Sidebar button to show/hide the control panel.
+       Raise fully / lower fully buttons on the periscope raise/lower control.
+       TDC dial window (AOB, target speed, target distance) on the left of
+       the scope.
+       Counters start in the right place right after loading a game
+       (they used to sit lower until the game UI was toggled with Alt).
+  1.0  First release.
 
 Fixes to the base game
 ----------------------
@@ -213,6 +251,9 @@ added in later versions are appended automatically; your values are kept.
 
   OffsetX / OffsetY                   counter position (Ctrl+drag sets these)
   ControlsOffsetX / ControlsOffsetY   panel position (Ctrl+drag sets these)
+  DialsOffsetX / DialsOffsetY         dial window position (Ctrl+drag sets these)
+  DialsX / DialsY                     dial window base position (screen fraction)
+  ShowDials=true                      false = no dial window
   Position=Below | Above              side of the bearing tape for the counters
   Scale=1.0                           size of counters and panel
   Format=360 | LR                     000-359, or L/R 000-180

@@ -210,6 +210,71 @@ namespace ScopeTdcControls
             }
         }
 
+        public static string TipRaiseFully
+        {
+            get
+            {
+                return T("<b>Sehrohr ganz ausfahren</b>\nFährt das Sehrohr bis zum Anschlag aus, so als hieltest du die Ausfahrtaste gedrückt. Erneut klicken oder eine der Hebetasten benutzen, um anzuhalten.",
+                         "<b>Raise fully</b>\nRaises the periscope all the way, as if you held the raise button. Click again, or use the stock raise/lower buttons, to stop.");
+            }
+        }
+
+        public static string TipLowerFully
+        {
+            get
+            {
+                return T("<b>Sehrohr ganz einfahren</b>\nFährt das Sehrohr ganz ein, so als hieltest du die Einfahrtaste gedrückt. Erneut klicken oder eine der Hebetasten benutzen, um anzuhalten.",
+                         "<b>Lower fully</b>\nLowers the periscope all the way, as if you held the lower button. Click again, or use the stock raise/lower buttons, to stop.");
+            }
+        }
+
+        public static string TipSidebarButton
+        {
+            get
+            {
+                return T("<b>Scope TDC Controls</b>\nBedienfeld ein- oder ausblenden (Zielpeilung, Peilungsgeber, Schusswinkelempfänger, Parallaxenmodus, Einstellungen). Die Zähler bleiben sichtbar.",
+                         "<b>Scope TDC Controls</b>\nShow or hide the control panel (target bearing, bearing source, gyro angle receiver, parallax mode, settings) and the TDC dials (AOB, target speed, target distance). The counters stay visible.");
+            }
+        }
+
+        // ---- TDC dial window ----
+        public static string DialAob { get { return T("LAGE", "AOB"); } }
+        public static string DialSpeed { get { return T("GEGNERFAHRT", "TARGET SPEED"); } }
+        public static string DialDistance { get { return T("ENTFERNUNG", "TARGET DISTANCE"); } }
+        public static string UnitKnots { get { return T("sm/Std", "kn"); } }
+        public static string Port { get { return T("Bb", "P"); } }
+        public static string Starboard { get { return T("Stb", "S"); } }
+
+        const string DialUsageDe = "\nZum Einstellen die Scheibe greifen und um ihre Mitte drehen, wie am Rechner. Umschalt = 10x feiner, Mausrad = in Schritten. Strg+Ziehen verschiebt das Fenster.";
+        const string DialUsageEn = "\nGrab the dial and turn it around its centre, like on the TDC. Shift = 10x finer, mouse wheel = steps. Ctrl+drag moves the window.";
+
+        public static string TipDialAob
+        {
+            get
+            {
+                return T("<b>Lage</b>\nLagewinkel des Ziels, wie die Lage-Scheibe am Vorhaltrechner: 0 = Bug auf uns zu, 180 = Heck. Steuerbordhälfte grün, Backbordhälfte rot. Wie am Rechner stellt das Drehen nur den hellen Hilfszeiger; beim Loslassen dreht der Lage-Motor des Rechners den Zeiger dorthin (die Lage-Nachführung wird dafür kurz abgeschaltet). Gesperrt, solange die Sperre ausgelöst ist. Mausrad: 1°, wird übernommen, sobald das Rad stillsteht." + DialUsageDe,
+                         "<b>AOB</b>\nThe target's angle on the bow, as on the TDC's AOB dial: 0 = bow on, 180 = stern on. Starboard half green, port half red. As on the TDC, turning it only sets the pale ghost pointer; on release the TDC's AOB motor turns the pointer there (AOB tracking is switched off meanwhile). Locked while the locking mechanism is triggered. Mouse wheel: 1°, sent once the wheel stops." + DialUsageEn);
+            }
+        }
+
+        public static string TipDialSpeed
+        {
+            get
+            {
+                return T("<b>Gegnerfahrt</b>\nFahrt des Ziels in Knoten (0 bis 55), wie die Gegnerfahrt-Scheibe am Vorhaltrechner. Mausrad: 0,5 kn." + DialUsageDe,
+                         "<b>Target speed</b>\nThe target's speed in knots (0 to 55), as on the TDC's speed dial. Mouse wheel: 0.5 kn." + DialUsageEn);
+            }
+        }
+
+        public static string TipDialDistance
+        {
+            get
+            {
+                return T("<b>Entfernung</b>\nEntfernung zum Ziel (3 bis 100 hm, also 300 m bis 10 km), wie die Entfernungs-Scheibe am Vorhaltrechner. Mausrad: 100 m." + DialUsageDe,
+                         "<b>Target distance</b>\nRange to the target (3 to 100 hm, i.e. 300 m to 10 km), as on the TDC's range dial. Mouse wheel: 100 m." + DialUsageEn);
+            }
+        }
+
         public static string TipSettings
         {
             get

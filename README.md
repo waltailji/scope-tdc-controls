@@ -25,6 +25,13 @@ Beside the periscope raise/lower control:
 - **Bearing source**: None, UZO, Observation or Attack periscope
 - **Gyro angle receiver**: Off, Bow or Stern
 - **Parallax mode**: Forward or Backward
+- Shown or hidden with a button added to the periscope screen's stock left sidebar
+
+### TDC dials
+A window on the left of the scope with the TDC's **AOB**, **target speed** and **target distance** dials. Grab a dial and turn it, just like on the TDC; Shift for fine adjustment, mouse wheel for steps, exact readout under each dial. Shown and hidden with the sidebar button together with the panel.
+
+### Raise fully / lower fully
+Two buttons above and below the stock periscope raise/lower control run the periscope all the way up or down at its normal speed.
 
 ### Settings (saved between sessions)
 Show receiver angle · Show active receivers only · Show parallax · Auto set receiver · Auto set parallax · Realistic TDC follower · Realistic receiver sync · Single torpedo launch fix · TDC operator required

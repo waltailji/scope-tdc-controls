@@ -29,6 +29,9 @@ namespace ScopeTdcControls
         public static float Gap = 4f;
         public static float FallbackX = 0.5f;
         public static float FallbackY = 0.80f;
+        // last seen bearing-tape anchor point, as a fraction of the screen (NaN = not seen yet)
+        public static float TapeAnchorX = float.NaN;
+        public static float TapeAnchorY = float.NaN;
         public static float Scale = 1f;
         public static bool LeftRight = false;        // Format=360 | LR
         public static bool ShowTenths = false;
@@ -48,12 +51,21 @@ namespace ScopeTdcControls
 
         // controls panel
         public static bool ShowControls = true;
+        public static bool ControlsVisible = true;    // shown/hidden with the sidebar button
+        public static bool ElevatorButtons = true;    // raise fully / lower fully buttons
         public static bool ControlsAtElevator = true; // ControlsAnchor=Elevator | Screen
         public static float ControlsOffsetX = 0f;
         public static float ControlsOffsetY = 0f;
         public static float ControlsGap = 10f;
         public static float ControlsX = 0.92f;
         public static float ControlsY = 0.5f;
+
+        // TDC dial window (AOB / target speed / distance), shown with the control panel
+        public static bool ShowDials = true;
+        public static float DialsX = 0.12f;
+        public static float DialsY = 0.5f;
+        public static float DialsOffsetX = 0f;
+        public static float DialsOffsetY = 0f;
 
         // general
         public static LanguageMode Language = LanguageMode.Auto;
@@ -88,6 +100,10 @@ Gap=4
 # bearing tape has been seen)
 FallbackX=0.5
 FallbackY=0.80
+# Where the bearing tape was last seen (set automatically; lets the counters
+# start in the right place before the tape appears after loading a game)
+TapeAnchorX=
+TapeAnchorY=
 # Size multiplier for the counter and the control panel
 Scale=1.0
 # 360 = Schusswinkel 000-359 ; LR = L/R 000-180
@@ -127,6 +143,10 @@ TdcOperatorRequired=true
 
 # ---- Follow-up / gyro receiver panel ----
 ShowControls=true
+# Panel shown or hidden (the button in the periscope's left sidebar sets this)
+ControlsVisible=true
+# Raise fully / lower fully buttons above and below the periscope raise/lower control
+ElevatorButtons=true
 # Elevator = beside the periscope raise/lower control ; Screen = ControlsX/ControlsY
 ControlsAnchor=Elevator
 # Extra offset in 1080p pixels. Ctrl+drag updates these.
@@ -135,6 +155,16 @@ ControlsOffsetY=0
 ControlsGap=10
 ControlsX=0.92
 ControlsY=0.5
+
+# ---- TDC dial window (AOB, target speed, target distance) ----
+# Shown and hidden together with the control panel (sidebar button)
+ShowDials=true
+# Centre of the window, 0..1 of screen width/height from bottom-left
+DialsX=0.12
+DialsY=0.5
+# Extra offset in 1080p pixels. Ctrl+drag updates these.
+DialsOffsetX=0
+DialsOffsetY=0
 
 # ---- General ----
 # Auto = follow the game's language ; DE ; EN
@@ -230,6 +260,12 @@ DebugLog=false
             SaveText(key, value.ToString("0.#", CultureInfo.InvariantCulture));
         }
 
+        /// <summary>Save a value with more decimals (screen fractions).</summary>
+        public static void SavePrecise(string key, float value)
+        {
+            SaveText(key, value.ToString("0.#####", CultureInfo.InvariantCulture));
+        }
+
         public static void Save(string key, bool value)
         {
             SaveText(key, value ? "true" : "false");
@@ -274,6 +310,8 @@ DebugLog=false
                 case "gap": Gap = Num(v, Gap); break;
                 case "fallbackx": FallbackX = Mathf.Clamp01(Num(v, FallbackX)); break;
                 case "fallbacky": FallbackY = Mathf.Clamp01(Num(v, FallbackY)); break;
+                case "tapeanchorx": TapeAnchorX = v.Length == 0 ? float.NaN : Num(v, float.NaN); break;
+                case "tapeanchory": TapeAnchorY = v.Length == 0 ? float.NaN : Num(v, float.NaN); break;
                 case "scale": Scale = Mathf.Clamp(Num(v, Scale), 0.25f, 5f); break;
                 case "format": LeftRight = v.Equals("lr", StringComparison.OrdinalIgnoreCase); break;
                 case "showtenths": ShowTenths = Bool(v, ShowTenths); break;
@@ -290,11 +328,18 @@ DebugLog=false
                 case "tdcoperatorrequired": TdcOperatorRequired = Bool(v, TdcOperatorRequired); break;
                 case "showcontrols": ShowControls = Bool(v, ShowControls); break;
                 case "controlsanchor": ControlsAtElevator = !v.Equals("screen", StringComparison.OrdinalIgnoreCase); break;
+                case "controlsvisible": ControlsVisible = Bool(v, ControlsVisible); break;
+                case "elevatorbuttons": ElevatorButtons = Bool(v, ElevatorButtons); break;
                 case "controlsoffsetx": ControlsOffsetX = Num(v, ControlsOffsetX); break;
                 case "controlsoffsety": ControlsOffsetY = Num(v, ControlsOffsetY); break;
                 case "controlsgap": ControlsGap = Num(v, ControlsGap); break;
                 case "controlsx": ControlsX = Mathf.Clamp01(Num(v, ControlsX)); break;
                 case "controlsy": ControlsY = Mathf.Clamp01(Num(v, ControlsY)); break;
+                case "showdials": ShowDials = Bool(v, ShowDials); break;
+                case "dialsx": DialsX = Mathf.Clamp01(Num(v, DialsX)); break;
+                case "dialsy": DialsY = Mathf.Clamp01(Num(v, DialsY)); break;
+                case "dialsoffsetx": DialsOffsetX = Num(v, DialsOffsetX); break;
+                case "dialsoffsety": DialsOffsetY = Num(v, DialsOffsetY); break;
                 case "language":
                     Language = v.Equals("de", StringComparison.OrdinalIgnoreCase) ? LanguageMode.German
                              : v.Equals("en", StringComparison.OrdinalIgnoreCase) ? LanguageMode.English
