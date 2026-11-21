@@ -1,0 +1,53 @@
+[h1]Scope TDC Controls[/h1]
+SH3-style TDC readouts and controls right in the periscope and UZO views, inspired by the gyro angle displays of GWX and OneAlex. See your firing solution and work the fire-control system without leaving the scope.
+
+[h2]Rolling drum counters[/h2]
+Compact mechanical-style counters sit under the bearing tape. Every drum rolls over smoothly, just like a real odometer, including 359 → 000.
+[list]
+[*][b]TDC[/b] – the gyro angle (Schusswinkel) computed by the TDC
+[*][b]Parallax[/b] – the parallax correction the TDC adds (+/-)
+[*][b]Bow / Stern[/b] – the angle the tube gyros are actually set to, so you can watch them catch up
+[*][b]Gyro-set lamp[/b] – green = tubes set to the TDC angle, red = synchronizing, dark = receiver off
+[/list]
+If nobody is manning the TDC, the TDC counter greys out with a "TDC not manned" note.
+[b]Double-click a Bow/Stern counter[/b] to switch to that receiver: the scope swings round until the TDC angle matches what those tubes are already set to, so they're ready instantly.
+
+[h2]Fire-control panel[/h2]
+A vertical panel beside the periscope raise/lower control:
+[list]
+[*][b]Target bearing[/b] – Following / Not following, with a blue lamp while not following
+[*][b]Bearing source[/b] – None, UZO, Observation or Attack periscope
+[*][b]Gyro angle receiver[/b] – Off, Bow or Stern
+[*][b]Parallax mode[/b] – Forward or Backward
+[/list]
+
+[h2]Settings (saved between sessions)[/h2]
+[list]
+[*][b]Show receiver angle / Show active receivers only / Show parallax[/b]
+[*][b]Auto set receiver[/b] – follows the tubes you check (none = off; bow and stern both checked = the end the scope is looking toward)
+[*][b]Auto set parallax[/b] – follows the checked tubes, then the receiver, then the target bearing
+[*][b]Realistic TDC follower / Realistic receiver sync[/b] – turn off for 10× faster TDC and tube gyro motors
+[*][b]TDC operator required[/b] – turn off to use the TDC without a crew member at it
+[/list]
+
+[h2]Fixes to the base game[/h2]
+[list]
+[*][b]Single torpedo launch fix[/b] – checking another tube a few seconds after pressing fire no longer launches it too. A fire command fires only the tubes selected when you gave it, like the real firing key.
+[*][b]Stern shots from the scope[/b] – the torpedo panel no longer forces the gyro receiver to Bow whenever a bow tube is flooded.
+[*][b]Not following holds[/b] – the game no longer turns bearing follow-up back on every frame while a target is locked.
+[*][b]Tube selection kept[/b] – hiding or showing the torpedo panel no longer changes which tube is selected, and the fire-control box tube selector stays in step with your choice.
+[/list]
+
+[h2]Details[/h2]
+[list]
+[*]English and German, following the game's language
+[*]Pop-up description on every element
+[*]Hold Ctrl and drag the counters or panel to move them
+[*]Hiding the game UI (Alt) doesn't move them
+[*]Works with or without the Torpedo Room mod
+[*]Stores nothing in your save game; all settings live in [i]scope-tdc-controls-config.txt[/i]
+[/list]
+
+Source code: https://github.com/waltailji/scope-tdc-controls
+
+Built for UBOAT 2026.1 patch 21.

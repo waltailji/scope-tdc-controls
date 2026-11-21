@@ -49,7 +49,11 @@ mod/            the mod itself (this is what goes to the Workshop)
   README.txt    player documentation
   Preview.jpg   Workshop thumbnail
   Source/       C# source, compiled by the game
+workshop/
+  description.bbcode.txt   Steam Workshop page description (Steam BBCode)
 ```
+
+The UBOAT Launcher replaces the Workshop description with the plain one from `Manifest.json` on every update, so paste `workshop/description.bbcode.txt` back into the Workshop page afterwards.
 
 ### Developing
 Keep the repo anywhere outside the game folders and point the game's mod folder at `mod/` with a directory junction, so `.git` never ends up in a Workshop upload (the UBOAT Launcher uploads every folder inside the mod):
