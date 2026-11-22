@@ -49,7 +49,7 @@ A spring-loaded Aus / Schuß lever: press and hold it to fire the selected tubes
 [*]gyro angle past the ±135° stop
 [*]dark = no power: the firing station switch is on Off
 [/list]
-While the lamp is red, the lever does not fire.
+While the lamp is red or dark, the lever does not fire.
 
 [h2]Periscope - Raise fully / lower fully[/h2]
 Two buttons above and below the stock periscope raise/lower control run the periscope all the way up or down. Click again (or use a stock raise/lower button) to stop.
@@ -90,7 +90,7 @@ Keeping your gyros set to the correct directions, and leaving the gyro angle rec
 
 [h2]Details[/h2]
 [list]
-[*]English and German, following the game's language
+[*]English and German text, following the game's language
 [*]Pop-up description on every element
 [*]Drag a window's background to move it; resize the dial, selector and lever windows with their corner grip
 [*]Hiding the game UI (Alt) doesn't move them; the overlay stays out of loading screens and disappears as soon as you quit

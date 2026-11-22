@@ -1,0 +1,101 @@
+[h1]Scope TDC Controls[/h1]
+Ever been in the middle of a convoy trying to set up successive shots out of your bow and stern tubes, only to be frustrated by the gyro angle receivers taking forever to synchronize when switching directions, having to switch to the TDC view, and getting your scope moved around when you go back to look through it?  Now you can avoid these frustrations by having all the important information and controls on your scope view, setup both torpedo rooms for zero gyro angle shots in the bow and stern directions ahead of time so that you can launch successive torpedoes in a matter of a seconds.  This mod comes with some "cheats" and critical fixes to the stock torpedo fire control behavior as well.  Details below.
+
+[h2]Gyro angle indicators (rolling digit style)[/h2]
+Mechanical-style counters under the bearing tape; every drum rolls over like an odometer.
+[list]
+[*][b]TDC[/b] – the gyro angle (Schusswinkel) computed by the TDC
+[*][b]Parallax[/b] – the parallax correction the TDC adds (+/-)
+[*][b]Bow / Stern[/b] – the angle the tube gyros are actually set to
+[*][b]Gyro-set lamp[/b] – green = set, red = synchronizing, dark = receiver off
+[/list]
+Greyed out with "TDC not manned" when nobody is at the TDC. [b]Double-click a Bow/Stern counter[/b] to switch to that receiver: the scope swings round until the TDC angle matches what those tubes are already set to.
+
+[h2]Control panel[/h2]
+Beside the periscope raise/lower control (roll it up with the caret by its title):
+[list]
+[*][b]Target bearing[/b] – Follow / Not follow, blue lamp while not following
+[*][b]Parallax mode[/b] – Forward or Backward
+[*][b]Windows[/b] – show or hide each window below, and reset their sizes
+[/list]
+A button in the scope screen's left sidebar shows or hides the panel and its windows.
+
+[h2]TDC dials[/h2]
+The TDC's [b]AOB[/b], [b]target speed[/b], [b]target distance[/b] and [b]target length[/b] dials, styled after the real ones.
+[list]
+[*]Turn a dial like on the TDC, click a value on its scale, or use the mouse wheel; Shift = fine
+[*][b]AOB[/b] – red/green halves and rolling ones digits; the TDC follows as you turn
+[*][b]Target length[/b] – turning ring, shown only while a spread is selected
+[*][b]Voice callouts[/b] – the crew member at the scope announces what you dial in
+[/list]
+
+[h2]Firing selector & direction selector[/h2]
+The boat's rotary switches, with its own knob clicks:
+[list]
+[*][b]Firing selector[/b] – Einzelschuß, Fächerschuß and T.Abf. Schalter; only your sub's positions are offered
+[*][b]Direction selector[/b] – Zielrichtung (bearing source) and Schußrichtung (gyro angle receiver)
+[/list]
+
+[h2]Fire lever[/h2]
+A spring-loaded Aus / Schuß lever: press and hold to fire the selected tubes. Its lamp turns green only when the shot makes sense (hover it for the reason); while red or dark the lever does not fire:
+[list]
+[*]no tube selected, or a selected tube not flooded
+[*]gyro angle receiver not on the selected tubes' end
+[*]target beyond the torpedo's run – how the watch officer made the system safe
+[*]gyro angle past the ±135° stop
+[*]dark = no power (firing station switch off)
+[/list]
+
+[h2]Raise fully / lower fully[/h2]
+Buttons above and below the stock periscope raise/lower control run the periscope all the way up or down.
+
+[h2]Settings (saved between sessions)[/h2]
+[list]
+[*][b]Show gyro receiver angles / active receivers only / parallax angle[/b] – choose which counters you see
+[*][b]Auto set gyro receiver[/b] – follows the checked, flooded tubes (none = off; both ends = the direction your scope is viewing)
+[*][b]Auto set parallax mode[/b] – follows your tube, receiver or scope direction
+[*][b]Realistic TDC follower / receiver sync[/b] – turn off for 10× faster TDC and gyro receivers; no more waiting ages to use your aft torpedoes
+[*][b]TDC operator required[/b] – turn off to use the TDC unmanned
+[*][b]Voice callouts[/b], [b]Ctrl+drag to move[/b] (off = drag a window's background)
+[/list]
+
+[h2]Fixes to the base game[/h2]
+[list]
+[*][b]Single torpedo launch fix[/b] – a tube checked after pressing fire no longer launches too.  no more wasted torpedoes!
+[*][b]Stern shots from the scope[/b] – the torpedo panel no longer forces the receiver to Bow.
+[*][b]Not following holds[/b] while a target is locked.
+[*][b]Tube selection kept[/b] when hiding or showing the torpedo panel.
+[/list]
+
+[h2]Recommended Torpedo Attack Workflow[/h2]
+[olist]
+[*]Pick a scope to set up your gyros with (UZO/attack periscope/observation periscope)
+[*]Set that scope as your target bearing source
+[*]Turn your scope to a point to a relative bearing of 0 degrees
+[*]Switch to "Bow" on gyro angle receiver selector and allow the gyros fully synchronize.
+[*]Switch to "None" on the gyro receiver selector.
+[*]Turn your scope to a point to a relative bearing of 180 degrees.
+[*]Switch to "Stern" on the gyro angle receiver selector and allow the stern gyro to fully synchronize.
+[*]Select "None" on the gyro receiver selector.
+[/olist]
+
+Keeping your gyros set to the correct directions, and leaving the gyro angle receiver selector set to "None" when switching directions or when not on an active attack will help save a lot of time and frustration with making rapid successive torpedo launches in both directions (in the middle of a convoy).  The stock system lead to a lot of unnecessary gyro chasing when performing routine scanning with the scopes and made it difficult to optimize attack planning in both directions.
+
+[h2]Details[/h2]
+[list]
+[*]English and German, following the game's language; pop-up description on every element
+[*]Move windows by dragging; resize with the corner grip
+[*]Works with or without the Torpedo Room mod; stores nothing in your save game
+[*]Full documentation: [url=https://github.com/waltailji/scope-tdc-controls]GitHub[/url]
+[/list]
+
+[h2]Version history[/h2]
+[list]
+[*][b]1.2[/b] – realistic TDC dials (incl. target length), voice callouts, firing and direction selectors, fire lever with ready lamp, reworked panel, resizable windows
+[*][b]1.1[/b] – TDC dials, sidebar button, raise/lower fully, counter start position fix
+[*][b]1.0[/b] – first release
+[/list]
+
+Built for UBOAT 2026.1 patch 21.
+
+This mod was created with AI-assisted agentic coding.
