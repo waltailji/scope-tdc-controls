@@ -1,24 +1,20 @@
-Scope TDC Controls  v1.1  (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.2  (UBOAT 2026.1 patch 21)
 =================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
 
   Under the bearing tape              Beside the periscope raise/lower control
-  [ TDC       |   3 5 7 ° (o) ]       [ (o) ZIELPEILUNG ]
-  [ Parallaxe | + 0 0 1 °     ]       [ FOLGEN        ]
-  [ BUG       |   3 5 4 °     ]       [ NICHT FOLGEN  ]
-                                      [ PEILUNGSGEBER ]
-                                      [ KEINER        ]
-                                      [ UZO           ]
-                                      [ BEOBACHTUNG   ]
-                                      [ ANGRIFF       ]
-                                      [ SCHUSSWINKELEMPFÄNGER ]
-                                      [ AUS           ]
-                                      [ BUG           ]
-                                      [ HECK          ]
+  [ TDC       |   3 5 7 ° (o) ]       [ Scope TDC Controls ]
+  [ Parallaxe | + 0 0 1 °     ]       [ (o) ZIELPEILUNG ]
+  [ BUG       |   3 5 4 °     ]       [ FOLGEN ][ NICHT FOLGEN ]
                                       [ PARALLAXENMODUS ]
-                                      [ VORN          ]
-                                      [ ACHTERN       ]
+                                      [ VORN ][ ACHTERN ]
+                                      [ FENSTER       ]
+                                      [x] Schusswinkel
+                                      [x] Rechnerscheiben
+                                      [x] Schusswahl
+                                      [x] Richtungswahl
+                                      [x] Abfeuerhebel
                                       [ + EINSTELLUNGEN ]
 
 Hover over any element for a pop-up description. Hold Ctrl and drag the
@@ -29,31 +25,114 @@ the chronometer) shows or hides the control panel and the TDC dials. The
 counters stay visible. The choice is remembered (ControlsVisible in the
 settings file).
 
-TDC dials: a window on the left of the scope with the TDC's three target
-dials, LAGE / GEGNERFAHRT / ENTFERNUNG (AOB / TARGET SPEED / TARGET DISTANCE).
+TDC dials: a window on the left of the scope with the TDC's target dials,
+stacked: LAGE / GEGNERFAHRT / ENTFERNUNG / STREUBREITE (AOB / TARGET SPEED /
+TARGET DISTANCE / TARGET LENGTH).
 They work like the dials on the TDC itself: grab a dial and turn it around
 its centre, and the TDC value follows. The readout under each dial shows the
 exact value.
-  AOB        full circle, 0 = bow on, 180 = stern on; starboard half green,
-             port half red; readout S/P (Stb/Bb) 000-180°. As on the TDC,
-             turning it moves a pale ghost pointer; on release the TDC's AOB
-             motor turns the brass pointer there (the game switches AOB
-             tracking off meanwhile). Locked while the TDC's locking
-             mechanism is triggered.
+  AOB        like the TDC's Lagenwinkel dial: black rim marked every 10°,
+             numbered every 20° (0 = bow on at the top, 180 = stern on at the
+             bottom), inner disc solid red on the port half (Bug links) and
+             green on the starboard half (Bug rechts), and a window at the
+             bottom where the ones digits roll by (red port, green starboard);
+             brass needle with an arrow tip; readout S/P
+             (Stb/Bb) 000-180°. As on the TDC, turning it moves a pale ghost
+             pointer; on release the TDC's AOB motor turns the brass pointer
+             there (the game switches AOB tracking off meanwhile). Locked
+             while the TDC's locking mechanism is triggered.
   Speed      0-55 kn, clockwise from just right of the top, like the TDC
   Distance   3-100 hm (300 m - 10 km) on the TDC's stretched scale,
-             clockwise from just right of the top
+             clockwise from just right of the top; numbers round the rim,
+             marks inside them (dots on the half-way marks) and a four-lobed
+             knob with a white triangle pointer, like the TDC
+  Length     100-200 m, like the TDC's Streubreite dial: the numbers are on
+             a ring that turns, and the value under the fixed index at the
+             top is the one set. With the distance it gives the spread angle,
+             so it is only shown while the Einzelschuß switch is on a spread
+             (Fächer auf geradem Kurs / im Drehen); the window shrinks and
+             grows to fit
   Hold Shift for 10x finer turning. The mouse wheel steps 1° / 0.5 kn /
   100 m (with Shift a tenth of that). Ctrl+drag moves the window. Greyed out
-  and locked while the TDC is not manned. (ShowDials=false removes it.)
+  and locked while the TDC is not manned. Shown or hidden with the
+  Rechnerscheiben (TDC dials) check box on the control panel.
 
-Raise fully / lower fully: two small buttons just above and below the stock
+  Voice callouts (settings drop-down, on by default): the crew member at the
+  scope announces what you dial in, with the game's own voice lines and
+  subtitles, just as when you send a locked target's values to the TDC
+  ("Attack parameters update... angle on bow, right, 3-0"). Speed and
+  distance are set at once and announced after you let go (or the wheel
+  stops). AOB is set, as in the game, once it has been said: AOB motor and
+  tracking on, the TDC jumps to the new AOB. Changing a value while it is
+  still being said gets one more callout with the latest value. Nobody at
+  the scope: values are applied silently. Distances above 9999 m are
+  spoken as 9999 (the game's voice lines stop at four digits).
+
+Firing selector (SCHUSSWAHL): a window near the bottom of the scope with the
+three switches of the Schaltkasten T-Abf.-Anl.:
+  Einzelschuß (Single shot)       tube for a single shot, or a spread on a
+                                  straight course / while turning
+  Fächerschuß (Salvo)             which tubes fire together (Aus = none)
+  T.Abf. Schalter (Firing station) Brücke (bridge/UZO), Turm (tower) or Aus
+  Each switch offers exactly the positions of your boat's own knob, so it
+  follows the sub type (salvo labels come from the game's own text), and
+  turning it does what turning the knob in the boat does; the knob in the
+  boat turns along. Click a label to switch there; click the handle (left =
+  on, right = back), use the mouse wheel or drag to turn it. Ctrl+drag moves
+  the window. Shown and hidden with the sidebar button.
+  Shown or hidden with the Schusswahl (Firing selector) check box on the control
+  panel.
+
+Fire lever (T-Abf.-Schalter): a narrow window at the bottom right with a
+  spring-loaded lever, Aus (Off) / Schuß (Fire). It rests at Aus; press on
+  it (grip, slot or plates) to throw it to Schuß and fire the selected tubes;
+  it stays down while the mouse button is held and springs back when you let
+  go. It fires through the boat's own launch lever (which moves
+  along), with the same checks: not while torpedoes are being launched, and
+  every checked tube must be flooded.
+  Ready lamp under the slot (hover it for what it shows right now and why):
+    green  ready
+    red    safe - the lever does not fire (stricter than the boat's own
+           lever, which only refuses while launching or with a dry tube):
+             - no tube selected, or a selected tube not flooded
+             - the gyro angle receiver not on the selected tubes' end
+               (Bug for bow tubes, Heck for stern tubes)
+             - the set distance beyond the torpedo's run: the TDC's "max
+               distance to target" drum (its geometry ratio x the torpedo
+               range on its range knob) - how the watch officer made the
+               system safe
+             - the gyro angle past the gyro setting gear's ±135° stop,
+               measured from the tube axis (0° bow tubes, 180° stern tubes)
+    amber  firing
+    dark   no power: the lever is only live while the firing station switch
+           (T.Abf. Schalter) is on Brücke or Turm; on either Aus it is dead.
+           (On the boat only the named station is live, bridge for the UZO,
+           tower for the attack periscope; for now either one powers it.)
+  Shown or hidden with the Abfeuerhebel (Fire lever) check box.
+
+Raise fully / lower fully: two slim buttons just above and below the stock
 periscope raise/lower control. Click one to run the periscope all the way up
 or down at its normal speed; click it again, or use a stock raise/lower
 button, to stop. Hidden in the UZO and while the game UI is hidden.
 (ElevatorButtons=false in the settings file removes them.)
 
 Version history
+  1.2  Voice callouts for the TDC dials, using the game's own crew voice
+       lines.
+       Window check boxes (FENSTER / WINDOWS) on the control panel to show or
+       hide the TDC dials, firing selector, direction selector and fire
+       lever.
+       Target length (Streubreite) dial (turning ring) in the TDC dial
+       window, shown for spreads; AOB needle with an arrow tip; distance
+       dial as a knob with an arrow.
+       Fire lever window (spring-loaded Aus / Schuß) with a ready lamp.
+       Direction selector window (Zielrichtung / Schußrichtung knobs) and
+       replace those
+       panel buttons; the panel is titled "Scope TDC Controls", with the
+       target bearing and parallax buttons side by side and window check
+       boxes.
+       Firing selector window (single shot, salvo, firing station),
+       adapted to the boat's tube setup.
   1.1  Sidebar button to show/hide the control panel.
        Raise fully / lower fully buttons on the periscope raise/lower control.
        TDC dial window (AOB, target speed, target distance) on the left of
@@ -133,24 +212,33 @@ Gyro-set lamp
   red   = synchronizing (the tube gyros are still turning to the TDC angle)
   dark  = the gyro receiver is off
 
-Control panel
--------------
-Target bearing (Zielpeilung: Following / Not following, Folgen / Nicht folgen)
-  Whether the TDC follows this scope's or the UZO's bearing. The lamp is
-  lit blue while NOT following and dark while following. The buttons use
+Control panel and windows
+-------------------------
+The control panel (titled "Scope TDC Controls"; hover the title for the
+version and author) holds the target bearing and parallax mode buttons, the
+WINDOWS check boxes and the settings drop-down (which opens above any of
+the mod's windows). Bearing source and gyro receiver are
+worked in their own windows:
+Target bearing - on the panel (Zielpeilung: Folgen / Nicht folgen)
+  Whether the TDC follows this scope's or the UZO's bearing: two buttons side
+  by side, with a blue lamp in the header that is
+  lit while NOT following and dark while following. The buttons use
   the game's own follow-up handler. Normally the game turns follow-up back
   on every frame while a target is locked. With this mod, "Not following"
-  holds until you press "Following" or lock a different target.
+  holds until you set Folgen again or lock a different target.
 
-Bearing source (Peilungsgeber: Keiner / UZO / Beobachtung / Angriff)
+Bearing source - Zielrichtung, in the RICHTUNGSWAHL / DIRECTION SELECTOR window
+  (Aus at the bottom, Zieloptik = attack periscope at the top, UZO right,
+  observation periscope left)
   Selects which scope sends its bearing to the TDC. Normally the game picks
   the scope you are looking through. A pick here takes priority until a new
   target is locked; turning the physical knob on the fire-control box also
-  counts as a pick. Scopes the boat doesn't have are greyed out.
+  counts as a pick. Scopes the boat doesn't have are left off the dial.
 
-Gyro angle receiver (Schusswinkelempfänger: Aus / Bug / Heck)
-  Selects which tube group receives the TDC gyro angle. "Heck" is greyed
-  out on boats without a stern receiver.
+Gyro angle receiver - Schußrichtung, in the same window
+  (Aus at the top and bottom, Bug left, Heck right, as on the box)
+  Selects which tube group receives the TDC gyro angle. "Heck" is left off
+  on boats without a stern receiver.
 
   Fix for the game's torpedo panel: normally, while the periscope torpedo
   panel is open, it forces the receiver to Bow whenever any bow tube is
@@ -233,6 +321,9 @@ Settings drop-down (EINSTELLUNGEN / SETTINGS), all on by default
                            off = the TDC calculates unmanned and can be
                                  opened and operated from the station bar;
                                  power loss and damage still switch it off
+  Voice callouts           on  = the man at the scope announces values set
+                                 with the TDC dials (see "TDC dials")
+                           off = dial values are applied silently
   Each change is saved immediately and carries over to later sessions. The
   TDC options apply throughout the game, not only while looking through the
   scope. The faster modes run the game's own motor simulation more often, so
@@ -253,7 +344,15 @@ added in later versions are appended automatically; your values are kept.
   ControlsOffsetX / ControlsOffsetY   panel position (Ctrl+drag sets these)
   DialsOffsetX / DialsOffsetY         dial window position (Ctrl+drag sets these)
   DialsX / DialsY                     dial window base position (screen fraction)
-  ShowDials=true                      false = no dial window
+  ShowGyros / ShowDials / ShowSwitches / ShowDirections / ShowLever
+                                      windows shown (also the
+                                      WINDOWS buttons on the control panel)
+  SwitchesOffsetX / SwitchesOffsetY   switch box position (Ctrl+drag sets these)
+  SwitchesX / SwitchesY               switch box base position (screen fraction)
+  LeverOffsetX / LeverOffsetY         fire lever position (Ctrl+drag sets these)
+  LeverX / LeverY                     fire lever base position (screen fraction)
+  DirectionsX / DirectionsY            direction selector base position;
+  DirectionsOffsetX / DirectionsOffsetY  (Ctrl+drag sets the offsets)
   Position=Below | Above              side of the bearing tape for the counters
   Scale=1.0                           size of counters and panel
   Format=360 | LR                     000-359, or L/R 000-180
@@ -262,7 +361,7 @@ added in later versions are appended automatically; your values are kept.
   ShowSyncLamp / ShowControls / Tooltips
   ShowReceiverAngle / ActiveReceiverOnly / ShowParallax / AutoReceiver / AutoParallax /
   RealisticTdc / RealisticReceiverSync / SingleTorpedoLaunchFix /
-  TdcOperatorRequired   (also in the drop-down)
+  TdcOperatorRequired / VoiceCallouts   (also in the drop-down)
   ControlsAnchor=Elevator | Screen    Screen = place the panel at ControlsX/ControlsY
   Anchor=Compass | Screen             Screen = place the counters at FallbackX/FallbackY
   HideWithGameUI=false                true = also hide this mod's elements with Alt

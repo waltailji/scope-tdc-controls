@@ -47,6 +47,8 @@ namespace ScopeTdcControls
         public static string BearingHeader { get { return T("ZIELPEILUNG", "TARGET BEARING"); } }
         public static string Follow { get { return T("FOLGEN", "FOLLOWING"); } }
         public static string NoFollow { get { return T("NICHT FOLGEN", "NOT FOLLOWING"); } }
+        public static string FollowBtn { get { return T("FOLGEN", "FOLLOW"); } }
+        public static string NoFollowBtn { get { return T("NICHT FOLGEN", "NOT FOLLOW"); } }
         public static string TdcNotManned { get { return T("Rechner nicht besetzt", "TDC not manned"); } }
         public static string ReceiverHeader { get { return T("SCHUSSWINKELEMPFÄNGER", "GYRO ANGLE RECEIVER"); } }
         public static string Off { get { return T("AUS", "OFF"); } }
@@ -201,6 +203,17 @@ namespace ScopeTdcControls
 
         public static string OptTdcOperator { get { return T("Rechnerbediener erforderlich", "TDC operator required"); } }
 
+        public static string OptVoiceCallouts { get { return T("Sprachmeldungen", "Voice callouts"); } }
+
+        public static string TipOptVoiceCallouts
+        {
+            get
+            {
+                return T("<b>Sprachmeldungen</b>\nAn: Werte, die mit den Rechner-Scheiben links eingestellt werden, meldet der Mann am Sehrohr mit den Sprachmeldungen des Spiels, wie beim Übergeben eines aufgeschalteten Ziels an den Rechner. Fahrt und Entfernung gelten sofort und werden nach dem Loslassen gemeldet; die Lage wird gesetzt, sobald sie ausgesprochen ist.\nAus: Werte gelten ohne Meldung (die Lage dreht der Lage-Motor nach dem Loslassen hin).",
+                         "<b>Voice callouts</b>\nOn: values set with the TDC dials on the left are announced by the crew member at the scope, with the game's own voice lines, as when sending a locked target to the TDC. Speed and distance are set at once and announced after you let go; AOB is set once it has been said.\nOff: values are applied without callouts (the AOB motor turns to the new AOB after you let go).");
+            }
+        }
+
         public static string TipOptTdcOperator
         {
             get
@@ -232,15 +245,200 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Scope TDC Controls</b>\nBedienfeld ein- oder ausblenden (Zielpeilung, Peilungsgeber, Schusswinkelempfänger, Parallaxenmodus, Einstellungen). Die Zähler bleiben sichtbar.",
-                         "<b>Scope TDC Controls</b>\nShow or hide the control panel (target bearing, bearing source, gyro angle receiver, parallax mode, settings) and the TDC dials (AOB, target speed, target distance). The counters stay visible.");
+                return T("<b>Scope TDC Controls</b>\nBedienfeld und die eingeschalteten Fenster (Rechnerscheiben, Schusswahl, Richtungswahl, Abfeuerhebel) ein- oder ausblenden. Die Zähler bleiben sichtbar.",
+                         "<b>Scope TDC Controls</b>\nShow or hide the control panel and the windows switched on there (TDC dials, firing selector, direction selector, fire lever). The counters stay visible.");
+            }
+        }
+
+        // ---- window toggles on the control panel ----
+        public static string WindowsHeader { get { return T("FENSTER", "WINDOWS"); } }
+        public static string WinGyros { get { return T("Schusswinkel", "Gyros"); } }
+        public static string TipWinGyros
+        {
+            get
+            {
+                return T("<b>Schusswinkel</b>\nDie Schusswinkelzähler unter dem Peilungsband (Rechner, Parallaxe, Bug/Heck) ein- oder ausblenden.",
+                         "<b>Gyros</b>\nShow or hide the gyro angle counters under the bearing tape (TDC, parallax, bow/stern).");
+            }
+        }
+        public static string WinDials { get { return T("Rechnerscheiben", "TDC dials"); } }
+        public static string WinSwitches { get { return T("Schusswahl", "Firing selector"); } }
+        public static string WinDirections { get { return T("Richtungswahl", "Direction selector"); } }
+
+        public static string ModTitle { get { return "Scope TDC Controls"; } }
+        public static string ByAuthor { get { return T("von CrzyDmnd", "by CrzyDmnd"); } }
+
+        public static string TipWinDirections
+        {
+            get
+            {
+                return T("<b>Richtungswahl</b>\nDas Fenster mit den Schaltern Zielrichtung (Peilungsgeber) und Schußrichtung (Schusswinkelempfänger) ein- oder ausblenden.",
+                         "<b>Direction selector</b>\nShow or hide the window with the bearing source (Zielrichtung) and gyro angle receiver (Schußrichtung) switches.");
+            }
+        }
+
+        // ---- direction selector ----
+        public static string DirTarget { get { return T("Zielrichtung", "Bearing source"); } }
+        public static string DirShot { get { return T("Schußrichtung", "Gyro receiver"); } }
+        public static string DirAttack { get { return T("Angriffssehrohr", "Attack periscope"); } }
+        public static string DirAttackShort { get { return T("Zieloptik", "Attack scope"); } }
+        public static string DirObs { get { return T("Beobachtungssehrohr", "Observation periscope"); } }
+        public static string DirObsShort { get { return T("Beob.-Sehrohr", "Obs. scope"); } }
+        public static string DirBow { get { return T("Bugtorpedoraum", "Bow tubes"); } }
+        public static string DirBowShort { get { return T("Bug", "Bow"); } }
+        public static string DirStern { get { return T("Hecktorpedoraum", "Stern tubes"); } }
+        public static string DirSternShort { get { return T("Heck", "Stern"); } }
+
+        public static string TipDirTarget
+        {
+            get
+            {
+                return T("<b>Zielrichtung</b> (Peilungsgeber)\nWählt, welches Sehrohr seine Peilung an den Rechner gibt: Angriffssehrohr, UZO oder Beobachtungssehrohr, oder Aus. Normalerweise wählt das Spiel das Sehrohr, durch das du schaust; eine Wahl hier gilt, bis ein neues Ziel aufgeschaltet wird. Sehrohre, die das Boot nicht hat, fehlen." + SwitchUsageDe,
+                         "<b>Bearing source</b> (Zielrichtung)\nSelects which scope sends its bearing to the TDC: attack periscope, UZO or observation periscope, or off. Normally the game picks the scope you are looking through; a pick here holds until a new target is locked. Scopes the boat doesn't have are left off." + SwitchUsageEn);
+            }
+        }
+
+        public static string TipDirShot
+        {
+            get
+            {
+                return T("<b>Schußrichtung</b> (Schusswinkelempfänger)\nWählt, welche Rohrgruppe den Schusswinkel des Rechners bekommt: Bug, Heck oder Aus. Mit „Empfänger automatisch“ folgt er den angehakten Rohren; eine Wahl hier gilt, bis sich die Rohrauswahl ändert." + SwitchUsageDe,
+                         "<b>Gyro receiver</b> (Schußrichtung)\nSelects which tube group receives the TDC's gyro angle: bow, stern or off. With \"Auto set receiver\" on it follows the checked tubes; a pick here holds until the tube selection changes." + SwitchUsageEn);
+            }
+        }
+
+        public static string TipWindowsHeader
+        {
+            get
+            {
+                return T("<b>Fenster</b>\nZusätzliche Fenster dieses Mods ein- oder ausblenden. Angehakt = sichtbar. Wird gespeichert.",
+                         "<b>Windows</b>\nShow or hide this mod's extra windows. Checked = shown. Remembered between sessions.");
+            }
+        }
+
+        public static string TipWinDials
+        {
+            get
+            {
+                return T("<b>Rechnerscheiben</b>\nDas Fenster mit den Scheiben für Lage, Gegnerfahrt und Entfernung ein- oder ausblenden.",
+                         "<b>TDC dials</b>\nShow or hide the window with the AOB, target speed and target distance dials.");
+            }
+        }
+
+        public static string TipWinSwitches
+        {
+            get
+            {
+                return T("<b>Schusswahl</b>\nDas Fenster mit den Schaltern Einzelschuß, Fächerschuß und T.Abf. Schalter ein- oder ausblenden.",
+                         "<b>Firing selector</b>\nShow or hide the window with the single shot, salvo and firing station switches.");
+            }
+        }
+
+        public static string WinLever { get { return T("Abfeuerhebel", "Fire lever"); } }
+
+        public static string TipWinLever
+        {
+            get
+            {
+                return T("<b>Abfeuerhebel</b>\nDas Fenster mit dem Abfeuerhebel (Aus / Gesichert / Schuß) ein- oder ausblenden.",
+                         "<b>Fire lever</b>\nShow or hide the window with the fire lever (Off / Safe / Fire).");
+            }
+        }
+
+        // ---- fire lever ----
+        public static string LeverTitle { get { return T("T-ABF.-\nSCHALTER", "FIRE\nLEVER"); } }
+        public static string LeverOff { get { return T("Aus", "Off"); } }
+        public static string LeverFire { get { return T("Schuß", "Fire"); } }
+        public static string LeverWrongReceiver { get { return T("Empfänger nicht auf {0}", "Receiver not on {0}"); } }
+        public static string LeverOutOfRange { get { return T("Außer Reichweite (max. {0} m)", "Out of range (max {0} m)"); } }
+        public static string LeverGyroStop { get { return T("Schusswinkel {0}° über Anschlag ±{1}°", "Gyro angle {0}° past ±{1}° stop"); } }
+        public static string LeverNoPower { get { return T("Kein Strom – T.Abf. Schalter Aus", "No power – firing station Off"); } }
+        public static string LeverFiring { get { return T("Abfeuern …", "Firing …"); } }
+        public static string LeverNothing { get { return T("Kein Rohr gewählt", "No tube selected"); } }
+        public static string LeverNoBoat { get { return T("Kein Boot", "No boat"); } }
+        public static string LeverNotFlooded { get { return T("Rohr {0} nicht bewässert", "Tube {0} not flooded"); } }
+        public static string LeverReady { get { return T("Bereit: Rohr {0}", "Ready: tube {0}"); } }
+
+        public static string TipLever
+        {
+            get
+            {
+                return T("<b>Abfeuerhebel</b>\nDer Hebel ist gefedert und ruht auf Aus. Zum Abfeuern auf den Hebel drücken: er geht auf Schuß und feuert die gewählten (angehakten) Rohre, wie der Hebel im Boot, bleibt unten, solange die Maustaste gedrückt ist, und federt beim Loslassen zurück. Feuert nur bei grüner Lampe (Maus über die Lampe für Einzelheiten). Strg+Ziehen verschiebt das Fenster.",
+                         "<b>Fire lever</b>\nThe lever is spring-loaded and rests at Off. To fire, press on the lever: it goes to Fire and fires the selected (checked) tubes, like the lever in the boat, stays down while the mouse button is held, and springs back when you let go. Fires only while the lamp is green (hover the lamp for details). Ctrl+drag moves the window.");
+            }
+        }
+
+        public static string LeverLampTitle { get { return T("Feuerbereitschaft", "Ready to fire"); } }
+
+        public static string LeverLampLegend
+        {
+            get
+            {
+                return T("<b>grün</b> = bereit\n<b>rot</b> = gesichert, der Hebel feuert nicht:\n – kein Rohr gewählt oder ein gewähltes Rohr nicht bewässert\n – Schusswinkelempfänger nicht auf Bug/Heck der gewählten Rohre\n – Entfernung über der Laufstrecke des Torpedos (Trommel „größte Zielentfernung“ am Rechner) – so hat der WO die Anlage gesichert\n – Schusswinkel über dem Anschlag von ±135° (von der Rohrachse: 0° Bug, 180° Heck)\n<b>gelb</b> = feuert\n<b>dunkel</b> = kein Strom: T.Abf. Schalter auf Aus (Brücke oder Turm schaltet ein)",
+                         "<b>green</b> = ready\n<b>red</b> = safe, the lever does not fire:\n – no tube selected, or a selected tube not flooded\n – gyro angle receiver not on the selected tubes' end (bow/stern)\n – distance beyond the torpedo's run (the TDC's “max distance to target” drum) – how the watch officer made the system safe\n – gyro angle past the ±135° stop (from the tube axis: 0° bow, 180° stern)\n<b>amber</b> = firing\n<b>dark</b> = no power: firing station switch on Off (Bridge or Tower powers it)");
+            }
+        }
+
+        // ---- fire-control switch box ----
+        public static string SwitchSingle { get { return T("Einzelschuß", "Single shot"); } }
+        public static string SwitchSalvo { get { return T("Fächerschuß", "Salvo"); } }
+        public static string SwitchLever { get { return T("T.Abf. Schalter", "Firing station"); } }
+        public static string TubeWord { get { return T("Rohr", "Tube"); } }
+        public static string SpreadCourse { get { return T("Fächer auf geradem Kurs", "Spread, straight course"); } }
+        public static string SpreadTurning { get { return T("Fächer im Drehen", "Spread while turning"); } }
+        public static string SpreadCourseShort { get { return T("Fächer gerade", "Spread straight"); } }
+        public static string SpreadTurningShort { get { return T("Fächer Drehen", "Spread turning"); } }
+        public static string SwitchOff { get { return T("Aus", "Off"); } }
+        public static string LeverBridge { get { return T("Brücke", "Bridge"); } }
+        public static string LeverTower { get { return T("Turm", "Tower"); } }
+
+        const string SwitchUsageDe = "\nBeschriftung anklicken, um dorthin zu schalten; Griff anklicken (links = weiter, rechts = zurück), Mausrad oder Ziehen zum Weiterschalten. Strg+Ziehen verschiebt das Fenster. Wie der Schalter am Schaltkasten T-Abf.-Anl.; es werden nur die Stellungen deines Bootes angeboten.";
+        const string SwitchUsageEn = "\nClick a label to switch there; click the handle (left = on, right = back), use the mouse wheel or drag to turn it. Ctrl+drag moves the window. Works like the knob on the fire-control switch box; only your boat's positions are offered.";
+
+        public static string TipSwitchSingle
+        {
+            get
+            {
+                return T("<b>Einzelschuß</b>\nWählt das Rohr für einen Einzelschuß oder einen Fächer (auf geradem Kurs / im Drehen). Setzt die Rohrauswahl wie der Schalter im Boot." + SwitchUsageDe,
+                         "<b>Single shot</b>\nSelects the tube for a single shot, or a spread (straight course / while turning). Sets the tube selection like the knob in the boat." + SwitchUsageEn);
+            }
+        }
+
+        public static string TipSwitchSalvo
+        {
+            get
+            {
+                return T("<b>Fächerschuß</b>\nWählt die Rohre, die zusammen als Fächer geschossen werden (Aus = keiner)." + SwitchUsageDe,
+                         "<b>Salvo</b>\nSelects which tubes fire together as a salvo (Off = none)." + SwitchUsageEn);
+            }
+        }
+
+        public static string TipSwitchLever
+        {
+            get
+            {
+                return T("<b>T.Abf. Schalter</b>\nTorpedo-Abfeuerungsschalter: von wo abgefeuert wird – Brücke (UZO) oder Turm (Angriffssehrohr) – oder Aus." + SwitchUsageDe,
+                         "<b>Firing station</b>\nTorpedo firing switch: where torpedoes are fired from – bridge (UZO) or tower (attack periscope) – or off." + SwitchUsageEn);
             }
         }
 
         // ---- TDC dial window ----
-        public static string DialAob { get { return T("LAGE", "AOB"); } }
+        public static string DialAob { get { return T("LAGENWINKEL", "AOB"); } }
+        public static string AobDegrees { get { return T("Grad", "Degrees"); } }
+        public static string AobBowLeft { get { return T("Bug Links", "Port Bow"); } }
+        public static string AobBowRight { get { return T("Bug Rechts", "Stbd Bow"); } }
         public static string DialSpeed { get { return T("GEGNERFAHRT", "TARGET SPEED"); } }
         public static string DialDistance { get { return T("ENTFERNUNG", "TARGET DISTANCE"); } }
+        public static string DialLength { get { return T("STREUBREITE", "TARGET LENGTH"); } }
+
+        public static string TipDialLength
+        {
+            get
+            {
+                return T("<b>Streubreite</b>\nLänge des Ziels (100 bis 200 m), wie die Streubreite-Scheibe am Vorhaltrechner. Daraus und aus der Entfernung errechnet der Rechner den Streuwinkel für einen Fächer. Mausrad: 1 m." + DialUsageDe,
+                         "<b>Target length</b>\nThe target's length (100 to 200 m), as on the TDC's target length (Streubreite) dial. With the distance, the TDC works out the spread angle for a salvo from it. Mouse wheel: 1 m." + DialUsageEn);
+            }
+        }
         public static string UnitKnots { get { return T("sm/Std", "kn"); } }
         public static string Port { get { return T("Bb", "P"); } }
         public static string Starboard { get { return T("Stb", "S"); } }

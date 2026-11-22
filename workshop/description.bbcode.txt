@@ -79,7 +79,7 @@ Keeping your gyros set to the correct directions, and leaving the gyro angle rec
 
 [h2]Version history[/h2]
 [list]
-[*][b]1.1[/b] – TDC dial window (AOB, target speed, target distance); sidebar button to show/hide the panel and dials; raise fully / lower fully buttons; counters now start in the right place right after loading a game
+[*][b]1.1[/b] – TDC dial window (AOB, target speed, target distance); add bottom toolbar button to show/hide the panel and dials; raise fully / lower fully buttons; gyros display now start in the right place right after loading a game
 [*][b]1.0[/b] – first release
 [/list]
 

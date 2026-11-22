@@ -48,6 +48,7 @@ namespace ScopeTdcControls
         public static bool RealisticReceiverSync = true;  // false = tube gyro motors run 10x faster
         public static bool SingleTorpedoLaunchFix = true; // fire only the tubes selected when fire was pressed
         public static bool TdcOperatorRequired = true;    // false = TDC works without a crew member at it
+        public static bool VoiceCallouts = true;          // dial window: the officer at the scope announces the values
 
         // controls panel
         public static bool ShowControls = true;
@@ -61,11 +62,34 @@ namespace ScopeTdcControls
         public static float ControlsY = 0.5f;
 
         // TDC dial window (AOB / target speed / distance), shown with the control panel
+        public static bool ShowGyros = true;  // the gyro angle counters under the bearing tape
         public static bool ShowDials = true;
         public static float DialsX = 0.12f;
-        public static float DialsY = 0.5f;
+        public static float DialsY = 0.6f;   // above the switch box
         public static float DialsOffsetX = 0f;
         public static float DialsOffsetY = 0f;
+
+        // fire-control switch box window (single shot / salvo / launch station), shown with the control panel
+        public static bool ShowSwitches = true;
+        public static float SwitchesX = 0.12f;  // bottom left, under the TDC dials
+        public static float SwitchesY = 0.11f;
+        public static float SwitchesOffsetX = 0f;
+        public static float SwitchesOffsetY = 0f;
+
+        // fire lever window (Aus / Gesichert / Schuß), shown with the control panel
+        public static bool ShowLever = true;
+        public static float LeverX = 0.80f;
+        public static float LeverY = 0.17f;
+        public static float LeverOffsetX = 0f;
+        public static float LeverOffsetY = 0f;
+
+        // direction selector window (bearing transmitter + gyro receiver knobs), shown with the control panel
+        public static bool ShowDirections = true;
+        public static float DirectionsX = 0.285f;  // bottom, right of the firing selector
+        public static float DirectionsY = 0.11f;
+        public static float DirectionsOffsetX = 0f;
+        public static float DirectionsOffsetY = 0f;
+
 
         // general
         public static LanguageMode Language = LanguageMode.Auto;
@@ -140,6 +164,9 @@ SingleTorpedoLaunchFix=true
 # true = the TDC only works with a crew member at it (base game)
 # false = the TDC calculates and can be opened from the station bar unmanned
 TdcOperatorRequired=true
+# true = the officer at the scope announces values set with the TDC dial window,
+#        with the game's own voice lines (AOB is set once he has said it)
+VoiceCallouts=true
 
 # ---- Follow-up / gyro receiver panel ----
 ShowControls=true
@@ -158,13 +185,43 @@ ControlsY=0.5
 
 # ---- TDC dial window (AOB, target speed, target distance) ----
 # Shown and hidden together with the control panel (sidebar button)
+# Gyro angle counters under the bearing tape shown (also the WINDOWS check box)
+ShowGyros=true
 ShowDials=true
 # Centre of the window, 0..1 of screen width/height from bottom-left
 DialsX=0.12
-DialsY=0.5
+DialsY=0.6
 # Extra offset in 1080p pixels. Ctrl+drag updates these.
 DialsOffsetX=0
 DialsOffsetY=0
+
+# ---- Fire-control switch box (single shot, salvo, launch station) ----
+# Shown and hidden together with the control panel (sidebar button)
+ShowSwitches=true
+# Centre of the window, 0..1 of screen width/height from bottom-left
+SwitchesX=0.12
+SwitchesY=0.11
+# Extra offset in 1080p pixels. Ctrl+drag updates these.
+SwitchesOffsetX=0
+SwitchesOffsetY=0
+
+# ---- Fire lever (Aus / Gesichert / Schuß) ----
+# Shown and hidden together with the control panel (sidebar button)
+ShowLever=true
+# Centre of the window, 0..1 of screen width/height from bottom-left
+LeverX=0.80
+LeverY=0.17
+# Extra offset in 1080p pixels. Ctrl+drag updates these.
+LeverOffsetX=0
+LeverOffsetY=0
+
+# ---- Direction selector (Zielrichtung / Schußrichtung: bearing source, gyro receiver) ----
+ShowDirections=true
+DirectionsX=0.285
+DirectionsY=0.11
+DirectionsOffsetX=0
+DirectionsOffsetY=0
+
 
 # ---- General ----
 # Auto = follow the game's language ; DE ; EN
@@ -214,6 +271,21 @@ DebugLog=false
                 }
 
                 AppendMissingDefaults(path, present);
+
+                // 1.2 test builds put the switch box at the bottom centre; move an untouched one to its new home
+                if (SwitchesX == 0.5f && SwitchesY == 0.13f && SwitchesOffsetX == 0f && SwitchesOffsetY == 0f)
+                {
+                    SwitchesX = 0.12f;
+                    SwitchesY = 0.11f;
+                    SavePrecise("SwitchesX", SwitchesX);
+                    SavePrecise("SwitchesY", SwitchesY);
+                }
+                // four stacked dials are taller: raise an untouched dial window clear of the switch box
+                if (DialsY == 0.5f && DialsOffsetX == 0f && DialsOffsetY == 0f)
+                {
+                    DialsY = 0.6f;
+                    SavePrecise("DialsY", DialsY);
+                }
             }
             catch (Exception e)
             {
@@ -326,6 +398,7 @@ DebugLog=false
                 case "realisticreceiversync": RealisticReceiverSync = Bool(v, RealisticReceiverSync); break;
                 case "singletorpedolaunchfix": SingleTorpedoLaunchFix = Bool(v, SingleTorpedoLaunchFix); break;
                 case "tdcoperatorrequired": TdcOperatorRequired = Bool(v, TdcOperatorRequired); break;
+                case "voicecallouts": VoiceCallouts = Bool(v, VoiceCallouts); break;
                 case "showcontrols": ShowControls = Bool(v, ShowControls); break;
                 case "controlsanchor": ControlsAtElevator = !v.Equals("screen", StringComparison.OrdinalIgnoreCase); break;
                 case "controlsvisible": ControlsVisible = Bool(v, ControlsVisible); break;
@@ -335,11 +408,27 @@ DebugLog=false
                 case "controlsgap": ControlsGap = Num(v, ControlsGap); break;
                 case "controlsx": ControlsX = Mathf.Clamp01(Num(v, ControlsX)); break;
                 case "controlsy": ControlsY = Mathf.Clamp01(Num(v, ControlsY)); break;
+                case "showgyros": ShowGyros = Bool(v, ShowGyros); break;
                 case "showdials": ShowDials = Bool(v, ShowDials); break;
                 case "dialsx": DialsX = Mathf.Clamp01(Num(v, DialsX)); break;
                 case "dialsy": DialsY = Mathf.Clamp01(Num(v, DialsY)); break;
                 case "dialsoffsetx": DialsOffsetX = Num(v, DialsOffsetX); break;
                 case "dialsoffsety": DialsOffsetY = Num(v, DialsOffsetY); break;
+                case "showswitches": ShowSwitches = Bool(v, ShowSwitches); break;
+                case "showlever": ShowLever = Bool(v, ShowLever); break;
+                case "leverx": LeverX = Mathf.Clamp01(Num(v, LeverX)); break;
+                case "levery": LeverY = Mathf.Clamp01(Num(v, LeverY)); break;
+                case "leveroffsetx": LeverOffsetX = Num(v, LeverOffsetX); break;
+                case "leveroffsety": LeverOffsetY = Num(v, LeverOffsetY); break;
+                case "showdirections": ShowDirections = Bool(v, ShowDirections); break;
+                case "directionsx": DirectionsX = Mathf.Clamp01(Num(v, DirectionsX)); break;
+                case "directionsy": DirectionsY = Mathf.Clamp01(Num(v, DirectionsY)); break;
+                case "directionsoffsetx": DirectionsOffsetX = Num(v, DirectionsOffsetX); break;
+                case "directionsoffsety": DirectionsOffsetY = Num(v, DirectionsOffsetY); break;
+                case "switchesx": SwitchesX = Mathf.Clamp01(Num(v, SwitchesX)); break;
+                case "switchesy": SwitchesY = Mathf.Clamp01(Num(v, SwitchesY)); break;
+                case "switchesoffsetx": SwitchesOffsetX = Num(v, SwitchesOffsetX); break;
+                case "switchesoffsety": SwitchesOffsetY = Num(v, SwitchesOffsetY); break;
                 case "language":
                     Language = v.Equals("de", StringComparison.OrdinalIgnoreCase) ? LanguageMode.German
                              : v.Equals("en", StringComparison.OrdinalIgnoreCase) ? LanguageMode.English

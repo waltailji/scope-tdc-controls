@@ -93,11 +93,12 @@ namespace ScopeTdcControls
         RectTransform tipPanel;
         TextMeshProUGUI tipText;
         Lamp syncLamp, followLamp;
-        Btn btnFollow, btnNoFollow, btnOff, btnBow, btnStern;
         Btn btnSettings;
+        Btn btnFollow, btnNoFollow;
         RectTransform settingsPanel;      // drop-down under the control panel
         bool settingsOpen;
         readonly List<Check> checks = new List<Check>();
+        readonly List<Check> windowChecks = new List<Check>(); // the WINDOWS check boxes, always on the panel
 
         sealed class Check
         {
@@ -111,7 +112,6 @@ namespace ScopeTdcControls
         CounterRow rcvRowA;  // active receiver (or Bow when all receivers are shown)
         CounterRow rcvRowB;  // Stern, only when all receivers are shown
         Btn btnParFwd, btnParBack;
-        Btn btnTxNone, btnTxUzo, btnTxObs, btnTxAttack;
         Image unmannedVeil;
         TextMeshProUGUI unmannedNote;
         RectTransform raiseBtn, lowerBtn;   // raise fully / lower fully, beside the stock raise/lower control
@@ -231,17 +231,27 @@ namespace ScopeTdcControls
             if (raiseBtn != null) Destroy(raiseBtn.gameObject);
             if (lowerBtn != null) Destroy(lowerBtn.gameObject);
             if (dialsPanel != null) Destroy(dialsPanel.gameObject);
-            counterPanel = controlsPanel = tipPanel = raiseBtn = lowerBtn = dialsPanel = null;
+            if (switchesPanel != null) Destroy(switchesPanel.gameObject);
+            if (leverPanel != null) Destroy(leverPanel.gameObject);
+            if (directionsPanel != null) Destroy(directionsPanel.gameObject);
+            counterPanel = controlsPanel = tipPanel = raiseBtn = lowerBtn = dialsPanel = switchesPanel = leverPanel = null;
+            directionsPanel = null;
+            btnFollow = btnNoFollow = null;
+            directionsBoxes = null;
+            directionsRetryAt = 0f;
+            dirKnobs.Clear();
+            switchesBoxes = null;
+            switchesRetryAt = 0f;
+            knobs.Clear();
             dialsGroup = null;
             dials.Clear();
             tdcRow = parRow = rcvRowA = rcvRowB = null;
             btnParFwd = btnParBack = null;
-            btnTxNone = btnTxUzo = btnTxObs = btnTxAttack = null;
             syncLamp = followLamp = null;
-            btnFollow = btnNoFollow = btnOff = btnBow = btnStern = null;
             btnSettings = null;
             settingsPanel = null; // destroyed with controlsPanel
             checks.Clear();
+            windowChecks.Clear();
             pendingTip = null;
             tipShown = false;
 
@@ -250,7 +260,22 @@ namespace ScopeTdcControls
             if (GyroConfig.ShowControls) BuildControls(font);
             if (GyroConfig.ElevatorButtons) BuildElevatorButtons();
             if (GyroConfig.ShowDials) BuildDials(font);
+            if (GyroConfig.ShowSwitches) BuildSwitches(font);
+            BuildLever(font); // always built; ShowLever only hides it
+            if (GyroConfig.ShowDirections) BuildDirections(font);
             BuildTooltip(font);
+            RaiseOverlays();
+        }
+
+        /// <summary>
+        /// Draw order: the control panel (with its settings drop-down) above every other
+        /// window of this mod, and the pop-up tooltip above everything. Called whenever a
+        /// window is (re)built later, since a new window would otherwise land on top.
+        /// </summary>
+        void RaiseOverlays()
+        {
+            if (controlsPanel != null) controlsPanel.SetAsLastSibling();
+            if (tipPanel != null) tipPanel.SetAsLastSibling();
         }
 
         // ------------------------------------------------------------------ raise fully / lower fully
@@ -313,9 +338,9 @@ namespace ScopeTdcControls
             if (!have) return;
 
             Vector2 lmin = ToLocal(mn), lmax = ToLocal(mx);
-            // as wide as the stock control, half as tall
+            // as wide as the stock control, about a third as tall
             float width = Mathf.Max(lmax.x - lmin.x, 22f);
-            float height = Mathf.Max(width * 0.5f, 12f);
+            float height = Mathf.Max(width * 0.35f, 9f);
             float cx = (lmin.x + lmax.x) * 0.5f;
             const float gap = 4f;
             raiseBtn.sizeDelta = lowerBtn.sizeDelta = new Vector2(width, height);
@@ -557,42 +582,60 @@ namespace ScopeTdcControls
             Frame(controlsPanel, true);
 
             // width = widest label
-            string[] labels = { Strings.BearingHeader, Strings.Follow, Strings.NoFollow,
-                                Strings.SourceHeader, Strings.TxNone, Strings.TxUzo, Strings.TxObservation, Strings.TxAttack,
-                                Strings.ReceiverHeader, Strings.Off, Strings.Bow, Strings.Stern,
-                                Strings.ParallaxHeader, Strings.ParForward, Strings.ParBackward,
-                                "+ " + Strings.SettingsHeader };
+            string[] labels = { Strings.BearingHeader, Strings.ParallaxHeader, Strings.WindowsHeader, "+ " + Strings.SettingsHeader };
+            string[] windowLabels = { Strings.WinGyros, Strings.WinDials, Strings.WinSwitches, Strings.WinDirections, Strings.WinLever };
             float inner = 80f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 18f);
-            inner = Mathf.Max(inner, 16f + Mathf.Ceil(TextWidth(font, Strings.BearingHeader, HeaderFont)) + 6f);
+            foreach (var s in windowLabels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f); // check box rows
+            inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, Strings.ModTitle, CtlFont)) + 10f);
+            // the two parallax buttons sit side by side
+            float parW = Mathf.Max(Mathf.Max(Mathf.Ceil(TextWidth(font, Strings.ParForward, CtlFont)), Mathf.Ceil(TextWidth(font, Strings.ParBackward, CtlFont))),
+                                   Mathf.Max(Mathf.Ceil(TextWidth(font, Strings.FollowBtn, CtlFont)), Mathf.Ceil(TextWidth(font, Strings.NoFollowBtn, CtlFont)))) + 12f;
+            inner = Mathf.Max(inner, parW * 2f + RowGap);
 
             float y = -CPad;
+            float half = (inner - RowGap) * 0.5f; // side-by-side button pairs
 
-            // --- bearing follow-up ---
+            // --- title: the mod's name; hover for version and author ---
+            var title = NewText("Title", controlsPanel, font, Strings.ModTitle, CtlFont, DigitLight);
+            title.fontStyle = FontStyles.Bold;
+            title.alignment = TextAlignmentOptions.Center;
+            title.raycastTarget = true;
+            PlaceV(title.rectTransform, CPad, y, inner, RowH);
+            AddTooltip(title.gameObject, () => "<b>" + Strings.ModTitle + "</b>\nv" + ScopeTdcControlsMod.Version + " " + Strings.ByAuthor);
+            y -= RowH + RowGap;
+            Divider(ref y, inner);
+
+            // --- target bearing follow-up: blue lamp in the header = NOT following ---
             y = Header(font, Strings.BearingHeader, y, inner, true, () => Strings.TipBearingHeader);
-            btnFollow = MakeButton(controlsPanel, font, Strings.Follow, ref y, inner, () => SetFollowUp(true), () => Strings.TipFollow);
-            btnNoFollow = MakeButton(controlsPanel, font, Strings.NoFollow, ref y, inner, () => SetFollowUp(false), () => Strings.TipNoFollow);
-            Divider(ref y, inner);
-
-            // --- bearing source (transmitter) ---
-            y = Header(font, Strings.SourceHeader, y, inner, false, () => Strings.TipSourceHeader);
-            btnTxNone = MakeButton(controlsPanel, font, Strings.TxNone, ref y, inner, () => SetTransmitter(BearingTransmitter.None), () => Strings.TipTxNone);
-            btnTxUzo = MakeButton(controlsPanel, font, Strings.TxUzo, ref y, inner, () => SetTransmitter(BearingTransmitter.UZO), () => Strings.TipTxUzo);
-            btnTxObs = MakeButton(controlsPanel, font, Strings.TxObservation, ref y, inner, () => SetTransmitter(BearingTransmitter.ObservationPeriscope), () => Strings.TipTxObservation);
-            btnTxAttack = MakeButton(controlsPanel, font, Strings.TxAttack, ref y, inner, () => SetTransmitter(BearingTransmitter.AttackPeriscope), () => Strings.TipTxAttack);
-            Divider(ref y, inner);
-
-            // --- gyro receiver ---
-            y = Header(font, Strings.ReceiverHeader, y, inner, false, () => Strings.TipReceiverHeader);
-            btnOff = MakeButton(controlsPanel, font, Strings.Off, ref y, inner, () => SetReceiver(GyroAngleReceiverSetting.Off), () => Strings.TipOff);
-            btnBow = MakeButton(controlsPanel, font, Strings.Bow, ref y, inner, () => SetReceiver(GyroAngleReceiverSetting.Bow), () => Strings.TipBow);
-            btnStern = MakeButton(controlsPanel, font, Strings.Stern, ref y, inner, () => SetReceiver(GyroAngleReceiverSetting.Stern), () => Strings.TipStern);
+            var fol = NewRect("Btn_Follow", controlsPanel);
+            PlaceV(fol, CPad, y, half, RowH);
+            btnFollow = BuildButton(fol, font, Strings.FollowBtn, CtlFont, () => SetFollowUp(true), () => Strings.TipFollow);
+            var nof = NewRect("Btn_NoFollow", controlsPanel);
+            PlaceV(nof, CPad + half + RowGap, y, half, RowH);
+            btnNoFollow = BuildButton(nof, font, Strings.NoFollowBtn, CtlFont, () => SetFollowUp(false), () => Strings.TipNoFollow);
+            y -= RowH + RowGap;
             Divider(ref y, inner);
 
             // --- parallax direction ---
             y = Header(font, Strings.ParallaxHeader, y, inner, false, () => Strings.TipParallaxHeader);
-            btnParFwd = MakeButton(controlsPanel, font, Strings.ParForward, ref y, inner, () => SetParallax(Parallax.Forward), () => Strings.TipParForward);
-            btnParBack = MakeButton(controlsPanel, font, Strings.ParBackward, ref y, inner, () => SetParallax(Parallax.Backward), () => Strings.TipParBackward);
+            var fwd = NewRect("Btn_ParFwd", controlsPanel);
+            PlaceV(fwd, CPad, y, half, RowH);
+            btnParFwd = BuildButton(fwd, font, Strings.ParForward, CtlFont, () => SetParallax(Parallax.Forward), () => Strings.TipParForward);
+            var back = NewRect("Btn_ParBack", controlsPanel);
+            PlaceV(back, CPad + half + RowGap, y, half, RowH);
+            btnParBack = BuildButton(back, font, Strings.ParBackward, CtlFont, () => SetParallax(Parallax.Backward), () => Strings.TipParBackward);
+            y -= RowH + RowGap;
+            Divider(ref y, inner);
+
+            // --- extra windows on/off: independent, so check boxes ---
+            y = Header(font, Strings.WindowsHeader, y, inner, false, () => Strings.TipWindowsHeader);
+            windowChecks.Clear();
+            MakeCheck(font, Strings.WinGyros, ref y, inner, () => GyroConfig.ShowGyros, v => { GyroConfig.ShowGyros = v; GyroConfig.Save("ShowGyros", v); HideTip(); }, () => Strings.TipWinGyros, controlsPanel, windowChecks);
+            MakeCheck(font, Strings.WinDials, ref y, inner, () => GyroConfig.ShowDials, v => { if (v != GyroConfig.ShowDials) ToggleDialsWindow(); }, () => Strings.TipWinDials, controlsPanel, windowChecks);
+            MakeCheck(font, Strings.WinSwitches, ref y, inner, () => GyroConfig.ShowSwitches, v => { if (v != GyroConfig.ShowSwitches) ToggleSwitchesWindow(); }, () => Strings.TipWinSwitches, controlsPanel, windowChecks);
+            MakeCheck(font, Strings.WinDirections, ref y, inner, () => GyroConfig.ShowDirections, v => { if (v != GyroConfig.ShowDirections) ToggleDirectionsWindow(); }, () => Strings.TipWinDirections, controlsPanel, windowChecks);
+            MakeCheck(font, Strings.WinLever, ref y, inner, () => GyroConfig.ShowLever, v => { if (v != GyroConfig.ShowLever) ToggleLeverWindow(); }, () => Strings.TipWinLever, controlsPanel, windowChecks);
             Divider(ref y, inner);
 
             // --- settings drop-down toggle ---
@@ -616,12 +659,48 @@ namespace ScopeTdcControls
             y -= 1.5f + RowGap + 2f;
         }
 
+        void ToggleDialsWindow()
+        {
+            GyroConfig.ShowDials = !GyroConfig.ShowDials;
+            GyroConfig.Save("ShowDials", GyroConfig.ShowDials);
+            if (GyroConfig.ShowDials && dialsPanel == null)
+            {
+                BuildDials(ResolveFont());
+                RaiseOverlays(); // panel and pop-ups stay on top
+            }
+            HideTip();
+        }
+
+        void ToggleSwitchesWindow()
+        {
+            GyroConfig.ShowSwitches = !GyroConfig.ShowSwitches;
+            GyroConfig.Save("ShowSwitches", GyroConfig.ShowSwitches);
+            if (GyroConfig.ShowSwitches) switchesRetryAt = 0f; // built (or retried) on the next frame
+            HideTip();
+        }
+
+        void ToggleDirectionsWindow()
+        {
+            GyroConfig.ShowDirections = !GyroConfig.ShowDirections;
+            GyroConfig.Save("ShowDirections", GyroConfig.ShowDirections);
+            if (GyroConfig.ShowDirections) directionsRetryAt = 0f; // built (or retried) on the next frame
+            HideTip();
+        }
+
+        void ToggleLeverWindow()
+        {
+            GyroConfig.ShowLever = !GyroConfig.ShowLever;
+            GyroConfig.Save("ShowLever", GyroConfig.ShowLever);
+            HideTip();
+        }
+
         string SettingsLabel() { return (settingsOpen ? "- " : "+ ") + Strings.SettingsHeader; }
 
         void ToggleSettings()
         {
             settingsOpen = !settingsOpen;
             if (settingsPanel != null) settingsPanel.gameObject.SetActive(settingsOpen);
+            if (settingsOpen) RaiseOverlays(); // the drop-down over any of our windows below the panel
             if (btnSettings != null) btnSettings.Label.text = SettingsLabel();
         }
 
@@ -631,7 +710,7 @@ namespace ScopeTdcControls
             settingsPanel = NewRect("GyroSettings", controlsPanel);
             Frame(settingsPanel, true);
 
-            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator };
+            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts };
             float inner = 0f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f);
 
@@ -677,14 +756,19 @@ namespace ScopeTdcControls
                 () => GyroConfig.TdcOperatorRequired,
                 v => { GyroConfig.TdcOperatorRequired = v; GyroConfig.Save("TdcOperatorRequired", v); TdcOperator.Apply(); },
                 () => Strings.TipOptTdcOperator);
+            MakeCheck(font, Strings.OptVoiceCallouts, ref y, inner,
+                () => GyroConfig.VoiceCallouts,
+                v => { GyroConfig.VoiceCallouts = v; GyroConfig.Save("VoiceCallouts", v); },
+                () => Strings.TipOptVoiceCallouts);
 
             settingsPanel.sizeDelta = new Vector2(inner + CPad * 2f, -y + CPad - RowGap);
             settingsPanel.gameObject.SetActive(settingsOpen);
         }
 
-        void MakeCheck(TMP_FontAsset font, string text, ref float y, float width, Func<bool> get, Action<bool> set, Func<string> tip)
+        void MakeCheck(TMP_FontAsset font, string text, ref float y, float width, Func<bool> get, Action<bool> set, Func<string> tip,
+                       RectTransform parent = null, List<Check> list = null)
         {
-            var row = NewRect("Opt_" + text, settingsPanel);
+            var row = NewRect("Opt_" + text, parent != null ? parent : settingsPanel);
             PlaceV(row, CPad, y, width, RowH);
             y -= RowH + RowGap;
 
@@ -732,7 +816,7 @@ namespace ScopeTdcControls
             });
             var relay = AddTooltip(row.gameObject, tip);
             relay.OnHover = h => check.Hover = h;
-            checks.Add(check);
+            (list ?? checks).Add(check);
         }
 
         float Header(TMP_FontAsset font, string text, float y, float inner, bool withLamp, Func<string> tip)
@@ -804,6 +888,47 @@ namespace ScopeTdcControls
             var edge = r.gameObject.AddComponent<Outline>();
             edge.effectColor = FrameEdge;
             edge.effectDistance = new Vector2(1f, -1f);
+        }
+
+        // the boat's control boxes are painted off-white: the dial and lever windows match
+        static readonly Color BoxColor = new Color(0.85f, 0.84f, 0.80f, 0.97f);
+        static readonly Color BoxEdge = new Color(0.52f, 0.51f, 0.48f, 1f);
+        static readonly Color BoxInk = new Color(0.12f, 0.12f, 0.12f, 1f);   // lettering straight on the box
+
+        /// <summary>Off-white window background with a darker edge, like the boat's switch boxes.</summary>
+        static void BoxFrame(RectTransform r)
+        {
+            var frame = r.gameObject.AddComponent<Image>();
+            frame.sprite = RoundedBoxSprite();
+            frame.type = Image.Type.Sliced;   // corners keep their size whatever the window size
+            frame.color = BoxColor;
+            frame.raycastTarget = true;
+            var edge = r.gameObject.AddComponent<Outline>();
+            edge.effectColor = BoxEdge;
+            edge.effectDistance = new Vector2(1.5f, -1.5f);
+        }
+
+        const float BoxCornerRadius = 12f;
+        static Sprite roundedBoxSprite;
+
+        /// <summary>A white rounded rectangle, nine-sliced so only the middle stretches.</summary>
+        static Sprite RoundedBoxSprite()
+        {
+            if (roundedBoxSprite != null) return roundedBoxSprite;
+            const int n = 64;
+            float rad = BoxCornerRadius, lo = rad, hi = n - rad;
+            var shape = MakeShapeSprite(n, n, (x, y) =>
+            {
+                // distance into a corner square decides; elsewhere it's inside
+                float cx = x < lo ? lo : x > hi ? hi : x;
+                float cy = y < lo ? lo : y > hi ? hi : y;
+                float dx = x - cx, dy = y - cy;
+                return dx * dx + dy * dy <= rad * rad;
+            });
+            float b = rad + 2f; // border covers the curve
+            roundedBoxSprite = Sprite.Create(shape.texture, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f, 0,
+                                             SpriteMeshType.FullRect, new Vector4(b, b, b, b));
+            return roundedBoxSprite;
         }
 
         void MakeDrum(CounterRow row, Transform parent, TMP_FontAsset font, float x, bool inverse)
@@ -1055,6 +1180,9 @@ namespace ScopeTdcControls
             public GyroCounterUI Owner;
             public bool Controls;
             public bool Dials;   // the TDC dial window
+            public bool Switches; // the fire-control switch box window
+            public bool Lever;    // the fire lever window
+            public bool Directions; // the direction selector window
             bool dragging;
 
             static bool CtrlHeld { get { return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl); } }
@@ -1071,7 +1199,10 @@ namespace ScopeTdcControls
                 if (!dragging || Owner == null) return;
                 float k = Owner.canvas != null && Owner.canvas.scaleFactor > 0f ? Owner.canvas.scaleFactor : 1f;
                 Vector2 d = e.delta / k;
-                if (Dials) { GyroConfig.DialsOffsetX += d.x; GyroConfig.DialsOffsetY += d.y; }
+                if (Directions) { GyroConfig.DirectionsOffsetX += d.x; GyroConfig.DirectionsOffsetY += d.y; }
+                else if (Lever) { GyroConfig.LeverOffsetX += d.x; GyroConfig.LeverOffsetY += d.y; }
+                else if (Switches) { GyroConfig.SwitchesOffsetX += d.x; GyroConfig.SwitchesOffsetY += d.y; }
+                else if (Dials) { GyroConfig.DialsOffsetX += d.x; GyroConfig.DialsOffsetY += d.y; }
                 else if (Controls) { GyroConfig.ControlsOffsetX += d.x; GyroConfig.ControlsOffsetY += d.y; }
                 else { GyroConfig.OffsetX += d.x; GyroConfig.OffsetY += d.y; }
             }
@@ -1080,7 +1211,22 @@ namespace ScopeTdcControls
             {
                 if (!dragging) return;
                 dragging = false;
-                if (Dials)
+                if (Directions)
+                {
+                    GyroConfig.Save("DirectionsOffsetX", GyroConfig.DirectionsOffsetX);
+                    GyroConfig.Save("DirectionsOffsetY", GyroConfig.DirectionsOffsetY);
+                }
+                else if (Lever)
+                {
+                    GyroConfig.Save("LeverOffsetX", GyroConfig.LeverOffsetX);
+                    GyroConfig.Save("LeverOffsetY", GyroConfig.LeverOffsetY);
+                }
+                else if (Switches)
+                {
+                    GyroConfig.Save("SwitchesOffsetX", GyroConfig.SwitchesOffsetX);
+                    GyroConfig.Save("SwitchesOffsetY", GyroConfig.SwitchesOffsetY);
+                }
+                else if (Dials)
                 {
                     GyroConfig.Save("DialsOffsetX", GyroConfig.DialsOffsetX);
                     GyroConfig.Save("DialsOffsetY", GyroConfig.DialsOffsetY);
@@ -1342,19 +1488,83 @@ namespace ScopeTdcControls
 
         // ------------------------------------------------------------------ runtime
 
+        bool visibleWanted;   // attached and not hidden by the user
+        bool suppressed;      // the game is loading or quitting: draw nothing
+        static bool quitting;
+        static bool quitHooked;
+        static UBOAT.Game.UI.Loading.LoadingUIController loadingUi;
+        static float loadingUiLookupAt;
+
         void SetVisible(bool v)
         {
-            if (canvas != null) canvas.enabled = v;
+            visibleWanted = v;
+            if (canvas != null) canvas.enabled = v && !suppressed;
+        }
+
+        /// <summary>The player confirmed quitting the game: hide at once (the game fades out before it really quits).</summary>
+        public static void OnGameQuitting()
+        {
+            quitting = true;
+            if (instance != null)
+            {
+                instance.HideTip();
+                if (instance.canvas != null) instance.canvas.enabled = false;
+            }
+        }
+
+        /// <summary>The game's loading screen is up (loading a save, going back to the menu).</summary>
+        static bool GameLoading()
+        {
+            try
+            {
+                if (loadingUi == null && Time.unscaledTime >= loadingUiLookupAt)
+                {
+                    loadingUiLookupAt = Time.unscaledTime + 1f;
+                    loadingUi = Get<UBOAT.Game.UI.Loading.LoadingUIController>();
+                    if (loadingUi == null)
+                    {
+                        var all = Resources.FindObjectsOfTypeAll<UBOAT.Game.UI.Loading.LoadingUIController>();
+                        if (all != null && all.Length > 0) loadingUi = all[0];
+                    }
+                }
+                return loadingUi != null && loadingUi.IsLoading;
+            }
+            catch { return false; }
+        }
+
+        /// <summary>
+        /// Keep our overlay out of the game's loading screens and its shutdown: hidden
+        /// while the game is loading (so it doesn't appear before the game itself) and
+        /// gone the moment the game starts quitting (so it isn't the last thing left).
+        /// </summary>
+        void UpdateSuppression()
+        {
+            if (!quitHooked)
+            {
+                quitHooked = true;
+                Application.quitting += () =>
+                {
+                    quitting = true;
+                    if (instance != null && instance.canvas != null) instance.canvas.enabled = false;
+                };
+            }
+            bool s = quitting || GameLoading();
+            if (s == suppressed) return;
+            suppressed = s;
+            if (s) HideTip();
+            if (canvas != null) canvas.enabled = visibleWanted && !suppressed;
         }
 
         void Update()
         {
+            UpdateSuppression();
             if (ScopeAim.Active)
             {
                 if (periscopeUI == null) ScopeAim.Stop();
                 else ScopeAim.Tick(Tdc());
             }
             PeriscopeTravel.Tick();
+            VoiceCallouts.Tick();
 
             if (GyroConfig.ToggleKey != KeyCode.None && periscopeUI != null && Input.GetKeyDown(GyroConfig.ToggleKey))
             {
@@ -1378,14 +1588,22 @@ namespace ScopeTdcControls
             bool uiHidden = GameUiHidden();
             var tdc = Tdc();
             bool show = tdc != null && !(uiHidden && GyroConfig.HideWithGameUI);
-            counterPanel.gameObject.SetActive(show);
+            counterPanel.gameObject.SetActive(show && GyroConfig.ShowGyros);
             if (controlsPanel != null)
             {
                 bool panel = show && GyroConfig.ControlsVisible;
                 if (controlsPanel.gameObject.activeSelf != panel) controlsPanel.gameObject.SetActive(panel);
             }
-            bool dialsOn = show && GyroConfig.ControlsVisible && dialsPanel != null;
+            bool dialsOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowDials && dialsPanel != null;
             if (dialsPanel != null && dialsPanel.gameObject.activeSelf != dialsOn) dialsPanel.gameObject.SetActive(dialsOn);
+            if (show && GyroConfig.ControlsVisible) ValidateSwitches();
+            bool switchesOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowSwitches && switchesPanel != null;
+            if (switchesPanel != null && switchesPanel.gameObject.activeSelf != switchesOn) switchesPanel.gameObject.SetActive(switchesOn);
+            bool leverOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowLever && leverPanel != null;
+            if (leverPanel != null && leverPanel.gameObject.activeSelf != leverOn) leverPanel.gameObject.SetActive(leverOn);
+            if (show && GyroConfig.ControlsVisible) ValidateDirections();
+            bool directionsOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowDirections && directionsPanel != null;
+            if (directionsPanel != null && directionsPanel.gameObject.activeSelf != directionsOn) directionsPanel.gameObject.SetActive(directionsOn);
             UpdateElevatorButtons(uiHidden);
             if (!show) { HideTip(); return; }
 
@@ -1397,6 +1615,21 @@ namespace ScopeTdcControls
             {
                 UpdateDials(tdc, IsTdcManned(tdc));
                 PositionDials();
+            }
+            if (switchesOn)
+            {
+                UpdateSwitches();
+                PositionSwitches();
+            }
+            if (leverOn)
+            {
+                UpdateLever();
+                PositionLever();
+            }
+            if (directionsOn)
+            {
+                UpdateDirections();
+                PositionDirections();
             }
         }
 
@@ -1524,42 +1757,27 @@ namespace ScopeTdcControls
         {
             if (controlsPanel == null) return;
 
-            bool follow = tdc.BearingFollowUpEnabled;
-            followLamp.Set(!follow, LampBlue); // blue = NOT following, dark = following
-            btnFollow.Paint(follow, true);
-            btnNoFollow.Paint(!follow, true);
-
-            var boxes = Boxes();
-            bool haveBoxes = boxes != null;
-            var setting = haveBoxes ? boxes.GyroAngleReceiver : GyroAngleReceiverSetting.Off;
-            bool off = setting == GyroAngleReceiverSetting.Off || setting == GyroAngleReceiverSetting.Off2;
-            bool hasBow = haveBoxes && (bowReceiverField == null || bowReceiverField(boxes) != null);
-            bool hasStern = haveBoxes && (sternReceiverField == null || sternReceiverField(boxes) != null);
-            btnOff.Paint(haveBoxes && off, haveBoxes);
-            btnBow.Paint(setting == GyroAngleReceiverSetting.Bow, hasBow);
-            btnStern.Paint(setting == GyroAngleReceiverSetting.Stern, hasStern);
-
-            // bearing source: grey out scopes this boat doesn't have
-            var tx = haveBoxes ? boxes.BearingTransmitter : BearingTransmitter.None;
-            btnTxNone.Paint(haveBoxes && tx == BearingTransmitter.None, haveBoxes);
-            btnTxUzo.Paint(tx == BearingTransmitter.UZO, HasScope(boxes, uzoField));
-            btnTxObs.Paint(tx == BearingTransmitter.ObservationPeriscope, HasScope(boxes, obsScopeField));
-            btnTxAttack.Paint(tx == BearingTransmitter.AttackPeriscope, HasScope(boxes, attackScopeField));
-
             // parallax direction: indicator only while auto is on
             bool fwd = Parallax.IsForward(tdc);
             bool manualPar = !GyroConfig.AutoParallax;
             btnParFwd.Paint(fwd, manualPar);
             btnParBack.Paint(!fwd, manualPar);
 
+            bool follow = tdc.BearingFollowUpEnabled;
+            if (followLamp != null) followLamp.Set(!follow, LampBlue); // blue = NOT following, dark = following
+            if (btnFollow != null) btnFollow.Paint(follow, true);
+            if (btnNoFollow != null) btnNoFollow.Paint(!follow, true);
             if (btnSettings != null) btnSettings.Paint(settingsOpen, true);
-            if (settingsOpen)
+            PaintChecks(windowChecks);
+            if (settingsOpen) PaintChecks(checks);
+        }
+
+        static void PaintChecks(List<Check> list)
+        {
+            foreach (var c in list)
             {
-                foreach (var c in checks)
-                {
-                    c.Fill.enabled = c.Get();
-                    c.Bg.color = c.Hover ? new Color(BtnHover.r, BtnHover.g, BtnHover.b, 0.6f) : Color.clear;
-                }
+                c.Fill.enabled = c.Get();
+                c.Bg.color = c.Hover ? new Color(BtnHover.r, BtnHover.g, BtnHover.b, 0.6f) : Color.clear;
             }
         }
 

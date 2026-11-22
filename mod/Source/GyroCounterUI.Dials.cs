@@ -51,7 +51,16 @@ namespace ScopeTdcControls
 
         RectTransform dialsPanel;
         CanvasGroup dialsGroup;
+        float dialsFullH;                // window height with every dial shown
         readonly List<DialSpec> dials = new List<DialSpec>();
+
+        enum PointerStyle
+        {
+            Needle,   // thin brass needle (speed)
+            Arrow,    // needle with an arrow tip (AOB)
+            Knob,     // turning knob grip with a painted arrow (distance)
+            Ring      // the scale ring turns under a fixed index at the top (target length)
+        }
 
         /// <summary>One TDC dial: how it reads/writes the TDC and how it is drawn.</summary>
         sealed class DialSpec
@@ -59,12 +68,20 @@ namespace ScopeTdcControls
             public Func<TorpedoCalculator, float> Get;
             public Action<TorpedoCalculator, float> Set;      // direct dials
             public Action<TorpedoCalculator, float> Commit;   // AOB: send the ghost pointer's value on release
+            public Action<TorpedoCalculator, float> Announce; // direct dials: voice callout after release
+            public float AnnounceAt = float.NaN;              // wheel: announce once the wheel stops
+            public float DragStartValue = float.NaN;
             public Func<TorpedoCalculator, bool> Locked;
             public float[] Values, Rots;                      // value -> pointer angle (clockwise from the top), increasing
             public bool Wrap;                                 // AOB: ±180 is the same place
             public float WheelStep;
             public Func<float, string> Format;
-            public RectTransform Needle, Ghost;
+            public Action<DialSpec, float> Extra;             // per-frame extras (AOB: the rolling ones digits)
+            public Func<bool> Visible;                        // null = always shown
+            public RectTransform Group;                       // title, dial and readout
+            public float Height;                              // its share of the window height
+            public PointerStyle Style;                        // how the value is shown
+            public RectTransform Needle, Ghost;               // Ring style: Needle is the turning scale ring
             public TextMeshProUGUI Readout;
             public RectTransform Face;
 
@@ -74,8 +91,8 @@ namespace ScopeTdcControls
             public float CommitAt = float.NaN;
             public float GhostUntil;
 
-            public float Min { get { return Values[0]; } }
-            public float Max { get { return Values[Values.Length - 1]; } }
+            public float Min { get { return Mathf.Min(Values[0], Values[Values.Length - 1]); } }
+            public float Max { get { return Mathf.Max(Values[0], Values[Values.Length - 1]); } }
 
             public float ToRot(float v)
             {
@@ -91,6 +108,13 @@ namespace ScopeTdcControls
 
             static float Map(float x, float[] from, float[] to)
             {
+                if (from.Length > 1 && from[0] > from[from.Length - 1])
+                {
+                    // descending table (e.g. a scale that reads anticlockwise): walk it backwards
+                    var f = (float[])from.Clone(); Array.Reverse(f);
+                    var t = (float[])to.Clone(); Array.Reverse(t);
+                    from = f; to = t;
+                }
                 if (x <= from[0]) return to[0];
                 for (int i = 1; i < from.Length; i++)
                     if (x <= from[i]) return Mathf.Lerp(to[i - 1], to[i], (x - from[i - 1]) / (from[i] - from[i - 1]));
@@ -100,8 +124,9 @@ namespace ScopeTdcControls
             /// <summary>Turn by a pointer angle; the value follows the scale under the pointer.</summary>
             public float Turn(float v, float degrees)
             {
-                float r = ToRot(v) + degrees;
-                if (!Wrap) r = Mathf.Clamp(r, Rots[0], Rots[Rots.Length - 1]);
+                // a turning scale under a fixed index reads the other way round
+                float r = ToRot(v) + (Style == PointerStyle.Ring ? -degrees : degrees);
+                if (!Wrap) r = Mathf.Clamp(r, Mathf.Min(Rots[0], Rots[Rots.Length - 1]), Mathf.Max(Rots[0], Rots[Rots.Length - 1]));
                 return ToValue(r);
             }
 
@@ -118,30 +143,33 @@ namespace ScopeTdcControls
             dials.Clear();
             dialsPanel = NewRect("TdcDials", transform);
             dialsPanel.anchorMin = dialsPanel.anchorMax = dialsPanel.pivot = new Vector2(0.5f, 0.5f);
-            Frame(dialsPanel, true);
+            BoxFrame(dialsPanel);
             dialsPanel.gameObject.AddComponent<WheelGuard>();
             dialsGroup = dialsPanel.gameObject.AddComponent<CanvasGroup>();
             AddDrag(dialsPanel.gameObject, false).Dials = true;
 
             float inner = DialSize + 16f;
+            float x0 = DialPad;
             float y = -DialPad;
 
             // AOB: full circle, 0 at the top, starboard clockwise (green), port anticlockwise (red)
-            y = AddDial(font, y, inner, Strings.DialAob, () => Strings.TipDialAob, new DialSpec
+            y = AddDial(font, x0, y, inner, Strings.DialAob, () => Strings.TipDialAob, new DialSpec
             {
                 Get = t => t.AngleOnBow,
                 Commit = CommitAob,
                 Locked = t => t.IsLockingMechanismTriggered,
+                Style = PointerStyle.Arrow,
                 Values = new[] { -180f, 180f }, Rots = new[] { -180f, 180f }, Wrap = true,
                 WheelStep = 1f,
                 Format = FormatAob
             }, (spec, f) => DrawAobScale(spec, f), "");
 
             // target speed: 0..55 kn, clockwise from just right of the top round to just left of it
-            y = AddDial(font, y, inner, Strings.DialSpeed, () => Strings.TipDialSpeed, new DialSpec
+            y = AddDial(font, x0, y, inner, Strings.DialSpeed, () => Strings.TipDialSpeed, new DialSpec
             {
                 Get = t => t.TargetSpeed,
                 Set = (t, v) => t.TargetSpeed = v,
+                Announce = VoiceCallouts.AnnounceSpeed,
                 Values = new[] { 0f, 55f }, Rots = new[] { 10f, 350f },
                 WheelStep = -0.5f,   // wheel toward you = more, like turning the dial clockwise
                 Format = v => v.ToString("0.0", CultureInfo.InvariantCulture) + " " + Strings.UnitKnots
@@ -152,16 +180,32 @@ namespace ScopeTdcControls
             DistanceScale(out hm, out rot);
             var meters = new float[hm.Length];
             for (int i = 0; i < hm.Length; i++) meters[i] = hm[i] * 100f;
-            y = AddDial(font, y, inner, Strings.DialDistance, () => Strings.TipDialDistance, new DialSpec
+            y = AddDial(font, x0, y, inner, Strings.DialDistance, () => Strings.TipDialDistance, new DialSpec
             {
                 Get = t => t.DistanceToTarget,
                 Set = (t, v) => t.DistanceToTarget = v,
+                Announce = VoiceCallouts.AnnounceDistance,
+                Style = PointerStyle.Knob,
                 Values = meters, Rots = rot,
                 WheelStep = -100f,   // wheel toward you = more
                 Format = v => Mathf.RoundToInt(v).ToString(CultureInfo.InvariantCulture) + " m"
-            }, (spec, f) => DrawDistanceScale(spec, f), "hm");
+            }, (spec, f) => DrawDistanceScale(spec, f), ""); // "hm" is printed on the rim
 
-            dialsPanel.sizeDelta = new Vector2(inner + DialPad * 2f, -y + DialPad - 6f);
+            // target length (Streubreite): 100..200 m printed round the right half of a turning ring;
+            // the value under the fixed index at the top is the one set (as on the TDC)
+            y = AddDial(font, x0, y, inner, Strings.DialLength, () => Strings.TipDialLength, new DialSpec
+            {
+                Get = t => t.TargetLength,
+                Set = (t, v) => t.TargetLength = v,
+                Style = PointerStyle.Ring,
+                Visible = SpreadSelected,   // only needed for a spread (Fächer)
+                Values = new[] { 100f, 200f }, Rots = new[] { 180f, 0f },
+                WheelStep = -1f,     // wheel toward you = more
+                Format = v => Mathf.RoundToInt(v).ToString(CultureInfo.InvariantCulture) + " m"
+            }, (spec, f) => DrawLengthScale(spec, f), "");
+
+            dialsPanel.sizeDelta = new Vector2(x0 + inner + DialPad, -y + DialPad - 6f);
+            dialsFullH = dialsPanel.sizeDelta.y;
             dialsPanel.localScale = Vector3.one * GyroConfig.Scale;
         }
 
@@ -211,24 +255,40 @@ namespace ScopeTdcControls
             }
         }
 
-        float AddDial(TMP_FontAsset font, float y, float inner, string title, Func<string> tip, DialSpec spec,
+        float AddDial(TMP_FontAsset font, float x, float y, float inner, string title, Func<string> tip, DialSpec spec,
                       Action<DialSpec, TMP_FontAsset> drawScale, string unit)
         {
-            var titleText = NewText("Title", dialsPanel, font, title, HeaderFont, LabelColor);
+            // everything of one dial in a group, so it can be hidden as a whole
+            spec.Group = NewRect("DialGroup", dialsPanel);
+            spec.Group.anchorMin = spec.Group.anchorMax = spec.Group.pivot = new Vector2(0f, 1f);
+            spec.Group.sizeDelta = Vector2.zero;
+            float yStart = y;
+            var titleText = NewText("Title", spec.Group, font, title, HeaderFont, BoxInk);
             titleText.fontStyle = FontStyles.Bold;
             titleText.characterSpacing = 2f;
             titleText.alignment = TextAlignmentOptions.Center;
-            PlaceV(titleText.rectTransform, DialPad, y, inner, 14f);
+            PlaceV(titleText.rectTransform, x, y, inner, 14f);
             y -= 14f + 3f;
 
             // dial: rim, dark face, scale, pointers, hub
-            var holder = NewRect("Dial", dialsPanel);
-            PlaceV(holder, DialPad + (inner - DialSize) * 0.5f, y, DialSize, DialSize);
-            Disc("Bezel", holder, CircleSprite(), DialSize + 6f, FrameEdge);
-            var face = Disc("Face", holder, CircleSprite(), DialSize, DialFace);
+            var holder = NewRect("Dial", spec.Group);
+            PlaceV(holder, x + (inner - DialSize) * 0.5f, y, DialSize, DialSize);
+            // sharp black rim, the face filling it (no soft brass ring)
+            Disc("Edge", holder, SharpCircleSprite(), DialSize + 6f, Color.black);
+            var face = Disc("Face", holder, SharpCircleSprite(), DialSize + 3f, DialFace);
             face.raycastTarget = true; // the grab area
-            spec.Face = face.rectTransform;
+            RectTransform ring = null;
+            if (spec.Style == PointerStyle.Ring)
+            {
+                // the scale is drawn on a ring that turns; the face stays put
+                ring = NewRect("Ring", face.rectTransform);
+                ring.anchorMin = ring.anchorMax = ring.pivot = new Vector2(0.5f, 0.5f);
+                ring.sizeDelta = new Vector2(DialSize, DialSize);
+                spec.Face = ring;
+            }
+            else spec.Face = face.rectTransform;
             drawScale(spec, font);
+            spec.Face = face.rectTransform;
 
             if (unit.Length > 0)
             {
@@ -240,10 +300,37 @@ namespace ScopeTdcControls
                 ur.anchoredPosition = new Vector2(0f, -DialSize * 0.2f);
             }
 
-            if (spec.Commit != null) spec.Ghost = MakePointer(face.rectTransform, "Ghost", DialGhost, 3f);
-            spec.Needle = MakePointer(face.rectTransform, "Needle", DialNeedle, 4f);
-            if (spec.Ghost != null) spec.Ghost.gameObject.SetActive(false);
-            Disc("Hub", face.rectTransform, CircleSprite(), 14f, FrameEdge);
+            switch (spec.Style)
+            {
+                case PointerStyle.Ring:
+                    // the same four-lobed knob as the distance dial, smaller so it clears the
+                    // numbers, turning with the ring; and the fixed index triangle at the top
+                    AddCrossKnob(ring, DialSize * 0.4f);
+                    var index = NewRect("Index", holder);
+                    index.anchorMin = index.anchorMax = index.pivot = new Vector2(0.5f, 0.5f);
+                    index.sizeDelta = new Vector2(13f, 11f);
+                    index.anchoredPosition = new Vector2(0f, DialSize * 0.5f - 2f);
+                    index.localEulerAngles = new Vector3(0f, 0f, 180f); // points down at the scale
+                    var ii = index.gameObject.AddComponent<Image>();
+                    ii.sprite = TriangleSprite();
+                    ii.color = DialScale;
+                    ii.raycastTarget = false;
+                    spec.Needle = ring;
+                    break;
+
+                case PointerStyle.Knob:
+                    spec.Needle = MakeKnobPointer(face.rectTransform);
+                    break;
+
+                default:
+                    bool arrow = spec.Style == PointerStyle.Arrow;
+                    if (spec.Commit != null) spec.Ghost = MakePointer(face.rectTransform, "Ghost", DialGhost, 3f, arrow);
+                    spec.Needle = MakePointer(face.rectTransform, "Needle", DialNeedle, 4f, arrow);
+                    if (spec.Ghost != null) spec.Ghost.gameObject.SetActive(false);
+                    if (arrow) { Disc("Hub", face.rectTransform, SharpCircleSprite(), 22f, Color.black); Disc("HubCap", face.rectTransform, SharpCircleSprite(), 10f, new Color(0.18f, 0.18f, 0.18f, 1f)); }
+                    else Disc("Hub", face.rectTransform, CircleSprite(), 14f, FrameEdge);
+                    break;
+            }
 
             var relay = face.gameObject.AddComponent<DialRelay>();
             relay.Owner = this;
@@ -252,8 +339,8 @@ namespace ScopeTdcControls
             y -= DialSize + 6f;
 
             // readout
-            var box = NewRect("Readout", dialsPanel);
-            PlaceV(box, DialPad + 14f, y, inner - 28f, 20f);
+            var box = NewRect("Readout", spec.Group);
+            PlaceV(box, x + 14f, y, inner - 28f, 20f);
             var boxImg = box.gameObject.AddComponent<Image>();
             boxImg.color = DrumBlack;
             boxImg.raycastTarget = false;
@@ -264,29 +351,105 @@ namespace ScopeTdcControls
             rr.offsetMin = rr.offsetMax = Vector2.zero;
             y -= 20f + 12f;
 
+            spec.Height = yStart - y;
             dials.Add(spec);
             return y;
         }
 
         /// <summary>A pointer turning about the face centre; returns the rotating holder.</summary>
-        static RectTransform MakePointer(RectTransform face, string name, Color color, float width)
+        static RectTransform MakePointer(RectTransform face, string name, Color color, float width, bool arrowTip)
         {
+            const float headLen = 13f;
             var holder = NewRect(name, face);
             holder.anchorMin = holder.anchorMax = holder.pivot = new Vector2(0.5f, 0.5f);
             holder.sizeDelta = Vector2.zero;
             var hand = NewRect("Hand", holder);
             hand.anchorMin = hand.anchorMax = new Vector2(0.5f, 0.5f);
             hand.pivot = new Vector2(0.5f, 0.12f);
-            hand.sizeDelta = new Vector2(width, DialSize * 0.5f - 10f);
+            float len = DialSize * 0.5f - 10f;
+            hand.sizeDelta = new Vector2(width, arrowTip ? len - headLen : len);
             hand.anchoredPosition = Vector2.zero;
             var img = hand.gameObject.AddComponent<Image>();
             img.color = color;
             img.raycastTarget = false;
+            if (arrowTip)
+            {
+                // solid arrowhead at the end of the needle, the tip at the needle's full length
+                var head = NewRect("Tip", hand);
+                head.anchorMin = head.anchorMax = new Vector2(0.5f, 1f);
+                head.pivot = new Vector2(0.5f, 0f);
+                head.sizeDelta = new Vector2(width * 3.2f, headLen);
+                head.anchoredPosition = new Vector2(0f, -1f);
+                var hi = head.gameObject.AddComponent<Image>();
+                hi.sprite = TriangleSprite();
+                hi.color = color;
+                hi.raycastTarget = false;
+            }
             return holder;
         }
 
+        /// <summary>
+        /// The distance knob, as on the TDC: a four-lobed grip with a brass screw in
+        /// the middle and a white triangle in one of its hollows pointing at the value.
+        /// </summary>
+        static RectTransform MakeKnobPointer(RectTransform face)
+        {
+            var holder = NewRect("Knob", face);
+            holder.anchorMin = holder.anchorMax = holder.pivot = new Vector2(0.5f, 0.5f);
+            holder.sizeDelta = Vector2.zero;
+
+            AddCrossKnob(holder, DistKnob);
+
+            // pointer: white triangle in the top hollow, pointing out at the scale
+            var tri = NewRect("Pointer", holder);
+            tri.anchorMin = tri.anchorMax = tri.pivot = new Vector2(0.5f, 0.5f);
+            tri.sizeDelta = new Vector2(11f, 10f);
+            tri.anchoredPosition = new Vector2(0f, DistKnob * 0.46f - 1f);
+            var ti = tri.gameObject.AddComponent<Image>();
+            ti.sprite = TriangleSprite();
+            ti.color = DialScale;
+            ti.raycastTarget = false;
+            tri.SetAsLastSibling(); // over the knob
+            return holder;
+        }
+
+        /// <summary>The TDC's four-lobed knob with a slotted brass screw in the middle.</summary>
+        static void AddCrossKnob(RectTransform parent, float size)
+        {
+            var knob = NewRect("Grip", parent);
+            knob.anchorMin = knob.anchorMax = knob.pivot = new Vector2(0.5f, 0.5f);
+            knob.sizeDelta = new Vector2(size, size);
+            var ki = knob.gameObject.AddComponent<Image>();
+            ki.sprite = CrossKnobSprite();
+            ki.color = new Color(0.10f, 0.10f, 0.10f, 1f);
+            ki.raycastTarget = false;
+            var ke = knob.gameObject.AddComponent<Outline>();
+            ke.effectColor = KnobHandleEdge;
+            ke.effectDistance = new Vector2(0.8f, -0.8f);
+
+            float screw = Mathf.Max(7f, size * 0.15f);
+            Disc("Screw", parent, CircleSprite(), screw, DialNeedle);
+            var slot = NewRect("Slot", parent);
+            slot.anchorMin = slot.anchorMax = slot.pivot = new Vector2(0.5f, 0.5f);
+            slot.sizeDelta = new Vector2(screw * 0.7f, 1.4f);
+            var si = slot.gameObject.AddComponent<Image>();
+            si.color = new Color(0.25f, 0.18f, 0.08f, 1f);
+            si.raycastTarget = false;
+        }
+
+        static Sprite triangleSprite;
+
+        /// <summary>A solid triangle pointing up.</summary>
+        static Sprite TriangleSprite()
+        {
+            if (triangleSprite != null) return triangleSprite;
+            const int w = 32, h = 32;
+            triangleSprite = MakeShapeSprite(w, h, (x, y) => y >= 1f && y <= h - 1f && Mathf.Abs(x - w * 0.5f) <= (w * 0.5f - 1f) * (h - 1f - y) / (h - 2f));
+            return triangleSprite;
+        }
+
         /// <summary>A tick on the face at a pointer angle (clockwise from the top).</summary>
-        void DrawTick(RectTransform face, float rot, float length, float width, Color color)
+        void DrawTick(RectTransform face, float rot, float length, float width, Color color, float outerRadius = -1f)
         {
             var holder = NewRect("TickHolder", face);
             holder.anchorMin = holder.anchorMax = holder.pivot = new Vector2(0.5f, 0.5f);
@@ -296,15 +459,15 @@ namespace ScopeTdcControls
             t.anchorMin = t.anchorMax = new Vector2(0.5f, 0.5f);
             t.pivot = new Vector2(0.5f, 1f);
             t.sizeDelta = new Vector2(width, length);
-            t.anchoredPosition = new Vector2(0f, DialSize * 0.5f - 3f);
+            t.anchoredPosition = new Vector2(0f, outerRadius > 0f ? outerRadius : DialSize * 0.5f - 3f);
             var img = t.gameObject.AddComponent<Image>();
             img.color = color;
             img.raycastTarget = false;
         }
 
-        void ScaleLabel(RectTransform face, TMP_FontAsset font, float rot, string text, Color color, float size = 10f)
+        void ScaleLabel(RectTransform face, TMP_FontAsset font, float rot, string text, Color color, float size = 10f, bool radial = false, float radius = -1f)
         {
-            float r = DialSize * 0.5f - 22f;
+            float r = radius > 0f ? radius : DialSize * 0.5f - 22f;
             float a = rot * Mathf.Deg2Rad;
             var label = NewText("Label", face, font, text, size, color);
             label.alignment = TextAlignmentOptions.Center;
@@ -312,17 +475,114 @@ namespace ScopeTdcControls
             lr.anchorMin = lr.anchorMax = lr.pivot = new Vector2(0.5f, 0.5f);
             lr.sizeDelta = new Vector2(28f, 14f);
             lr.anchoredPosition = new Vector2(Mathf.Sin(a) * r, Mathf.Cos(a) * r);
+            if (radial) lr.localEulerAngles = new Vector3(0f, 0f, -rot); // printed round the ring, upright at the top
         }
 
+        static readonly Color AobRed = new Color(0.80f, 0.29f, 0.26f, 1f);      // the TDC's port half
+        static readonly Color AobGreen = new Color(0.27f, 0.70f, 0.38f, 1f);    // the TDC's starboard half
+        const float AobFineSpacing = 16f;   // degrees of arc between the fine (ones) digits
+        const float AobWindowHalf = 52f;    // half the angle of the black window at the bottom
+
+        /// <summary>
+        /// The TDC's Lagenwinkel dial: a black rim with a mark every 10° and numbers every 20°
+        /// (0 at the top, 180 at the bottom), an inner disc with the port half solid red and
+        /// the starboard half solid green ("Bug links" / "Bug rechts", "Grad"), and a black
+        /// window at the bottom where the ones digits roll by (red for port, green for starboard).
+        /// </summary>
         void DrawAobScale(DialSpec spec, TMP_FontAsset font)
         {
+            var face = spec.Face;
             for (int deg = -170; deg <= 180; deg += 10)
             {
-                bool major = deg % 30 == 0;
-                Color c = deg == 0 || deg == 180 ? DialScale : (deg < 0 ? DialPort : DialStarboard);
-                DrawTick(spec.Face, deg, major ? 10f : 5f, major ? 2f : 1.2f, c);
-                if (major) ScaleLabel(spec.Face, font, deg, Mathf.Abs(deg).ToString(), c);
+                DrawTick(face, deg, 9f, 2.4f, DialScale);
+                if (deg % 20 == 0) ScaleLabel(face, font, deg, Mathf.Abs(deg).ToString(), DialScale, 9f, false, DialSize * 0.5f - 19f);
             }
+
+            // inner disc: thin white ring, red / green halves, black window at the bottom
+            float inner = DialSize * 0.58f;
+            Disc("InnerRing", face, SharpCircleSprite(), inner + 2f, DialScale);
+            Disc("Starboard", face, HalfDiscSprite(), inner, AobGreen);
+            var port = Disc("Port", face, HalfDiscSprite(), inner, AobRed);
+            port.rectTransform.localEulerAngles = new Vector3(0f, 0f, 180f);
+            Disc("WindowEdge", face, SectorSprite(), inner + 2f, DialScale);
+            Disc("Window", face, SectorSprite(), inner - 1f, Color.black);
+
+            AobLabel(face, font, Strings.AobDegrees, 0f, inner * 0.36f, 0f);
+            AobLabel(face, font, Strings.AobBowLeft, -42f, inner * 0.30f, 58f);
+            AobLabel(face, font, Strings.AobBowRight, 42f, inner * 0.30f, -58f);
+
+            // fine digits rolling through the window
+            var digits = new TextMeshProUGUI[7];
+            for (int k = 0; k < digits.Length; k++)
+            {
+                digits[k] = NewText("Fine" + k, face, font, "", 9f, DialStarboard);
+                digits[k].alignment = TextAlignmentOptions.Center;
+                digits[k].fontStyle = FontStyles.Bold;
+                var r = digits[k].rectTransform;
+                r.anchorMin = r.anchorMax = r.pivot = new Vector2(0.5f, 0.5f);
+                r.sizeDelta = new Vector2(12f, 12f);
+            }
+            float fineR = inner * 0.5f * 0.74f;
+            spec.Extra = (d, v) =>
+            {
+                float a = Mathf.Abs(v);
+                float u = Mathf.Repeat(a, 10f);            // ones and tenths
+                int baseDigit = Mathf.FloorToInt(u);
+                Color c = v < -0.05f ? DialPort : DialStarboard;
+                for (int k = 0; k < digits.Length; k++)
+                {
+                    int off = k - digits.Length / 2;
+                    float rot = 180f + ((baseDigit + off) - u) * AobFineSpacing; // the current value sits at the bottom
+                    float edge = Mathf.Abs(rot - 180f);
+                    var t = digits[k];
+                    if (edge > AobWindowHalf - 4f) { t.text = ""; continue; }
+                    t.text = (((baseDigit + off) % 10 + 10) % 10).ToString();
+                    var col = c;
+                    col.a = Mathf.Clamp01((AobWindowHalf - 4f - edge) / 10f); // fade out at the window's sides
+                    t.color = col;
+                    float ra = rot * Mathf.Deg2Rad;
+                    t.rectTransform.anchoredPosition = new Vector2(Mathf.Sin(ra) * fineR, Mathf.Cos(ra) * fineR);
+                }
+            };
+        }
+
+        void AobLabel(RectTransform face, TMP_FontAsset font, string text, float rot, float radius, float tilt)
+        {
+            var t = NewText("Label", face, font, text, 8f, DialScale);
+            t.alignment = TextAlignmentOptions.Center;
+            var r = t.rectTransform;
+            r.anchorMin = r.anchorMax = r.pivot = new Vector2(0.5f, 0.5f);
+            r.sizeDelta = new Vector2(50f, 11f);
+            float a = rot * Mathf.Deg2Rad;
+            r.anchoredPosition = new Vector2(Mathf.Sin(a) * radius, Mathf.Cos(a) * radius);
+            r.localEulerAngles = new Vector3(0f, 0f, tilt);
+        }
+
+        static Sprite halfDiscSprite, sectorSprite;
+
+        /// <summary>The right half of a crisp disc.</summary>
+        static Sprite HalfDiscSprite()
+        {
+            if (halfDiscSprite != null) return halfDiscSprite;
+            const int n = 256;
+            float c = n * 0.5f, rr = (n * 0.5f - 1f) * (n * 0.5f - 1f);
+            halfDiscSprite = MakeShapeSprite(n, n, (x, y) => x >= c && (x - c) * (x - c) + (y - c) * (y - c) <= rr);
+            return halfDiscSprite;
+        }
+
+        /// <summary>A crisp wedge of a disc pointing down (the AOB dial's window).</summary>
+        static Sprite SectorSprite()
+        {
+            if (sectorSprite != null) return sectorSprite;
+            const int n = 256;
+            float c = n * 0.5f, rr = (n * 0.5f - 1f) * (n * 0.5f - 1f);
+            sectorSprite = MakeShapeSprite(n, n, (x, y) =>
+            {
+                float dx = x - c, dy = y - c;
+                if (dx * dx + dy * dy > rr) return false;
+                return Mathf.Abs(Mathf.Atan2(dx, -dy) * Mathf.Rad2Deg) <= AobWindowHalf;
+            });
+            return sectorSprite;
         }
 
         void DrawSpeedScale(DialSpec spec, TMP_FontAsset font)
@@ -335,17 +595,95 @@ namespace ScopeTdcControls
             }
         }
 
+        // distance dial layout (as on the TDC): numbers round the rim, marks inside them pointing in
+        const float DistLabelR = DialSize * 0.5f - 9f;
+        const float DistTickR = DialSize * 0.5f - 17f;
+        const float DistMinorInset = 3f;               // minor marks start this far inside the numbered ones
+        const float DistKnob = DialSize * 0.5f;      // knob sprite size, corner to corner about 2 * DistTickR - marks
+
         void DrawDistanceScale(DialSpec spec, TMP_FontAsset font)
         {
-            // fine marks: every 0.5 hm up to 10, every 5 hm above
-            for (float hm = 3f; hm <= 100.01f; hm += hm < 10f ? 0.5f : 5f)
-                DrawTick(spec.Face, spec.ToRot(hm * 100f), 4f, 1.2f, DialScale);
-            foreach (float hm in new[] { 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 20f, 30f, 40f, 50f, 60f, 70f, 80f, 100f })
+            float[] labels = { 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 20f, 30f, 40f, 50f, 60f, 70f, 80f, 100f };
+            // numbered marks
+            foreach (float hm in labels)
             {
                 float r = spec.ToRot(hm * 100f);
-                DrawTick(spec.Face, r, 9f, 2f, DialScale);
-                ScaleLabel(spec.Face, font, r, ((int)hm).ToString(), DialScale, hm < 10f ? 9f : 10f);
+                DrawTick(spec.Face, r, 7f, 2f, DialScale, DistTickR);
+                ScaleLabel(spec.Face, font, r, ((int)hm).ToString(), DialScale, hm < 10f ? 9f : 10f, false, DistLabelR);
             }
+            // half-way marks with a dot on their tip: x.5 up to 10, then 15, 25 ... 75 and 90
+            for (int i = 0; i + 1 < labels.Length; i++)
+                DrawDotTick(spec.Face, spec.ToRot((labels[i] + labels[i + 1]) * 50f));
+            // fine marks every 2 hm from 10 to 30, where the scale is widest
+            for (float hm = 12f; hm < 30f; hm += 2f)
+                if (hm != 20f) DrawTick(spec.Face, spec.ToRot(hm * 100f), 3f, 1f, DialScale, DistTickR - DistMinorInset);
+            ScaleLabel(spec.Face, font, 0f, "hm", DialScale, 9f, false, DistLabelR);
+        }
+
+        /// <summary>A mark pointing in from the scale with a small dot on its inner tip.</summary>
+        void DrawDotTick(RectTransform face, float rot)
+        {
+            const float len = 5f;
+            DrawTick(face, rot, len, 1.2f, DialScale, DistTickR - DistMinorInset); // minor marks start a little inside the numbered ones
+            float a = rot * Mathf.Deg2Rad, r = DistTickR - DistMinorInset - len * 0.5f; // half way along the mark
+            var dot = Disc("Dot", face, CircleSprite(), 3.6f, DialScale);
+            dot.rectTransform.anchoredPosition = new Vector2(Mathf.Sin(a) * r, Mathf.Cos(a) * r);
+        }
+
+        static Sprite sharpCircleSprite;
+
+        /// <summary>A crisp filled circle (anti-aliased over about one pixel, no soft glow) for dial faces and rims.</summary>
+        static Sprite SharpCircleSprite()
+        {
+            if (sharpCircleSprite != null) return sharpCircleSprite;
+            const int n = 256;
+            float c = n * 0.5f, r = n * 0.5f - 1f;
+            sharpCircleSprite = MakeShapeSprite(n, n, (x, y) => (x - c) * (x - c) + (y - c) * (y - c) <= r * r);
+            return sharpCircleSprite;
+        }
+
+        static Sprite crossKnobSprite;
+
+        /// <summary>The distance knob: a square with deeply hollowed sides and rounded corners (four lobes).</summary>
+        static Sprite CrossKnobSprite()
+        {
+            if (crossKnobSprite != null) return crossKnobSprite;
+            const int n = 128;
+            float c = n * 0.5f, s = n * 0.46f, depth = n * 0.11f, bigR = n * 0.62f, cornerR = n * 0.09f;
+            crossKnobSprite = MakeShapeSprite(n, n, (x, y) =>
+            {
+                float dx = Mathf.Abs(x - c), dy = Mathf.Abs(y - c);
+                if (dx > s || dy > s) return false;
+                // rounded corners
+                if (dx > s - cornerR && dy > s - cornerR && new Vector2(dx - (s - cornerR), dy - (s - cornerR)).magnitude > cornerR) return false;
+                // hollowed sides: outside a big circle beyond each side
+                float off = s + bigR - depth;
+                if (new Vector2(dx, dy - off).magnitude < bigR) return false;
+                if (new Vector2(dx - off, dy).magnitude < bigR) return false;
+                return true;
+            });
+            return crossKnobSprite;
+        }
+
+        void DrawLengthScale(DialSpec spec, TMP_FontAsset font)
+        {
+            // as on the TDC: a mark every 10 m, longer every 50 m, numbered 100 / 150 / 200
+            for (int m = 100; m <= 200; m += 5)
+            {
+                bool major = m % 50 == 0, mid = m % 10 == 0;
+                if (!mid && !major) { DrawTick(spec.Face, spec.ToRot(m), 4f, 1.2f, DialScale); continue; }
+                DrawTick(spec.Face, spec.ToRot(m), major ? 11f : 7f, major ? 2.2f : 1.6f, DialScale);
+                if (major) ScaleLabel(spec.Face, font, spec.ToRot(m), m.ToString(), DialScale, 10f, true);
+            }
+        }
+
+        /// <summary>The Einzelschuß switch is on a spread position (straight course / while turning).</summary>
+        static bool SpreadSelected()
+        {
+            var b = Boxes();
+            if (b == null) return true;
+            var t = b.SelectedTorpedoTube;
+            return t == SelectedTorpedoTube.SalvoCourse || t == SelectedTorpedoTube.SalvoTurning;
         }
 
         static string FormatAob(float v)
@@ -358,6 +696,8 @@ namespace ScopeTdcControls
         /// <summary>The stock AOB dial's release: let the TDC's AOB motor turn to the new AOB.</summary>
         static void CommitAob(TorpedoCalculator tdc, float aob)
         {
+            // callout on: the officer says it, and it is set when he has (stock order)
+            if (VoiceCallouts.RequestAob(tdc, aob)) return;
             float impact = tdc.ComputeImpactAngleForDesiredAOB(Mathf.DeltaAngle(0f, aob), tdc.ImpactAngle);
             if (float.IsNaN(impact) || float.IsInfinity(impact)) return;
             tdc.DesiredImpactAngle = impact;
@@ -371,11 +711,40 @@ namespace ScopeTdcControls
             dialsGroup.alpha = manned ? 1f : 0.45f;
             dialsGroup.interactable = manned;
             dialsGroup.blocksRaycasts = manned;
+
+            // dials shown only in some cases (target length: spreads only); the window fits what is shown
+            bool layout = false;
+            foreach (var d in dials)
+            {
+                bool on = d.Visible == null || d.Visible();
+                if (d.Group.gameObject.activeSelf != on) { d.Group.gameObject.SetActive(on); layout = true; }
+            }
+            if (layout)
+            {
+                float h = dialsFullH;
+                foreach (var d in dials) if (!d.Group.gameObject.activeSelf) h -= d.Height;
+                dialsPanel.sizeDelta = new Vector2(dialsPanel.sizeDelta.x, h);
+            }
             foreach (var d in dials)
             {
                 float v = d.Get(tdc);
+                // a value outside the dial's (the game's) range, e.g. from an old save, would
+                // leave the dial with nothing to turn from: bring it into range
+                if (d.Set != null && !d.Wrap && (float.IsNaN(v) || float.IsInfinity(v) || v < d.Min - 0.01f || v > d.Max + 0.01f))
+                {
+                    float fixedV = float.IsNaN(v) || float.IsInfinity(v) ? (d.Min + d.Max) * 0.5f : Mathf.Clamp(v, d.Min, d.Max);
+                    if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " TDC value " + v + " out of the dial's range, set to " + fixedV);
+                    d.Set(tdc, fixedV);
+                    v = d.Get(tdc);
+                }
                 if (float.IsNaN(v) || float.IsInfinity(v)) continue;
-                d.Needle.localEulerAngles = new Vector3(0f, 0f, -d.ToRot(v));
+                if (d.Announce != null && !d.Dragging && !float.IsNaN(d.AnnounceAt) && Time.unscaledTime >= d.AnnounceAt)
+                {
+                    d.AnnounceAt = float.NaN;
+                    d.Announce(tdc, v);
+                }
+                // a pointer turns to the value; a ring turns the value to the top
+                d.Needle.localEulerAngles = new Vector3(0f, 0f, d.Style == PointerStyle.Ring ? d.ToRot(v) : -d.ToRot(v));
 
                 if (d.Ghost != null)
                 {
@@ -395,6 +764,7 @@ namespace ScopeTdcControls
                     d.Readout.text = ghost ? d.Format(v) + " > " + d.Format(d.Target) : d.Format(v);
                 }
                 else d.Readout.text = d.Format(v);
+                if (d.Extra != null) d.Extra(d, v);
             }
         }
 
@@ -404,14 +774,18 @@ namespace ScopeTdcControls
             Vector2 local;
             var screen = new Vector2(Screen.width * GyroConfig.DialsX, Screen.height * GyroConfig.DialsY);
             if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screen, null, out local))
-                dialsPanel.anchoredPosition = local + new Vector2(GyroConfig.DialsOffsetX, GyroConfig.DialsOffsetY);
+                dialsPanel.anchoredPosition = local + new Vector2(GyroConfig.DialsOffsetX, GyroConfig.DialsOffsetY)
+                    + new Vector2(0f, (dialsFullH - dialsPanel.sizeDelta.y) * 0.5f * GyroConfig.Scale); // hidden dials shrink it from the bottom; the top stays put
         }
 
         /// <summary>Starting value for a turn: the ghost's target while one is pending, else the TDC.</summary>
         float DialBase(DialSpec spec, TorpedoCalculator tdc)
         {
             if (spec.Commit != null && !float.IsNaN(spec.Target)) return spec.Target;
-            return spec.Get(tdc);
+            float v = spec.Get(tdc);
+            if (spec.Wrap) return v;
+            if (float.IsNaN(v) || float.IsInfinity(v)) return (spec.Min + spec.Max) * 0.5f; // nothing set yet
+            return Mathf.Clamp(v, spec.Min, spec.Max);                                  // out of range: start from the end
         }
 
         void SetDial(DialSpec spec, TorpedoCalculator tdc, float v)
@@ -437,11 +811,19 @@ namespace ScopeTdcControls
             if (float.IsNaN(v)) return;
             SetDial(spec, tdc, spec.Step(v, delta));
             if (spec.Commit != null && !spec.Dragging) spec.CommitAt = Time.unscaledTime + AobWheelCommitDelay;
+            if (spec.Announce != null && !spec.Dragging) spec.AnnounceAt = Time.unscaledTime + AobWheelCommitDelay;
         }
 
         void BeginDialDrag(DialSpec spec)
         {
-            if (spec.Commit == null) return;
+            if (spec.Commit == null)
+            {
+                spec.Dragging = true;          // speed / distance: announced on release
+                spec.AnnounceAt = float.NaN;
+                var t0 = Tdc();
+                spec.DragStartValue = t0 != null ? spec.Get(t0) : float.NaN;
+                return;
+            }
             var tdc = Tdc();
             if (tdc == null || (spec.Locked != null && spec.Locked(tdc))) return;
             spec.Dragging = true;
@@ -451,7 +833,16 @@ namespace ScopeTdcControls
 
         void EndDialDrag(DialSpec spec)
         {
-            if (spec.Commit == null || !spec.Dragging) return;
+            if (!spec.Dragging) return;
+            if (spec.Commit == null)
+            {
+                spec.Dragging = false;
+                var t1 = Tdc();
+                bool changed = t1 == null || float.IsNaN(spec.DragStartValue)
+                               || Mathf.Abs(spec.Get(t1) - spec.DragStartValue) > 0.01f;
+                if (spec.Announce != null && changed) spec.AnnounceAt = Time.unscaledTime; // next update, with the final value
+                return;
+            }
             spec.Dragging = false;
             var tdc = Tdc();
             if (tdc == null || float.IsNaN(spec.Target)) return;

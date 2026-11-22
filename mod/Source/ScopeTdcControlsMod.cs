@@ -22,7 +22,7 @@ namespace ScopeTdcControls
     public class ScopeTdcControlsMod : IUserMod
     {
         public const string Tag = "[ScopeTDC]";
-        public const string Version = "1.1"; // keep in sync with Manifest.json
+        public const string Version = "1.2"; // keep in sync with Manifest.json
 
         public void OnLoaded()
         {
@@ -59,6 +59,22 @@ namespace ScopeTdcControls
             try { GyroCounterUI.Detach(__instance); }
             catch (Exception e) { Debug.LogException(e); }
         }
+    }
+
+    /// <summary>
+    /// Quitting from the in-game menu: the game fades to black for a few seconds before
+    /// Application.quitting fires, so hide our overlay as soon as the quit is confirmed.
+    /// </summary>
+    [HarmonyPatch(typeof(UBOAT.Game.UI.EscapeMenu), "OnQuitConfirm")]
+    static class EscapeMenu_OnQuitConfirm_Patch
+    {
+        static void Prefix() { GyroCounterUI.OnGameQuitting(); }
+    }
+
+    [HarmonyPatch(typeof(UBOAT.Game.UI.EscapeMenu), "Quit")]
+    static class EscapeMenu_Quit_Patch
+    {
+        static void Prefix() { GyroCounterUI.OnGameQuitting(); }
     }
 
     /// <summary>Tracks the on-screen bearing tape so the counter can sit next to it.</summary>

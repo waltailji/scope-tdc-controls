@@ -18,23 +18,29 @@ Compact mechanical-style counters under the bearing tape. Every drum rolls over 
 - Greyed out with "TDC not manned" while nobody is at the TDC
 - **Double-click a Bow/Stern counter** to switch to that receiver: the scope swings until the TDC angle matches what those tubes are already set to
 
-### Fire-control panel
-Beside the periscope raise/lower control:
+### Control panel and windows
+A panel titled "Scope TDC Controls" beside the periscope raise/lower control (parallax mode, window buttons, settings), plus off-white windows styled after the boat's control boxes:
 
-- **Target bearing**: Following / Not following (blue lamp while not following)
-- **Bearing source**: None, UZO, Observation or Attack periscope
-- **Gyro angle receiver**: Off, Bow or Stern
-- **Parallax mode**: Forward or Backward
+- **Target bearing** (on the panel): Folgen / Nicht folgen, blue lamp while not following
+- **Direction selector**: rotary switches for the bearing source (Zielrichtung: Off, UZO, observation or attack periscope) and the gyro angle receiver (Schußrichtung: Off, Bow, Stern)
+- **Parallax mode** (on the panel): Forward or Backward
+- **Windows**: show or hide the gyro counters, TDC dials, firing selector, direction selector and fire lever
 - Shown or hidden with a button added to the periscope screen's stock left sidebar
 
 ### TDC dials
-A window on the left of the scope with the TDC's **AOB**, **target speed** and **target distance** dials. Grab a dial and turn it, just like on the TDC; Shift for fine adjustment, mouse wheel for steps, exact readout under each dial. Shown and hidden with the sidebar button together with the panel.
+A window on the left of the scope with the TDC's **AOB**, **target speed**, **target distance** and **target length** dials (target length only while a spread is selected). Grab a dial and turn it, just like on the TDC; Shift for fine adjustment, mouse wheel for steps, exact readout under each dial. Shown and hidden with the sidebar button together with the panel. With **Voice callouts** on, the crew member at the scope announces what you dial in using the game's own voice lines, as when sending a locked target to the TDC.
+
+### Firing selector
+The three rotary switches of the boat's Schaltkasten T-Abf.-Anl. in a window near the bottom of the scope: **Einzelschuß** (single tube / spread), **Fächerschuß** (salvo tubes) and **T.Abf. Schalter** (firing station). Each offers exactly your sub's positions and works like the knob in the boat.
+
+### Fire lever
+A spring-loaded Aus / Schuß lever: pull it to Schuß to fire the selected tubes through the boat's own launch lever. A ready lamp shows whether the selected tubes are flooded and the gyro angle receiver is on their end.
 
 ### Raise fully / lower fully
 Two buttons above and below the stock periscope raise/lower control run the periscope all the way up or down at its normal speed.
 
 ### Settings (saved between sessions)
-Show receiver angle · Show active receivers only · Show parallax · Auto set receiver · Auto set parallax · Realistic TDC follower · Realistic receiver sync · Single torpedo launch fix · TDC operator required
+Show receiver angle · Show active receivers only · Show parallax · Auto set receiver · Auto set parallax · Realistic TDC follower · Realistic receiver sync · Single torpedo launch fix · TDC operator required · Voice callouts
 
 ### Fixes to the base game
 - **Single torpedo launch fix**: a tube checked a few seconds after pressing fire is no longer launched too
