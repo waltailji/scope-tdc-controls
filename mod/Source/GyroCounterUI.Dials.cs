@@ -84,6 +84,8 @@ namespace ScopeTdcControls
 
             public bool Dragging;
             public float DragValue = float.NaN;               // the value being dragged (the TDC can read back differently)
+            public float LimitMin = float.NegativeInfinity;   // the scale may show more than can be set (torpedo depth: 1..14 m on 0..15)
+            public float LimitMax = float.PositiveInfinity;
 
             public float Min { get { return Mathf.Min(Values[0], Values[Values.Length - 1]); } }
             public float Max { get { return Mathf.Max(Values[0], Values[Values.Length - 1]); } }
@@ -121,12 +123,12 @@ namespace ScopeTdcControls
                 // a turning scale under a fixed index reads the other way round
                 float r = ToRot(v) + (Style == PointerStyle.Ring ? -degrees : degrees);
                 if (!Wrap) r = Mathf.Clamp(r, Mathf.Min(Rots[0], Rots[Rots.Length - 1]), Mathf.Max(Rots[0], Rots[Rots.Length - 1]));
-                return ToValue(r);
+                return Wrap ? ToValue(r) : Mathf.Clamp(ToValue(r), LimitMin, LimitMax);
             }
 
             public float Step(float v, float delta)
             {
-                return Wrap ? Mathf.DeltaAngle(0f, v + delta) : Mathf.Clamp(v + delta, Min, Max);
+                return Wrap ? Mathf.DeltaAngle(0f, v + delta) : Mathf.Clamp(Mathf.Clamp(v + delta, Min, Max), LimitMin, LimitMax);
             }
         }
 
@@ -250,6 +252,49 @@ namespace ScopeTdcControls
             }
         }
 
+        // ------------------------------------------------------------------ shared control layout
+        // Every dial and knob window uses the TDC dials' layout: the name above the control,
+        // the current value below it in a black box, at the same heights in every window.
+        const float TitleFont = 12f;          // control names
+        const float TitleH = 16f;
+        const float TitleGap = 3f;            // name to the control's black rim
+        const float ControlH = DialSize + 6f; // a control's band: the dial with its rim (knobs are centred in it)
+        const float ReadoutGap = 5f;          // control band to the readout
+        const float ReadoutW = DialSize - 12f, ReadoutH = 20f;
+        /// <summary>Height of one name / control / readout column.</summary>
+        const float ControlColumnH = TitleH + TitleGap + ControlH + ReadoutGap + ReadoutH;
+
+        /// <summary>A control's name, centred above it.</summary>
+        TextMeshProUGUI ControlTitle(RectTransform parent, TMP_FontAsset font, string text, float left, float top, float width)
+        {
+            var t = NewText("Title", parent, font, text, TitleFont, BoxInk);
+            t.fontStyle = FontStyles.Bold;
+            t.characterSpacing = 1.5f;
+            t.alignment = TextAlignmentOptions.Center;
+            PlaceV(t.rectTransform, left, top, width, TitleH);
+            return t;
+        }
+
+        /// <summary>The black value box under a control; returns its text.</summary>
+        TextMeshProUGUI ReadoutBox(RectTransform parent, TMP_FontAsset font, float centreX, float top)
+        {
+            var box = NewRect("Readout", parent);
+            PlaceV(box, centreX - ReadoutW * 0.5f, top, ReadoutW, ReadoutH);
+            var boxImg = box.gameObject.AddComponent<Image>();
+            boxImg.color = DrumBlack;
+            boxImg.raycastTarget = false;
+            var text = NewText("Text", box, font, "", CtlFont + 2f, DigitLight);
+            text.alignment = TextAlignmentOptions.Center;
+            text.enableAutoSizing = true;      // long switch names shrink to fit
+            text.fontSizeMin = 8f;
+            text.fontSizeMax = CtlFont + 2f;
+            text.overflowMode = TextOverflowModes.Truncate;
+            var rr = text.rectTransform;
+            rr.anchorMin = Vector2.zero; rr.anchorMax = Vector2.one;
+            rr.offsetMin = new Vector2(3f, 0f); rr.offsetMax = new Vector2(-3f, 0f);
+            return text;
+        }
+
         float AddDial(TMP_FontAsset font, float x, float y, float inner, string title, Func<string> tip, DialSpec spec,
                       Action<DialSpec, TMP_FontAsset> drawScale, string unit)
         {
@@ -258,16 +303,12 @@ namespace ScopeTdcControls
             spec.Group.anchorMin = spec.Group.anchorMax = spec.Group.pivot = new Vector2(0f, 1f);
             spec.Group.sizeDelta = Vector2.zero;
             float yStart = y;
-            var titleText = NewText("Title", spec.Group, font, title, HeaderFont, BoxInk);
-            titleText.fontStyle = FontStyles.Bold;
-            titleText.characterSpacing = 2f;
-            titleText.alignment = TextAlignmentOptions.Center;
-            PlaceV(titleText.rectTransform, x, y, inner, 14f);
-            y -= 14f + 3f;
+            ControlTitle(spec.Group, font, title, x, y, inner);
+            y -= TitleH + TitleGap;
 
-            // dial: rim, dark face, scale, pointers, hub
+            // dial: rim, dark face, scale, pointers, hub (the black rim reaches 3 beyond the holder)
             var holder = NewRect("Dial", spec.Group);
-            PlaceV(holder, x + (inner - DialSize) * 0.5f, y, DialSize, DialSize);
+            PlaceV(holder, x + (inner - DialSize) * 0.5f, y - 3f, DialSize, DialSize);
             // sharp black rim, the face filling it (no soft brass ring)
             Disc("Edge", holder, SharpCircleSprite(), DialSize + 6f, Color.black);
             var face = Disc("Face", holder, SharpCircleSprite(), DialSize + 3f, DialFace);
@@ -330,20 +371,11 @@ namespace ScopeTdcControls
             relay.Owner = this;
             relay.Spec = spec;
             AddTooltip(face.gameObject, tip);
-            y -= DialSize + 6f;
+            y -= ControlH + ReadoutGap;
 
             // readout
-            var box = NewRect("Readout", spec.Group);
-            PlaceV(box, x + 14f, y, inner - 28f, 20f);
-            var boxImg = box.gameObject.AddComponent<Image>();
-            boxImg.color = DrumBlack;
-            boxImg.raycastTarget = false;
-            spec.Readout = NewText("Text", box, font, "", CtlFont + 2f, DigitLight);
-            spec.Readout.alignment = TextAlignmentOptions.Center;
-            var rr = spec.Readout.rectTransform;
-            rr.anchorMin = Vector2.zero; rr.anchorMax = Vector2.one;
-            rr.offsetMin = rr.offsetMax = Vector2.zero;
-            y -= 20f + 12f;
+            spec.Readout = ReadoutBox(spec.Group, font, x + inner * 0.5f, y);
+            y -= ReadoutH + 12f;
 
             spec.Height = yStart - y;
             dials.Add(spec);
@@ -776,14 +808,45 @@ namespace ScopeTdcControls
         /// that gives this AOB, both as the target of the AOB motor and as its position, so
         /// the TDC follows the dial while it is turned.
         /// </summary>
+        /// <remarks>
+        /// Not through DesiredImpactAngle: its setter switches AOB tracking (ApplyCourseChanges)
+        /// off and remembers the old state to restore when the motor arrives, so setting it
+        /// again every frame of a drag remembered "off" and left tracking off for good (the
+        /// AOB then stopped following the bearing). Instead the impact angle is set directly,
+        /// and the TDC's AOB-bearing sum with it, so the tracking sees no course change to
+        /// undo. Like the crew's AOB report, it switches the AOB motor and tracking on.
+        /// </remarks>
         static void ApplyAobNow(TorpedoCalculator tdc, float aob)
         {
             aob = Mathf.DeltaAngle(0f, aob);
             float impact = tdc.ComputeImpactAngleForDesiredAOB(aob, tdc.ImpactAngle);
             if (float.IsNaN(impact) || float.IsInfinity(impact)) return;
-            tdc.DesiredImpactAngle = impact;
+
+            // as the crew's AOB report does (Periscope.CourseTicket_Stopped): AOB motor and AOB
+            // tracking on, so the TDC then keeps the target's course as the bearing changes
+            // (its tracking only works while the AOB motor is on)
+            if (!tdc.IsAOBMotorOn) tdc.IsAOBMotorOn = true;
+            if (!tdc.ApplyCourseChanges) tdc.ApplyCourseChanges = true;
+            ResolveAobFields();
+            if (restoreTracking != null) restoreTracking(tdc) = false; // nothing left to restore
+            if (desiredImpact != null) desiredImpact(tdc) = float.NaN; // cancel any motor run (no side effects)
             tdc.ImpactAngle = impact;
             tdc.AngleOnBow = aob; // shown right away; the TDC keeps it in step from here
+            tdc.AOBBearingSum = aob - tdc.TargetBearing; // so AOB tracking doesn't count this as a course change
+        }
+
+        static AccessTools.FieldRef<TorpedoCalculator, bool> restoreTracking;
+        static AccessTools.FieldRef<TorpedoCalculator, float> desiredImpact;
+        static bool aobFieldsResolved;
+
+        static void ResolveAobFields()
+        {
+            if (aobFieldsResolved) return;
+            aobFieldsResolved = true;
+            try { restoreTracking = AccessTools.FieldRefAccess<TorpedoCalculator, bool>("restoreApplyCourseChangesFlagAfterAOBChange"); }
+            catch (Exception e) { Debug.LogWarning(ScopeTdcControlsMod.Tag + " AOB: restore flag not found: " + e.Message); }
+            try { desiredImpact = AccessTools.FieldRefAccess<TorpedoCalculator, float>("desiredImpactAngle"); }
+            catch (Exception e) { Debug.LogWarning(ScopeTdcControlsMod.Tag + " AOB: desired impact angle not found: " + e.Message); }
         }
 
         // ------------------------------------------------------------------ runtime
@@ -899,8 +962,9 @@ namespace ScopeTdcControls
                 if (spec.Style == PointerStyle.Ring) rot = Mathf.Repeat(a + spec.ToRot(DialBase(spec, tdc)), 360f); // ring coordinates
                 float lo = Mathf.Min(spec.Rots[0], spec.Rots[spec.Rots.Length - 1]);
                 float hi = Mathf.Max(spec.Rots[0], spec.Rots[spec.Rots.Length - 1]);
+                if (rot > hi + 2f && rot - 360f >= lo - 2f) rot -= 360f;    // scales given in -180..180 (torpedo depth)
                 if (rot < lo - 2f || rot > hi + 2f) return;                 // off the printed scale
-                v = spec.ToValue(Mathf.Clamp(rot, lo, hi));
+                v = Mathf.Clamp(spec.ToValue(Mathf.Clamp(rot, lo, hi)), spec.LimitMin, spec.LimitMax);
             }
 
             HideTip();

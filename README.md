@@ -14,7 +14,7 @@ Compact mechanical-style counters under the bearing tape. Every drum rolls over 
 - **TDC**: the gyro angle (Schusswinkel) computed by the TDC
 - **Parallax**: the parallax correction the TDC adds (+/-)
 - **Bow / Stern**: the angle the tube gyros are actually set to
-- **Gyro-set lamp**: green = set, red = synchronizing, dark = receiver off
+- **Lamps**: a blue follow lamp on the TDC counter (click to switch follow-up), and a gyro-set lamp (green = set, red = synchronizing) on the selected receiver's counter
 - Greyed out with "TDC not manned" while nobody is at the TDC
 - **Double-click a Bow/Stern counter** to switch to that receiver: the scope swings until the TDC angle matches what those tubes are already set to
 
@@ -24,7 +24,7 @@ A panel titled "Scope TDC Controls" beside the periscope raise/lower control (pa
 - **Target bearing** (on the panel): Folgen / Nicht folgen, blue lamp while not following
 - **Direction selector**: rotary switches for the bearing source (Zielrichtung: Off, UZO, observation or attack periscope) and the gyro angle receiver (Schußrichtung: Off, Bow, Stern)
 - **Parallax mode** (on the panel): Forward or Backward
-- **Windows**: show or hide the gyro counters, TDC dials, firing selector, direction selector and fire lever
+- **Windows**: show or hide the gyro counters, TDC dials, firing selector, direction selector and launch lever
 - Shown or hidden with a button added to the periscope screen's stock left sidebar
 
 ### TDC dials
@@ -33,7 +33,7 @@ A window on the left of the scope with the TDC's **AOB**, **target speed**, **ta
 ### Firing selector
 The three rotary switches of the boat's Schaltkasten T-Abf.-Anl. in a window near the bottom of the scope: **Einzelschuß** (single tube / spread), **Fächerschuß** (salvo tubes) and **T.Abf. Schalter** (firing station). Each offers exactly your sub's positions and works like the knob in the boat.
 
-### Fire lever
+### Launch lever
 A spring-loaded Aus / Schuß lever: pull it to Schuß to fire the selected tubes through the boat's own launch lever. A ready lamp shows whether the selected tubes are flooded and the gyro angle receiver is on their end.
 
 ### Raise fully / lower fully

@@ -223,7 +223,7 @@ namespace ScopeTdcControls
             get
             {
                 return T("<b>Fenstergrößen zurücksetzen</b>\nSetzt Rechnerscheiben, Schusswahl, Richtungswahl und Abfeuerhebel wieder auf ihre normale Größe (die linke obere Ecke bleibt, wo sie ist).",
-                         "<b>Reset window sizes</b>\nPuts the TDC dials, firing selector, direction selector and fire lever back to their normal size (each window's top-left corner stays put).");
+                         "<b>Reset window sizes</b>\nPuts the TDC dials, firing selector, direction selector and launch lever back to their normal size (each window's top-left corner stays put).");
             }
         }
 
@@ -277,7 +277,7 @@ namespace ScopeTdcControls
             get
             {
                 return T("<b>Scope TDC Controls</b>\nBedienfeld und die eingeschalteten Fenster (Rechnerscheiben, Schusswahl, Richtungswahl, Abfeuerhebel) ein- oder ausblenden. Die Zähler bleiben sichtbar.",
-                         "<b>Scope TDC Controls</b>\nShow or hide the control panel and the windows switched on there (TDC dials, firing selector, direction selector, fire lever). The counters stay visible.");
+                         "<b>Scope TDC Controls</b>\nShow or hide the control panel and the windows switched on there (TDC dials, firing selector, direction selector, launch lever). The counters stay visible.");
             }
         }
 
@@ -373,19 +373,19 @@ namespace ScopeTdcControls
             }
         }
 
-        public static string WinLever { get { return T("Abfeuerhebel", "Fire lever"); } }
+        public static string WinLever { get { return T("Abfeuerhebel", "Launch lever"); } }
 
         public static string TipWinLever
         {
             get
             {
                 return T("<b>Abfeuerhebel</b>\nDas Fenster mit dem Abfeuerhebel (Aus / Gesichert / Schuß) ein- oder ausblenden.",
-                         "<b>Fire lever</b>\nShow or hide the window with the fire lever (Off / Safe / Fire).");
+                         "<b>Launch lever</b>\nShow or hide the window with the launch lever (Off / Safe / Fire).");
             }
         }
 
-        // ---- fire lever ----
-        public static string LeverTitle { get { return T("T-ABF.-\nSCHALTER", "FIRE\nLEVER"); } }
+        // ---- launch lever ----
+        public static string LeverTitle { get { return T("T-ABF.-\nSCHALTER", "LAUNCH\nLEVER"); } }
         public static string LeverOff { get { return T("Aus", "Off"); } }
         public static string LeverFire { get { return T("Schuß", "Fire"); } }
         public static string LeverWrongReceiver { get { return T("Empfänger nicht auf {0}", "Receiver not on {0}"); } }
@@ -403,7 +403,7 @@ namespace ScopeTdcControls
             get
             {
                 return T("<b>Abfeuerhebel</b>\nDer Hebel ist gefedert und ruht auf Aus. Zum Abfeuern auf den Hebel drücken: er geht auf Schuß und feuert die gewählten (angehakten) Rohre, wie der Hebel im Boot, bleibt unten, solange die Maustaste gedrückt ist, und federt beim Loslassen zurück. Feuert nur bei grüner Lampe (Maus über die Lampe für Einzelheiten).",
-                         "<b>Fire lever</b>\nThe lever is spring-loaded and rests at Off. To fire, press on the lever: it goes to Fire and fires the selected (checked) tubes, like the lever in the boat, stays down while the mouse button is held, and springs back when you let go. Fires only while the lamp is green (hover the lamp for details).");
+                         "<b>Launch lever</b>\nThe lever is spring-loaded and rests at Off. To fire, press on the lever: it goes to Fire and fires the selected (checked) tubes, like the lever in the boat, stays down while the mouse button is held, and springs back when you let go. Fires only while the lamp is green (hover the lamp for details).");
             }
         }
 
@@ -418,6 +418,59 @@ namespace ScopeTdcControls
             }
         }
 
+
+        // ---- torpedo settings window ----
+        public static string WinTorpedo { get { return T("Torpedoeinstellung", "Torpedo settings"); } }
+        public static string TorpDepth { get { return T("TIEFE", "DEPTH"); } }
+        public static string TorpSpeed { get { return T("FAHRSTUFE", "SPEED"); } }
+        public static string TorpPistol { get { return T("PISTOLE", "PISTOL"); } }
+        public static string SpeedSlow { get { return T("L", "S"); } }
+        public static string SpeedMedium { get { return "M"; } }
+        public static string SpeedFast { get { return T("S", "F"); } }
+        public static string PistolImpactShort { get { return T("AZ", "Impact"); } }
+        public static string PistolMagneticShort { get { return T("MZ", "Magnetic"); } }
+        public static string PistolImpact { get { return T("Aufschlag (AZ)", "Impact"); } }
+        public static string PistolMagnetic { get { return T("Magnet (MZ)", "Magnetic"); } }
+
+        public static string TipWinTorpedo
+        {
+            get
+            {
+                return T("<b>Torpedoeinstellung</b>\nDas Fenster mit Tiefe, Fahrstufe und Pistole ein- oder ausblenden. Es erscheint nur, solange ein angehaktes Rohr einen Torpedo hat.",
+                         "<b>Torpedo settings</b>\nShow or hide the window with depth, speed and pistol. It only appears while a checked tube holds a torpedo.");
+            }
+        }
+
+        public static string TipTorpDepth
+        {
+            get
+            {
+                return T("<b>Tiefe</b>\nLauftiefe des Torpedos, 1 bis 14 m (rot: nicht einstellbar). Gilt für den nächsten Schuss, wie der Tiefenregler im Spiel. Scheibe drehen, auf der Skala anklicken oder Mausrad; in Schritten von 0,25 m." + TorpRoomDe,
+                         "<b>Depth</b>\nThe torpedo's running depth, 1 to 14 m (red: can't be set). Applies to the next shot, like the game's depth control. Turn the dial, click the scale or use the mouse wheel; in 0.25 m steps." + TorpRoomEn);
+            }
+        }
+
+        public static string TipTorpSpeed
+        {
+            get
+            {
+                return T("<b>Fahrstufe</b>\nLangsam / Mittel / Schnell, nur die Stufen, die alle angehakten Torpedos haben. Darunter die Geschwindigkeit in Knoten. Wird auch an den Vorhaltrechner gegeben." + TorpRoomDe,
+                         "<b>Speed</b>\nSlow / medium / fast, only the speeds all checked torpedoes have. The readout shows the speed in knots. Also passed to the TDC." + TorpRoomEn);
+            }
+        }
+
+        public static string TipTorpPistol
+        {
+            get
+            {
+                return T("<b>Pistole</b>\nAufschlagzündung (AZ) oder Magnetzündung (MZ) für die Torpedos in den angehakten Rohren." + TorpRoomDe,
+                         "<b>Pistol</b>\nImpact or magnetic pistol for the torpedoes in the checked tubes." + TorpRoomEn);
+            }
+        }
+
+        // added to the torpedo tips when the Torpedo Room mod is installed
+        static string TorpRoomDe { get { return TorpedoRoomLink.Present ? "\n<i>Torpedo Room: wird für jeden angehakten Torpedo einzeln gespeichert.</i>" : ""; } }
+        static string TorpRoomEn { get { return TorpedoRoomLink.Present ? "\n<i>Torpedo Room: stored on each checked torpedo.</i>" : ""; } }
         // ---- fire-control switch box ----
         public static string SwitchSingle { get { return T("Einzelschuß", "Single shot"); } }
         public static string SwitchSalvo { get { return T("Fächerschuß", "Salvo"); } }
@@ -585,8 +638,17 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Schusswinkel eingestellt</b>\n<color=#6f6>Grün</color>: die Kreisel der gewählten Rohrgruppe stehen auf dem Rechnerwert.\n<color=#f66>Rot</color>: wird synchronisiert.\nDunkel: Empfänger aus.",
-                         "<b>Gyro set</b>\n<color=#6f6>Green</color>: the selected tube group's gyros match the TDC angle.\n<color=#f66>Red</color>: synchronizing.\nDark: receiver off.");
+                return T("<b>Schusswinkel eingestellt</b>\n<color=#6f6>Grün</color>: die Kreisel dieser Rohrgruppe stehen auf dem Rechnerwert.\n<color=#f66>Rot</color>: wird synchronisiert.\nNur an der Zeile des gewählten Empfängers.",
+                         "<b>Gyro set</b>\n<color=#6f6>Green</color>: this tube group's gyros match the TDC angle.\n<color=#f66>Red</color>: synchronizing.\nShown on the selected receiver's row only.");
+            }
+        }
+
+        public static string TipFollowLamp
+        {
+            get
+            {
+                return T("<b>Zielpeilung</b>\n<color=#6af>Blau</color>: der Rechner folgt der Peilung NICHT.\nDunkel: er folgt.\nAnklicken zum Umschalten (Folgen / Nicht folgen).",
+                         "<b>Target bearing</b>\n<color=#6af>Blue</color>: the TDC is NOT following the bearing.\nDark: it is following.\nClick to switch (Follow / Not follow).");
             }
         }
 

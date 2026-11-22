@@ -17,7 +17,7 @@ The "Scope TDC Controls" panel beside the periscope raise/lower control (roll it
 [list]
 [*][b]Target bearing[/b] – Follow / Not follow, with a blue lamp while not following
 [*][b]Parallax mode[/b] – Forward or Backward
-[*][b]Windows[/b] – check boxes to show or hide the gyro angle counters, TDC dials, firing selector, direction selector and fire lever, plus a button to reset window sizes
+[*][b]Windows[/b] – check boxes to show or hide the gyro angle counters, TDC dials, firing selector, direction selector and launch lever, plus a button to reset window sizes
 [*][b]Settings[/b] drop-down (see below)
 [/list]
 A button in the scope screen's stock left sidebar (next to the chronometer) shows or hides the panel and all its windows.
@@ -40,7 +40,7 @@ The boat's rotary switches, in off-white windows like the real switch boxes, wit
 [*][b]Direction selector[/b] – Zielrichtung (bearing source: attack periscope, UZO, observation periscope or off) and Schußrichtung (gyro angle receiver: bow, stern or off)
 [/list]
 
-[h2]Fire lever[/h2]
+[h2]Launch lever[/h2]
 A spring-loaded Aus / Schuß lever: press and hold it to fire the selected tubes through the boat's own launch lever. Its ready lamp only turns green when the shot makes sense – hover it to see why it's red:
 [list]
 [*]no tube selected, or a selected tube not flooded
@@ -100,7 +100,7 @@ Keeping your gyros set to the correct directions, and leaving the gyro angle rec
 
 [h2]Version history[/h2]
 [list]
-[*][b]1.2[/b] – TDC dials restyled after the real TDC (Lagenwinkel AOB, knob distance dial, turning target length ring for spreads), click-to-set and voice callouts; firing selector and direction selector windows with the boat's knob clicks; spring-loaded fire lever with a ready lamp; reworked control panel (title, collapse caret, window check boxes); off-white resizable windows; plain drag to move; overlay hidden during loading and on quit
+[*][b]1.2[/b] – TDC dials restyled after the real TDC (Lagenwinkel AOB, knob distance dial, turning target length ring for spreads), click-to-set and voice callouts; firing selector and direction selector windows with the boat's knob clicks; spring-loaded launch lever with a ready lamp; reworked control panel (title, collapse caret, window check boxes); off-white resizable windows; plain drag to move; overlay hidden during loading and on quit
 [*][b]1.1[/b] – TDC dial window (AOB, target speed, target distance); add bottom toolbar button to show/hide the panel and dials; raise fully / lower fully buttons; gyros display now start in the right place right after loading a game
 [*][b]1.0[/b] – first release
 [/list]

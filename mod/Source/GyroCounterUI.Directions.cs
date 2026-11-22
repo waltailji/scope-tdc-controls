@@ -90,7 +90,7 @@ namespace ScopeTdcControls
             AddKnob(font, directionsPanel, dirKnobs, x, Strings.DirShot, () => Strings.TipDirShot, rx);
             x += KnobSize + KnobGap;
 
-            float h = DialPad + KnobRim + KnobSize + KnobRim + 8f + 18f + 4f + 18f + DialPad;
+            float h = DialPad + ControlColumnH + DialPad;
             directionsPanel.sizeDelta = new Vector2(x - KnobGap + KnobRim + DialPad, h);
             AddResizeGrip(directionsPanel, ResizableWindow.Directions);
             RaiseOverlays(); // panel and pop-ups stay on top

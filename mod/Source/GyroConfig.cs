@@ -51,6 +51,11 @@ namespace ScopeTdcControls
         public static bool CtrlDragToMove = false;        // false = plain drag on a window background moves it (default for new installs)
         public const float WindowScaleMin = 0.6f, WindowScaleMax = 2.0f;
         public static float DialsScale = 1f, SwitchesScale = 1f, DirectionsScale = 1f, LeverScale = 1f; // per-window size (corner grip)
+        public const float TorpedoScaleDefault = 0.8f;   // smaller than the TDC dials
+        public static float TorpedoScale = TorpedoScaleDefault;
+        public static bool ShowTorpedo = true;            // torpedo settings window (shown while a checked tube holds a torpedo)
+        public static float TorpedoX = 0.62f, TorpedoY = 0.11f; // bottom, right of centre
+        public static float TorpedoOffsetX = 0f, TorpedoOffsetY = 0f;
         public static bool VoiceCallouts = true;          // dial window: the officer at the scope announces the values
 
         // controls panel
@@ -80,7 +85,7 @@ namespace ScopeTdcControls
         public static float SwitchesOffsetX = 0f;
         public static float SwitchesOffsetY = 0f;
 
-        // fire lever window (Aus / Gesichert / Schuß), shown with the control panel
+        // launch lever window (Aus / Gesichert / Schuß), shown with the control panel
         public static bool ShowLever = true;
         public static float LeverX = 0.80f;
         public static float LeverY = 0.17f;
@@ -177,6 +182,13 @@ DialsScale=1
 SwitchesScale=1
 DirectionsScale=1
 LeverScale=1
+TorpedoScale=0.8
+# ---- Torpedo settings window (depth, speed, pistol; shown while a checked tube holds a torpedo) ----
+ShowTorpedo=true
+TorpedoX=0.62
+TorpedoY=0.11
+TorpedoOffsetX=0
+TorpedoOffsetY=0
 VoiceCallouts=true
 
 # ---- Follow-up / gyro receiver panel ----
@@ -218,7 +230,7 @@ SwitchesY=0.11
 SwitchesOffsetX=0
 SwitchesOffsetY=0
 
-# ---- Fire lever (Aus / Gesichert / Schuß) ----
+# ---- Launch lever (Aus / Gesichert / Schuß) ----
 # Shown and hidden together with the control panel (sidebar button)
 ShowLever=true
 # Centre of the window, 0..1 of screen width/height from bottom-left
@@ -416,6 +428,12 @@ DebugLog=false
                 case "switchesscale": SwitchesScale = Mathf.Clamp(Num(v, SwitchesScale), WindowScaleMin, WindowScaleMax); break;
                 case "directionsscale": DirectionsScale = Mathf.Clamp(Num(v, DirectionsScale), WindowScaleMin, WindowScaleMax); break;
                 case "leverscale": LeverScale = Mathf.Clamp(Num(v, LeverScale), WindowScaleMin, WindowScaleMax); break;
+                case "torpedoscale": TorpedoScale = Mathf.Clamp(Num(v, TorpedoScale), WindowScaleMin, WindowScaleMax); break;
+                case "showtorpedo": ShowTorpedo = Bool(v, ShowTorpedo); break;
+                case "torpedox": TorpedoX = Mathf.Clamp01(Num(v, TorpedoX)); break;
+                case "torpedoy": TorpedoY = Mathf.Clamp01(Num(v, TorpedoY)); break;
+                case "torpedooffsetx": TorpedoOffsetX = Num(v, TorpedoOffsetX); break;
+                case "torpedooffsety": TorpedoOffsetY = Num(v, TorpedoOffsetY); break;
                 case "voicecallouts": VoiceCallouts = Bool(v, VoiceCallouts); break;
                 case "showcontrols": ShowControls = Bool(v, ShowControls); break;
                 case "controlsanchor": ControlsAtElevator = !v.Equals("screen", StringComparison.OrdinalIgnoreCase); break;

@@ -45,7 +45,47 @@ namespace ScopeTdcControls
         {
             if (tdc == null) return;
             if (tdc.ParallaxMultiplierTarget != direction) tdc.ParallaxMultiplierTarget = direction;
-            if (tdc.ParallaxMultiplier != direction) tdc.ParallaxMultiplier = direction;
+            if (tdc.ParallaxMultiplier != direction) SwitchKeepingAob(tdc, direction);
+        }
+
+        static Action<TorpedoCalculator> updateAngleOnBow;
+        static bool updateResolved;
+
+        /// <summary>
+        /// Switch the parallax direction without changing the target's course on the TDC.
+        /// The TDC's AOB includes the parallax correction, so flipping its sign makes the AOB
+        /// jump by twice the correction (largest with the target on the beam, which is where
+        /// auto parallax switches); AOB tracking then took that jump for a change of course
+        /// and the AOB came out wrong after a sweep (e.g. S 120 instead of S 90). So, while
+        /// the TDC is tracking, the impact angle is reset so the AOB stays what it was.
+        /// </summary>
+        static void SwitchKeepingAob(TorpedoCalculator tdc, float direction)
+        {
+            bool tracking = tdc.ApplyCourseChanges && tdc.IsAOBMotorOn && !tdc.IsLockingMechanismTriggered;
+            float aob = tdc.AngleOnBow;
+            tdc.ParallaxMultiplier = direction;
+            if (!tracking || float.IsNaN(aob) || float.IsInfinity(aob)) return;
+            try
+            {
+                if (!updateResolved)
+                {
+                    updateResolved = true;
+                    var m = AccessTools.Method(typeof(TorpedoCalculator), "UpdateAngleOnBow");
+                    if (m != null) updateAngleOnBow = AccessTools.MethodDelegate<Action<TorpedoCalculator>>(m);
+                }
+                if (updateAngleOnBow == null) return;
+                updateAngleOnBow(tdc); // the AOB with the new direction (else the impact search below returns at once)
+                float impact = tdc.ComputeImpactAngleForDesiredAOB(aob, tdc.ImpactAngle);
+                if (float.IsNaN(impact) || float.IsInfinity(impact)) return;
+                tdc.ImpactAngle = impact;
+                tdc.AngleOnBow = aob;
+                tdc.AOBBearingSum = aob - tdc.TargetBearing; // nothing for the tracking to correct
+            }
+            catch (Exception e)
+            {
+                updateAngleOnBow = null;
+                Debug.LogWarning(ScopeTdcControlsMod.Tag + " parallax switch: AOB not kept (" + e.GetBaseException().Message + ")");
+            }
         }
 
         public static void AutoTick(TorpedoCalculator tdc)

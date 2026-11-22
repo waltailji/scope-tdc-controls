@@ -22,7 +22,7 @@ namespace ScopeTdcControls
     public class ScopeTdcControlsMod : IUserMod
     {
         public const string Tag = "[ScopeTDC]";
-        public const string Version = "1.2"; // keep in sync with Manifest.json
+        public const string Version = "1.3"; // keep in sync with Manifest.json
 
         public void OnLoaded()
         {
@@ -30,7 +30,9 @@ namespace ScopeTdcControls
             {
                 Debug.Log(Tag + " v" + Version + " loading...");
                 GyroConfig.Load();
-                new Harmony("scope-tdc-controls").PatchAll(typeof(ScopeTdcControlsMod).Assembly);
+                var harmony = new Harmony("scope-tdc-controls");
+                harmony.PatchAll(typeof(ScopeTdcControlsMod).Assembly);
+                GyroCounterUI.HookMenus(harmony); // hide the overlay while the game's menus are open
                 Debug.Log(Tag + " loaded OK. Config: " + GyroConfig.FilePath);
             }
             catch (Exception e)

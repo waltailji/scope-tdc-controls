@@ -6,14 +6,14 @@ namespace ScopeTdcControls
 {
     /// <summary>
     /// Resizable windows: a small grip in the bottom-right corner of the TDC dials,
-    /// firing selector, direction selector and fire lever windows. Dragging it scales
+    /// firing selector, direction selector and launch lever windows. Dragging it scales
     /// the whole window (it is laid out at a fixed size), keeping its top-left corner
     /// where it is. Each window's size is saved; "Reset window sizes" on the panel
     /// sets them all back to 1.
     /// </summary>
     public partial class GyroCounterUI
     {
-        enum ResizableWindow { Dials, Switches, Directions, Lever }
+        enum ResizableWindow { Dials, Switches, Directions, Lever, Torpedo }
 
         const float GripSize = 12f;
 
@@ -24,6 +24,7 @@ namespace ScopeTdcControls
                 case ResizableWindow.Dials: return GyroConfig.DialsScale;
                 case ResizableWindow.Switches: return GyroConfig.SwitchesScale;
                 case ResizableWindow.Directions: return GyroConfig.DirectionsScale;
+                case ResizableWindow.Torpedo: return GyroConfig.TorpedoScale;
                 default: return GyroConfig.LeverScale;
             }
         }
@@ -35,6 +36,7 @@ namespace ScopeTdcControls
                 case ResizableWindow.Dials: return dialsPanel;
                 case ResizableWindow.Switches: return switchesPanel;
                 case ResizableWindow.Directions: return directionsPanel;
+                case ResizableWindow.Torpedo: return torpedoPanel;
                 default: return leverPanel;
             }
         }
@@ -65,6 +67,7 @@ namespace ScopeTdcControls
                 case ResizableWindow.Dials: GyroConfig.DialsScale = scale; break;
                 case ResizableWindow.Switches: GyroConfig.SwitchesScale = scale; break;
                 case ResizableWindow.Directions: GyroConfig.DirectionsScale = scale; break;
+                case ResizableWindow.Torpedo: GyroConfig.TorpedoScale = scale; break;
                 default: GyroConfig.LeverScale = scale; break;
             }
             if (panel != null) panel.localScale = Vector3.one * EffectiveScale(w);
@@ -78,6 +81,7 @@ namespace ScopeTdcControls
                 case ResizableWindow.Dials: GyroConfig.DialsOffsetX += by.x; GyroConfig.DialsOffsetY += by.y; break;
                 case ResizableWindow.Switches: GyroConfig.SwitchesOffsetX += by.x; GyroConfig.SwitchesOffsetY += by.y; break;
                 case ResizableWindow.Directions: GyroConfig.DirectionsOffsetX += by.x; GyroConfig.DirectionsOffsetY += by.y; break;
+                case ResizableWindow.Torpedo: GyroConfig.TorpedoOffsetX += by.x; GyroConfig.TorpedoOffsetY += by.y; break;
                 default: GyroConfig.LeverOffsetX += by.x; GyroConfig.LeverOffsetY += by.y; break;
             }
         }
@@ -94,6 +98,10 @@ namespace ScopeTdcControls
                     GyroConfig.SavePrecise("SwitchesScale", GyroConfig.SwitchesScale);
                     GyroConfig.Save("SwitchesOffsetX", GyroConfig.SwitchesOffsetX); GyroConfig.Save("SwitchesOffsetY", GyroConfig.SwitchesOffsetY);
                     break;
+                case ResizableWindow.Torpedo:
+                    GyroConfig.SavePrecise("TorpedoScale", GyroConfig.TorpedoScale);
+                    GyroConfig.Save("TorpedoOffsetX", GyroConfig.TorpedoOffsetX); GyroConfig.Save("TorpedoOffsetY", GyroConfig.TorpedoOffsetY);
+                    break;
                 case ResizableWindow.Directions:
                     GyroConfig.SavePrecise("DirectionsScale", GyroConfig.DirectionsScale);
                     GyroConfig.Save("DirectionsOffsetX", GyroConfig.DirectionsOffsetX); GyroConfig.Save("DirectionsOffsetY", GyroConfig.DirectionsOffsetY);
@@ -109,8 +117,11 @@ namespace ScopeTdcControls
         void ResetWindowSizes()
         {
             HideTip();
-            foreach (ResizableWindow w in new[] { ResizableWindow.Dials, ResizableWindow.Switches, ResizableWindow.Directions, ResizableWindow.Lever })
-                if (Mathf.Abs(WindowScale(w) - 1f) > 0.0001f) SetWindowScale(w, 1f, true);
+            foreach (ResizableWindow w in new[] { ResizableWindow.Dials, ResizableWindow.Switches, ResizableWindow.Directions, ResizableWindow.Lever, ResizableWindow.Torpedo })
+            {
+                float normal = w == ResizableWindow.Torpedo ? GyroConfig.TorpedoScaleDefault : 1f; // the torpedo window is smaller by design
+                if (Mathf.Abs(WindowScale(w) - normal) > 0.0001f) SetWindowScale(w, normal, true);
+            }
         }
 
         /// <summary>Add the corner grip to a window; also applies its saved size.</summary>

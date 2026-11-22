@@ -36,7 +36,7 @@ The boat's rotary switches, with its own knob clicks:
 [*][b]Direction selector[/b] – Zielrichtung (bearing source) and Schußrichtung (gyro angle receiver)
 [/list]
 
-[h2]Fire lever[/h2]
+[h2]Launch lever[/h2]
 A spring-loaded Aus / Schuß lever: press and hold to fire the selected tubes. Its lamp turns green only when the shot makes sense (hover it for the reason); while red or dark the lever does not fire:
 [list]
 [*]no tube selected, or a selected tube not flooded
@@ -91,7 +91,7 @@ Keeping your gyros set to the correct directions, and leaving the gyro angle rec
 
 [h2]Version history[/h2]
 [list]
-[*][b]1.2[/b] – realistic TDC dials (incl. target length), voice callouts, firing and direction selectors, fire lever with ready lamp, reworked panel, resizable windows
+[*][b]1.2[/b] – realistic TDC dials (incl. target length), voice callouts, firing and direction selectors, launch lever with ready lamp, reworked panel, resizable windows
 [*][b]1.1[/b] – TDC dials, sidebar button, raise/lower fully, counter start position fix
 [*][b]1.0[/b] – first release
 [/list]

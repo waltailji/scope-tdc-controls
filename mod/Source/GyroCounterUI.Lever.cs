@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace ScopeTdcControls
 {
     /// <summary>
-    /// Fire lever window (T-Abf.-Schalter): Aus / Schuß, spring-loaded.
+    /// Launch lever window (T-Abf.-Schalter): Aus / Schuß, spring-loaded.
     /// The lever rests at Aus; pull it down to Schuß to fire and it springs
     /// back to Aus.
     ///
@@ -56,13 +56,14 @@ namespace ScopeTdcControls
             AddDrag(leverPanel.gameObject, false).Lever = true;
 
             float y = -DialPad;
-            var title = NewText("Title", leverPanel, font, Strings.LeverTitle, HeaderFont, BoxInk);
+            var title = NewText("Title", leverPanel, font, Strings.LeverTitle, TitleFont, BoxInk);
             title.fontStyle = FontStyles.Bold;
             title.characterSpacing = 1f;
+            title.lineSpacing = -12f;
             title.alignment = TextAlignmentOptions.Center;
             title.enableWordWrapping = true;
-            PlaceV(title.rectTransform, DialPad, y, LeverW, 26f);
-            y -= 26f + 4f;
+            PlaceV(title.rectTransform, DialPad - 4f, y, LeverW + 8f, 30f);
+            y -= 30f + 4f;
 
             // slot on the right, the two plates on the left at its ends
             float slotX = DialPad + LeverW - 14f;
@@ -242,28 +243,21 @@ namespace ScopeTdcControls
             string problem = LeverProblem(ship, out ready, out blocking);
             if (problem != null)
             {
-                if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " fire lever held: " + problem);
+                if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " launch lever held: " + problem);
                 return;
             }
             try
             {
-                TorpedoLaunchLever lever = null;
-                foreach (var l in Resources.FindObjectsOfTypeAll<TorpedoLaunchLever>())
-                {
-                    if (l == null || !l.gameObject.scene.IsValid()) continue;
-                    if (lever == null || (l.isActiveAndEnabled && !lever.isActiveAndEnabled)) lever = l;
-                }
-                if (lever != null) lever.Launch();
-                else
-                {
-                    var s = ship.TorpedoAttackSettings;
-                    ship.LaunchAllTorpedoes(s.TorpedoDepth, s.TorpedoSpeed, 100f, 0.3f);
-                }
-                if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " fire lever: launch" + (problem != null ? " (" + problem + ")" : "") + (lever == null ? " via PlayerShip" : ""));
+                // the same launch the boat's lever performs (TorpedoLaunchLever.Launch), without
+                // pressing that 3D lever: it springs back only from its own update while visible,
+                // so pressing it from the scope could leave it stuck at Schuß (found fully down later)
+                var s = ship.TorpedoAttackSettings;
+                ship.LaunchAllTorpedoes(s.TorpedoDepth, s.TorpedoSpeed, 100f, 0.3f);
+                if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " launch lever: launch");
             }
             catch (Exception e)
             {
-                Debug.LogWarning(ScopeTdcControlsMod.Tag + " fire lever failed: " + e.Message);
+                Debug.LogWarning(ScopeTdcControlsMod.Tag + " launch lever failed: " + e.Message);
             }
         }
 

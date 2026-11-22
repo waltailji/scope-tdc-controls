@@ -92,7 +92,7 @@ namespace ScopeTdcControls
         RectTransform controlsPanel;
         RectTransform tipPanel;
         TextMeshProUGUI tipText;
-        Lamp syncLamp, followLamp;
+        Lamp followLamp;
         Btn btnSettings;
         Btn btnFollow, btnNoFollow, btnResetSizes;
         RectTransform settingsPanel;      // drop-down under the control panel
@@ -132,6 +132,8 @@ namespace ScopeTdcControls
             public readonly List<RectTransform> Strips = new List<RectTransform>(); // most significant first
             public readonly List<TextMeshProUGUI[]> Digits = new List<TextMeshProUGUI[]>(); // the 11 slots of each drum
             public readonly List<int> Patched = new List<int>(); // slot relabelled "0" during 359 -> 000, or -1
+            public Lamp RowLamp;          // TDC row: blue follow lamp; receiver rows: gyro-set lamp
+            public GameObject LampSlot;   // shown / hidden with its lamp
 
             public void AddDrum(RectTransform strip, TextMeshProUGUI[] digits)
             {
@@ -235,6 +237,10 @@ namespace ScopeTdcControls
             if (switchesPanel != null) Destroy(switchesPanel.gameObject);
             if (leverPanel != null) Destroy(leverPanel.gameObject);
             if (directionsPanel != null) Destroy(directionsPanel.gameObject);
+            if (torpedoPanel != null) Destroy(torpedoPanel.gameObject);
+            torpedoPanel = null;
+            torpedoSignature = null;
+            torpKnobs.Clear();
             counterPanel = controlsPanel = tipPanel = raiseBtn = lowerBtn = dialsPanel = switchesPanel = leverPanel = null;
             directionsPanel = null;
             btnFollow = btnNoFollow = null;
@@ -248,7 +254,7 @@ namespace ScopeTdcControls
             dials.Clear();
             tdcRow = parRow = rcvRowA = rcvRowB = null;
             btnParFwd = btnParBack = null;
-            syncLamp = followLamp = null;
+            followLamp = null;
             btnSettings = null;
             settingsPanel = null; // destroyed with controlsPanel
             checks.Clear();
@@ -560,14 +566,35 @@ namespace ScopeTdcControls
             if (GyroConfig.ShowSyncLamp)
             {
                 x += 3f;
-                if (kind == RowKind.Tdc)
+                if (kind == RowKind.Tdc || kind == RowKind.Receiver)
                 {
-                    var slot = NewRect("SyncSlot", p);
+                    var slot = NewRect(kind == RowKind.Tdc ? "FollowSlot" : "SyncSlot", p);
                     PlaceH(slot, x, 12f, DigitH);
                     var hit = slot.gameObject.AddComponent<Image>();
-                    hit.color = Color.clear; // invisible hover target for its own tooltip
-                    syncLamp = MakeLamp(slot, new Vector2(0.5f, 0.5f), Vector2.zero, 9f, LampGreen);
-                    AddTooltip(slot.gameObject, () => Strings.TipSyncLamp);
+                    hit.color = Color.clear; // invisible hover / click target
+                    row.LampSlot = slot.gameObject;
+                    if (kind == RowKind.Tdc)
+                    {
+                        // blue follow lamp: lit while NOT following; click it to switch follow-up
+                        row.RowLamp = MakeLamp(slot, new Vector2(0.5f, 0.5f), Vector2.zero, 9f, LampBlue);
+                        var btn = slot.gameObject.AddComponent<Button>();
+                        btn.transition = Selectable.Transition.None;
+                        btn.targetGraphic = hit;
+                        btn.onClick.AddListener(() =>
+                        {
+                            var tdc = Tdc();
+                            if (tdc != null) SetFollowUp(!tdc.BearingFollowUpEnabled);
+                            if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
+                        });
+                        AddTooltip(slot.gameObject, () => Strings.TipFollowLamp);
+                    }
+                    else
+                    {
+                        // gyro-set lamp: only on the row of the selected receiver
+                        row.RowLamp = MakeLamp(slot, new Vector2(0.5f, 0.5f), Vector2.zero, 9f, LampGreen);
+                        AddTooltip(slot.gameObject, () => Strings.TipSyncLamp);
+                        slot.gameObject.SetActive(false);
+                    }
                 }
                 x += 12f; // keep all rows the same width
             }
@@ -584,7 +611,7 @@ namespace ScopeTdcControls
 
             // width = widest label
             string[] labels = { Strings.BearingHeader, Strings.ParallaxHeader, Strings.WindowsHeader, Strings.ResetSizes, "+ " + Strings.SettingsHeader };
-            string[] windowLabels = { Strings.WinGyros, Strings.WinDials, Strings.WinSwitches, Strings.WinDirections, Strings.WinLever };
+            string[] windowLabels = { Strings.WinGyros, Strings.WinDials, Strings.WinSwitches, Strings.WinDirections, Strings.WinTorpedo, Strings.WinLever };
             float inner = 80f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 18f);
             foreach (var s in windowLabels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f); // check box rows
@@ -655,6 +682,7 @@ namespace ScopeTdcControls
             MakeCheck(font, Strings.WinDials, ref y, inner, () => GyroConfig.ShowDials, v => { if (v != GyroConfig.ShowDials) ToggleDialsWindow(); }, () => Strings.TipWinDials, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinSwitches, ref y, inner, () => GyroConfig.ShowSwitches, v => { if (v != GyroConfig.ShowSwitches) ToggleSwitchesWindow(); }, () => Strings.TipWinSwitches, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinDirections, ref y, inner, () => GyroConfig.ShowDirections, v => { if (v != GyroConfig.ShowDirections) ToggleDirectionsWindow(); }, () => Strings.TipWinDirections, controlsPanel, windowChecks);
+            MakeCheck(font, Strings.WinTorpedo, ref y, inner, () => GyroConfig.ShowTorpedo, v => { GyroConfig.ShowTorpedo = v; GyroConfig.Save("ShowTorpedo", v); HideTip(); }, () => Strings.TipWinTorpedo, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinLever, ref y, inner, () => GyroConfig.ShowLever, v => { if (v != GyroConfig.ShowLever) ToggleLeverWindow(); }, () => Strings.TipWinLever, controlsPanel, windowChecks);
             btnResetSizes = MakeButton(controlsPanel, font, Strings.ResetSizes, ref y, inner, ResetWindowSizes, () => Strings.TipResetSizes);
             Divider(ref y, inner);
@@ -960,11 +988,12 @@ namespace ScopeTdcControls
             var frame = r.gameObject.AddComponent<Image>();
             frame.sprite = RoundedBoxSprite();
             frame.type = Image.Type.Sliced;   // corners keep their size whatever the window size
-            frame.color = BoxColor;
+            frame.color = BoxColor * InteriorTint();
             frame.raycastTarget = true;
             var edge = r.gameObject.AddComponent<Outline>();
             edge.effectColor = BoxEdge;
             edge.effectDistance = new Vector2(1.5f, -1.5f);
+            boxFrames.Add(frame);
         }
 
         const float BoxCornerRadius = 12f;
@@ -1240,8 +1269,9 @@ namespace ScopeTdcControls
             public bool Controls;
             public bool Dials;   // the TDC dial window
             public bool Switches; // the fire-control switch box window
-            public bool Lever;    // the fire lever window
+            public bool Lever;    // the launch lever window
             public bool Directions; // the direction selector window
+            public bool Torpedo;  // the torpedo settings window
             bool dragging;
 
             static bool CtrlHeld { get { return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl); } }
@@ -1258,7 +1288,8 @@ namespace ScopeTdcControls
                 if (!dragging || Owner == null) return;
                 float k = Owner.canvas != null && Owner.canvas.scaleFactor > 0f ? Owner.canvas.scaleFactor : 1f;
                 Vector2 d = e.delta / k;
-                if (Directions) { GyroConfig.DirectionsOffsetX += d.x; GyroConfig.DirectionsOffsetY += d.y; }
+                if (Torpedo) { GyroConfig.TorpedoOffsetX += d.x; GyroConfig.TorpedoOffsetY += d.y; }
+                else if (Directions) { GyroConfig.DirectionsOffsetX += d.x; GyroConfig.DirectionsOffsetY += d.y; }
                 else if (Lever) { GyroConfig.LeverOffsetX += d.x; GyroConfig.LeverOffsetY += d.y; }
                 else if (Switches) { GyroConfig.SwitchesOffsetX += d.x; GyroConfig.SwitchesOffsetY += d.y; }
                 else if (Dials) { GyroConfig.DialsOffsetX += d.x; GyroConfig.DialsOffsetY += d.y; }
@@ -1270,7 +1301,12 @@ namespace ScopeTdcControls
             {
                 if (!dragging) return;
                 dragging = false;
-                if (Directions)
+                if (Torpedo)
+                {
+                    GyroConfig.Save("TorpedoOffsetX", GyroConfig.TorpedoOffsetX);
+                    GyroConfig.Save("TorpedoOffsetY", GyroConfig.TorpedoOffsetY);
+                }
+                else if (Directions)
                 {
                     GyroConfig.Save("DirectionsOffsetX", GyroConfig.DirectionsOffsetX);
                     GyroConfig.Save("DirectionsOffsetY", GyroConfig.DirectionsOffsetY);
@@ -1572,6 +1608,144 @@ namespace ScopeTdcControls
             }
         }
 
+        static GameUI gameUi;
+        static float menuLookupAt;
+        static GameUI.Mode loggedMode = (GameUI.Mode)(-1);
+        static string loggedMenu;
+        static readonly List<GameObject> menuObjects = new List<GameObject>();
+
+        // the game's full-screen windows (each switches the UI to a full-screen mode when it opens)
+        static readonly string[] MenuTypes =
+        {
+            "UBOAT.Game.UI.EscapeMenu",
+            "UBOAT.Game.Scene.UI.MainMenu.SettingsMenu",
+            "UBOAT.Game.UI.CrewListUI",
+            "UBOAT.Game.UI.CrewSpecializationsUI",
+            "UBOAT.Game.UI.JournalUI",
+            "UBOAT.Game.UI.Overviews.OverviewUI",
+            "UBOAT.Game.UI.TaskManagementUI",
+            "UBOAT.Game.UI.TimeManagementUI",
+            "UBOAT.Game.UI.AssignmentManagementUI",
+            "UBOAT.Game.UI.BoatManagementUI",
+            "UBOAT.Game.UI.RecruitmentListUI",
+            "UBOAT.Game.UI.ReputationPurchasesListUI",
+            "UBOAT.Game.UI.EquipmentUpgradeListUI",
+            "UBOAT.Game.UI.CampaignSummaryUI",
+            "UBOAT.Game.UI.PortActivitiesUI"
+        };
+        // screens the escape menu opens next to itself (it may be switched off while they show)
+        static readonly string[] EscapeMenuScreens = { "settingsUI", "loadGameStateUI", "saveGameStateUI", "quitConfirmationUI" };
+
+        /// <summary>
+        /// Learn the game's menu windows as they open: a postfix on each window type's
+        /// OnEnable adds its object to the list GameMenuOpen checks. No searching the scene
+        /// (Resources.FindObjectsOfTypeAll is slow enough to make the game stutter).
+        /// </summary>
+        public static void HookMenus(Harmony harmony)
+        {
+            var postfix = new HarmonyMethod(AccessTools.Method(typeof(GyroCounterUI), nameof(MenuEnabled)));
+            int hooked = 0;
+            foreach (var name in MenuTypes)
+            {
+                try
+                {
+                    var type = AccessTools.TypeByName(name);
+                    var onEnable = type != null ? AccessTools.DeclaredMethod(type, "OnEnable") : null;
+                    if (onEnable == null) continue;
+                    harmony.Patch(onEnable, postfix: postfix);
+                    hooked++;
+                }
+                catch (Exception e)
+                {
+                    if (GyroConfig.DebugLog) Debug.LogWarning(ScopeTdcControlsMod.Tag + " menu hook " + name + ": " + e.Message);
+                }
+            }
+            if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " menu windows hooked: " + hooked);
+        }
+
+        static void MenuEnabled(object __instance)
+        {
+            try
+            {
+                var c = __instance as Component;
+                if (c == null) return;
+                AddMenuObject(c.gameObject);
+                if (c.GetType().FullName != "UBOAT.Game.UI.EscapeMenu") return;
+                foreach (var field in EscapeMenuScreens)
+                {
+                    var v = AccessTools.Field(c.GetType(), field)?.GetValue(c);
+                    AddMenuObject(v as GameObject ?? (v as Component)?.gameObject);
+                }
+            }
+            catch { }
+        }
+
+        static void AddMenuObject(GameObject go)
+        {
+            if (go == null) return;
+            menuObjects.RemoveAll(o => o == null); // destroyed with an old scene
+            if (!menuObjects.Contains(go)) menuObjects.Add(go);
+        }
+
+        /// <summary>
+        /// One of the game's menus or full-screen windows is up: the escape menu (and the
+        /// settings / load / save screens opened from it), the overviews, crew, journal, map,
+        /// headquarters, dialogue and the like. Our overlay must not sit on top of those.
+        /// Checked two ways: the windows themselves being shown, and the game's UI mode
+        /// (the scope view runs in DeviceManualMode, never one of the modes below).
+        /// </summary>
+        static bool GameMenuOpen()
+        {
+            try
+            {
+                if (gameUi == null && Time.unscaledTime >= menuLookupAt)
+                {
+                    menuLookupAt = Time.unscaledTime + 5f;
+                    gameUi = Get<GameUI>();
+                }
+                string open = null;
+                for (int i = 0; i < menuObjects.Count; i++)
+                {
+                    var go = menuObjects[i];
+                    if (go != null && go.activeInHierarchy) { open = go.name; break; }
+                }
+
+                if (open == null && gameUi != null)
+                {
+                    var mode = gameUi.CurrentMode;
+                    if (GyroConfig.DebugLog && mode != loggedMode)
+                    {
+                        loggedMode = mode;
+                        Debug.Log(ScopeTdcControlsMod.Tag + " game UI mode: " + mode);
+                    }
+                    switch (mode)
+                    {
+                        case GameUI.Mode.FullscreenUI:
+                        case GameUI.Mode.FullscreenHighBarUI:
+                        case GameUI.Mode.Map:
+                        case GameUI.Mode.MapCutscene:
+                        case GameUI.Mode.Headquarters:
+                        case GameUI.Mode.Dialogue:
+                        case GameUI.Mode.StoryPlayerUI:
+                        case GameUI.Mode.PortActivitiesUI:
+                            open = "mode " + mode;
+                            break;
+                    }
+                }
+                if (GyroConfig.DebugLog && open != loggedMenu)
+                {
+                    loggedMenu = open;
+                    Debug.Log(ScopeTdcControlsMod.Tag + (open != null ? " game menu open (" + open + "): overlay hidden" : " game menu closed"));
+                }
+                return open != null;
+            }
+            catch (Exception e)
+            {
+                if (GyroConfig.DebugLog) Debug.LogWarning(ScopeTdcControlsMod.Tag + " menu check failed: " + e.Message);
+                return false;
+            }
+        }
+
         /// <summary>The game's loading screen is up (loading a save, going back to the menu).</summary>
         static bool GameLoading()
         {
@@ -1608,7 +1782,7 @@ namespace ScopeTdcControls
                     if (instance != null && instance.canvas != null) instance.canvas.enabled = false;
                 };
             }
-            bool s = quitting || GameLoading();
+            bool s = quitting || GameLoading() || GameMenuOpen();
             if (s == suppressed) return;
             suppressed = s;
             if (s) HideTip();
@@ -1664,11 +1838,13 @@ namespace ScopeTdcControls
             if (show && GyroConfig.ControlsVisible) ValidateDirections();
             bool directionsOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowDirections && directionsPanel != null;
             if (directionsPanel != null && directionsPanel.gameObject.activeSelf != directionsOn) directionsPanel.gameObject.SetActive(directionsOn);
+            ValidateTorpedo(show && GyroConfig.ControlsVisible); // shown only while a checked tube holds a torpedo
             UpdateElevatorButtons(uiHidden);
             if (!show) { HideTip(); return; }
 
             UpdateCounter(tdc);
             UpdateControls(tdc);
+            UpdateBoxTint(); // off-white windows follow the boat's interior light colour
             PositionCounter(uiHidden);
             PositionControls(uiHidden);
             if (dialsOn)
@@ -1749,15 +1925,8 @@ namespace ScopeTdcControls
             ShowReceiverRow(rcvRowA, groupA, group, ref y);
             ShowReceiverRow(rcvRowB, groupB, group, ref y);
 
-            if (syncLamp != null)
-            {
-                if (group == null) syncLamp.Set(false, LampGreen);
-                else
-                {
-                    bool synced = Mathf.Abs(Mathf.DeltaAngle(group.SetGyroAngle, group.ReceivedGyroAngle)) < SyncTolerance;
-                    syncLamp.Set(true, synced ? LampGreen : LampRed);
-                }
-            }
+            // TDC row: blue follow lamp, lit while the TDC is NOT following the bearing
+            if (tdcRow.RowLamp != null) tdcRow.RowLamp.Set(!tdc.BearingFollowUpEnabled, LampBlue);
         }
 
         static void ReceiverGroups(out TorpedoLauncherGroup bow, out TorpedoLauncherGroup stern)
@@ -1789,6 +1958,17 @@ namespace ScopeTdcControls
             bool isActive = ReferenceEquals(shown, active);
             row.Label.color = isActive || GyroConfig.ActiveReceiverOnly ? LabelColor : new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.45f);
             Drive(row, shown.SetGyroAngle);
+
+            // gyro-set lamp on the selected receiver's row only (none while the receiver is off)
+            if (row.LampSlot != null)
+            {
+                if (row.LampSlot.activeSelf != isActive) row.LampSlot.SetActive(isActive);
+                if (isActive)
+                {
+                    bool synced = Mathf.Abs(Mathf.DeltaAngle(shown.SetGyroAngle, shown.ReceivedGyroAngle)) < SyncTolerance;
+                    row.RowLamp.Set(true, synced ? LampGreen : LampRed);
+                }
+            }
         }
 
         static void Drive(CounterRow row, float target)

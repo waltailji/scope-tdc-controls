@@ -53,6 +53,7 @@ namespace ScopeTdcControls
             public string[] Labels;           // printed on the face
             public string[] Names;            // full names for the readout (null = Labels)
             public bool InnerTicks;           // marks round the hub at every position
+            public float LabelSize = 8.5f;    // face label font size
             public string Sound;              // the boat's knob click (its PresetDial audio keyword)
             public Func<TorpedoFireControlBoxes, int> Get;
             public Action<TorpedoFireControlBoxes, int> Set;
@@ -264,7 +265,7 @@ namespace ScopeTdcControls
                 x += KnobSize + KnobGap;
             }
 
-            float h = DialPad + KnobRim + KnobSize + KnobRim + 8f + 18f + 4f + 18f + DialPad;
+            float h = DialPad + ControlColumnH + DialPad;
             switchesPanel.sizeDelta = new Vector2(x - KnobGap + KnobRim + DialPad, h);
             AddResizeGrip(switchesPanel, ResizableWindow.Switches);
             RaiseOverlays(); // panel and pop-ups stay on top
@@ -278,7 +279,11 @@ namespace ScopeTdcControls
         /// <summary>A rotary switch (face, labels, handle, name plate, readout) in a window.</summary>
         void AddKnob(TMP_FontAsset font, RectTransform panel, List<KnobSpec> list, float x, string title, Func<string> tip, KnobSpec spec)
         {
-            float y = -DialPad - KnobRim;
+            // name above, as on the TDC dials
+            float top = -DialPad;
+            ControlTitle(panel, font, title, x - KnobGap * 0.5f, top, KnobSize + KnobGap);
+            float band = top - TitleH - TitleGap;                        // top of the control band
+            float y = band - (ControlH - (KnobSize + KnobRim * 2f)) * 0.5f - KnobRim; // knob centred in the band
             var holder = NewRect("Knob", panel);
             PlaceV(holder, x, y, KnobSize, KnobSize);
             // sharp black rim, the face filling it (no soft brass ring)
@@ -298,7 +303,7 @@ namespace ScopeTdcControls
                 if (string.IsNullOrEmpty(text)) continue;
                 float r = KnobLabelRadius;
                 float a = rot * Mathf.Deg2Rad;
-                var label = NewText("Label", face.rectTransform, font, text, 8.5f, DialScale);
+                var label = NewText("Label", face.rectTransform, font, text, spec.LabelSize, DialScale);
                 label.alignment = TextAlignmentOptions.Center;
                 label.enableWordWrapping = true;
                 label.lineSpacing = -18f;
@@ -337,25 +342,9 @@ namespace ScopeTdcControls
             relay.Owner = this;
             relay.Spec = spec;
             if (tip != null) AddTooltip(face.gameObject, tip);
-            y -= KnobSize + KnobRim + 8f; // below the black face
 
-            // name plate
-            var plate = NewRect("Plate", panel);
-            PlaceV(plate, x + 10f, y, KnobSize - 20f, 18f);
-            var plateImg = plate.gameObject.AddComponent<Image>();
-            plateImg.color = DrumBlack;
-            plateImg.raycastTarget = false;
-            var plateText = NewText("Text", plate, font, title, CtlFont, DialScale);
-            plateText.alignment = TextAlignmentOptions.Center;
-            var pr = plateText.rectTransform;
-            pr.anchorMin = Vector2.zero; pr.anchorMax = Vector2.one;
-            pr.offsetMin = pr.offsetMax = Vector2.zero;
-            y -= 18f + 4f;
-
-            // current position, in full
-            spec.Readout = NewText("Readout", panel, font, "", CtlFont, BoxInk);
-            spec.Readout.alignment = TextAlignmentOptions.Center;
-            PlaceV(spec.Readout.rectTransform, x - KnobGap * 0.5f, y, KnobSize + KnobGap, 18f);
+            // current position, in full, in the black box below (as on the TDC dials)
+            spec.Readout = ReadoutBox(panel, font, x + KnobSize * 0.5f, band - ControlH - ReadoutGap);
 
             list.Add(spec);
         }
@@ -503,6 +492,42 @@ namespace ScopeTdcControls
                 return dial != null ? dial.AudioKeyword : null;
             }
             catch { return null; }
+        }
+
+        /// <summary>
+        /// A knob click for switches the boat has no knob for (torpedo speed and pistol): the
+        /// first of the fire-control box's knobs that has a sound.
+        /// </summary>
+        static string AnyBoxKnobSound()
+        {
+            var boxes = Boxes();
+            if (boxes == null) return null;
+            // the scene search is slow and the torpedo window is rebuilt often: once per boat
+            if (ReferenceEquals(boxes, boxKnobSoundFor)) return boxKnobSound;
+            boxKnobSoundFor = boxes;
+            boxKnobSound = FindBoxKnobSound(boxes);
+            return boxKnobSound;
+        }
+
+        static TorpedoFireControlBoxes boxKnobSoundFor;
+        static string boxKnobSound;
+
+        static string FindBoxKnobSound(TorpedoFireControlBoxes boxes)
+        {
+            Component[] candidates =
+            {
+                SceneKnob<TorpedoFireControlBoxesTubeIndexKnob>(boxes),
+                SceneKnob<TorpedoFireControlBoxesSalvoKnob>(boxes),
+                SceneKnob<TorpedoFireControlBoxesActiveLaunchLeverKnob>(boxes),
+                SceneKnob<TorpedoFireControlBoxesGyroAngleReceiverKnob>(boxes),
+                SceneKnob<TorpedoFireControlBoxesBearingTransmitterKnob>(boxes)
+            };
+            foreach (var k in candidates)
+            {
+                string s = KnobSound(k);
+                if (!string.IsNullOrEmpty(s)) return s;
+            }
+            return null;
         }
 
         static UBOAT.Game.Scene.Audio.ISoundEffectsDatabase soundDb;

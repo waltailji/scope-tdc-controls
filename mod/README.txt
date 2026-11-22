@@ -1,12 +1,12 @@
-Scope TDC Controls  v1.2  (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.3  (UBOAT 2026.1 patch 21)
 =================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
 
   Under the bearing tape              Beside the periscope raise/lower control
-  [ TDC       |   3 5 7 ° (o) ]       [ Scope TDC Controls  v ]   (v = roll up / out)
+  [ TDC       |   3 5 7 ° (b) ]       [ Scope TDC Controls  v ]   (v = roll up / out)
   [ Parallaxe | + 0 0 1 °     ]       [ (o) ZIELPEILUNG ]
-  [ BUG       |   3 5 4 °     ]       [ FOLGEN ][ NICHT FOLGEN ]
+  [ BUG       |   3 5 4 ° (o) ]       [ FOLGEN ][ NICHT FOLGEN ]
                                       [ PARALLAXENMODUS ]
                                       [ VORN ][ ACHTERN ]
                                       [ FENSTER       ]
@@ -14,6 +14,7 @@ SH3-style TDC readouts and controls in the periscope and UZO views.
                                       [x] Rechnerscheiben
                                       [x] Schusswahl
                                       [x] Richtungswahl
+                                      [x] Torpedoeinstellung
                                       [x] Abfeuerhebel
                                       [ RESET WINDOW SIZES ]
                                       [ + EINSTELLUNGEN ]
@@ -22,7 +23,7 @@ Hover over any element for a pop-up description. Drag the background of the
 counters, the panel or a window to move it (dials, switches and levers only
 react on their round faces, so drags beside them move the window). With
 "Ctrl+drag to move" on in the settings, hold Ctrl to move instead. The TDC
-dials, both selector windows and the fire lever can be resized with the grip
+dials, both selector windows and the launch lever can be resized with the grip
 in their bottom-right corner; RESET WINDOW SIZES on the panel sets them back.
 Positions and sizes are saved automatically.
 
@@ -89,7 +90,22 @@ three switches of the Schaltkasten T-Abf.-Anl.:
   Shown or hidden with the Schusswahl (Firing selector) check box on the control
   panel.
 
-Fire lever (T-Abf.-Schalter): a narrow window at the bottom right with a
+Torpedo settings (Torpedoeinstellung): appears at the bottom, right of the
+  centre, while a checked tube holds a torpedo (loaded, flooding or flooded):
+    Tiefe (Depth)        running depth dial, scaled 0-15 m, numbered every
+                         metre from 1 to 14, red below 1 m and beyond 14 m;
+                         it sets 1-14 m in 0.25 m steps (wheel, click, drag)
+    Fahrstufe (Speed)    L / M / S (S / M / F): only the speeds every checked
+                         torpedo has; the readout shows the speed in knots;
+                         also passed to the TDC, as the game's speed dial does
+    Pistole (Pistol)     AZ / MZ (impact / magnetic) for the checked torpedoes
+  Smaller than the TDC dials by default (resizable like the other windows).
+  With the Torpedo Room mod installed, the window sets each checked torpedo's
+  own Torpedo Room depth, speed and pistol (which Torpedo Room applies at
+  launch) and shows the first one's.
+  Shown or hidden with the Torpedoeinstellung (Torpedo settings) check box.
+
+Launch lever (T-Abf.-Schalter): a narrow window at the bottom right with a
   spring-loaded lever, Aus (Off) / Schuß (Fire). It rests at Aus; press on
   it (grip, slot or plates) to throw it to Schuß and fire the selected tubes;
   it stays down while the mouse button is held and springs back when you let
@@ -114,7 +130,7 @@ Fire lever (T-Abf.-Schalter): a narrow window at the bottom right with a
            (T.Abf. Schalter) is on Brücke or Turm; on either Aus it is dead.
            (On the boat only the named station is live, bridge for the UZO,
            tower for the attack periscope; for now either one powers it.)
-  Shown or hidden with the Abfeuerhebel (Fire lever) check box.
+  Shown or hidden with the Abfeuerhebel (Launch lever) check box.
 
 Raise fully / lower fully: two slim buttons just above and below the stock
 periscope raise/lower control. Click one to run the periscope all the way up
@@ -123,6 +139,25 @@ button, to stop. Hidden in the UZO and while the game UI is hidden.
 (ElevatorButtons=false in the settings file removes them.)
 
 Version history
+  1.3  Torpedo settings window (depth, speed, pistol) while a tube is checked;
+       works with the Torpedo Room mod's per-torpedo settings.
+       Gyro-set lamp moved to the selected receiver's counter; the TDC counter
+       has a blue follow lamp (click to switch follow-up).
+       The overlay hides while the game's menus or full-screen windows are open
+       (escape menu, settings, load/save, overviews, crew, journal, map ...).
+       The off-white windows (TDC dials, selectors, launch lever) take on the
+       colour of the boat's interior lighting: reddish under the red lights,
+       bluish under the blue (silent running) lights, fading with them.
+       All dials and switches share one layout: the name above (a little
+       larger), the current setting below in a black box. "Fire lever" is
+       now "Launch lever".
+       Fixed: setting AOB on the dial no longer switches the TDC's AOB tracking
+       off (it now switches the AOB motor and tracking on, as the crew's AOB
+       report does), and a parallax switch keeps the AOB, so sweeping the
+       scope from bow to stern keeps the target's course. The launch lever
+       fires like the fire key and no longer leaves the 3D lever stuck at
+       Schuss. Depth scale clicks work on the whole scale; torpedo knobs
+       click; less stutter (no repeated scene searches).
   1.2  Voice callouts for the TDC dials, using the game's own crew voice
        lines.
        Window check boxes (FENSTER / WINDOWS) on the control panel to show or
@@ -131,7 +166,7 @@ Version history
        Target length (Streubreite) dial (turning ring) in the TDC dial
        window, shown for spreads; AOB needle with an arrow tip; distance
        dial as a knob with an arrow.
-       Fire lever window (spring-loaded Aus / Schuß) with a ready lamp.
+       Launch lever window (spring-loaded Aus / Schuß) with a ready lamp.
        Direction selector window (Zielrichtung / Schußrichtung knobs) and
        replace those
        panel buttons; the panel is titled "Scope TDC Controls", with the
@@ -213,10 +248,13 @@ Counters
   the other counters are hidden. The controls keep working. (Not shown when
   "TDC operator required" is off.)
 
-Gyro-set lamp
-  green = the selected tube group's gyros are set to the TDC angle (within 3.5°)
-  red   = synchronizing (the tube gyros are still turning to the TDC angle)
-  dark  = the gyro receiver is off
+Lamps on the counters
+  TDC row (blue)   lit while the TDC is NOT following the bearing, dark while
+                   following; click it to switch follow-up (Folgen / Nicht folgen)
+  BUG / HECK row   gyro-set lamp, on the selected receiver's row only (no lamp
+                   while the receiver is off):
+                     green = that group's gyros are set to the TDC angle (3.5°)
+                     red   = synchronizing (the gyros are still turning)
 
 Control panel and windows
 -------------------------
@@ -358,8 +396,8 @@ added in later versions are appended automatically; your values are kept.
                                       WINDOWS buttons on the control panel)
   SwitchesOffsetX / SwitchesOffsetY   switch box position (Ctrl+drag sets these)
   SwitchesX / SwitchesY               switch box base position (screen fraction)
-  LeverOffsetX / LeverOffsetY         fire lever position (Ctrl+drag sets these)
-  LeverX / LeverY                     fire lever base position (screen fraction)
+  LeverOffsetX / LeverOffsetY         launch lever position (Ctrl+drag sets these)
+  LeverX / LeverY                     launch lever base position (screen fraction)
   DirectionsX / DirectionsY            direction selector base position;
   DirectionsOffsetX / DirectionsOffsetY  (Ctrl+drag sets the offsets)
   Position=Below | Above              side of the bearing tape for the counters
