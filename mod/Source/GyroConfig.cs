@@ -48,11 +48,15 @@ namespace ScopeTdcControls
         public static bool RealisticReceiverSync = true;  // false = tube gyro motors run 10x faster
         public static bool SingleTorpedoLaunchFix = true; // fire only the tubes selected when fire was pressed
         public static bool TdcOperatorRequired = true;    // false = TDC works without a crew member at it
+        public static bool CtrlDragToMove = false;        // false = plain drag on a window background moves it (default for new installs)
+        public const float WindowScaleMin = 0.6f, WindowScaleMax = 2.0f;
+        public static float DialsScale = 1f, SwitchesScale = 1f, DirectionsScale = 1f, LeverScale = 1f; // per-window size (corner grip)
         public static bool VoiceCallouts = true;          // dial window: the officer at the scope announces the values
 
         // controls panel
         public static bool ShowControls = true;
         public static bool ControlsVisible = true;    // shown/hidden with the sidebar button
+        public static bool PanelCollapsed = false;    // the panel rolled up to its title bar (caret)
         public static bool ElevatorButtons = true;    // raise fully / lower fully buttons
         public static bool ControlsAtElevator = true; // ControlsAnchor=Elevator | Screen
         public static float ControlsOffsetX = 0f;
@@ -166,12 +170,21 @@ SingleTorpedoLaunchFix=true
 TdcOperatorRequired=true
 # true = the officer at the scope announces values set with the TDC dial window,
 #        with the game's own voice lines (AOB is set once he has said it)
+# true = hold Ctrl and drag to move the mod's windows ; false = drag a window's background to move it
+CtrlDragToMove=false
+# Window sizes (drag the corner grip; the panel button Reset window sizes sets them back to 1)
+DialsScale=1
+SwitchesScale=1
+DirectionsScale=1
+LeverScale=1
 VoiceCallouts=true
 
 # ---- Follow-up / gyro receiver panel ----
 ShowControls=true
 # Panel shown or hidden (the button in the periscope's left sidebar sets this)
 ControlsVisible=true
+# Panel rolled up to its title bar (the caret next to the title sets this)
+PanelCollapsed=false
 # Raise fully / lower fully buttons above and below the periscope raise/lower control
 ElevatorButtons=true
 # Elevator = beside the periscope raise/lower control ; Screen = ControlsX/ControlsY
@@ -398,10 +411,16 @@ DebugLog=false
                 case "realisticreceiversync": RealisticReceiverSync = Bool(v, RealisticReceiverSync); break;
                 case "singletorpedolaunchfix": SingleTorpedoLaunchFix = Bool(v, SingleTorpedoLaunchFix); break;
                 case "tdcoperatorrequired": TdcOperatorRequired = Bool(v, TdcOperatorRequired); break;
+                case "ctrldragtomove": CtrlDragToMove = Bool(v, CtrlDragToMove); break;
+                case "dialsscale": DialsScale = Mathf.Clamp(Num(v, DialsScale), WindowScaleMin, WindowScaleMax); break;
+                case "switchesscale": SwitchesScale = Mathf.Clamp(Num(v, SwitchesScale), WindowScaleMin, WindowScaleMax); break;
+                case "directionsscale": DirectionsScale = Mathf.Clamp(Num(v, DirectionsScale), WindowScaleMin, WindowScaleMax); break;
+                case "leverscale": LeverScale = Mathf.Clamp(Num(v, LeverScale), WindowScaleMin, WindowScaleMax); break;
                 case "voicecallouts": VoiceCallouts = Bool(v, VoiceCallouts); break;
                 case "showcontrols": ShowControls = Bool(v, ShowControls); break;
                 case "controlsanchor": ControlsAtElevator = !v.Equals("screen", StringComparison.OrdinalIgnoreCase); break;
                 case "controlsvisible": ControlsVisible = Bool(v, ControlsVisible); break;
+                case "panelcollapsed": PanelCollapsed = Bool(v, PanelCollapsed); break;
                 case "elevatorbuttons": ElevatorButtons = Bool(v, ElevatorButtons); break;
                 case "controlsoffsetx": ControlsOffsetX = Num(v, ControlsOffsetX); break;
                 case "controlsoffsety": ControlsOffsetY = Num(v, ControlsOffsetY); break;

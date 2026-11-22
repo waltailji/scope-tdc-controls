@@ -4,21 +4,27 @@ Scope TDC Controls  v1.2  (UBOAT 2026.1 patch 21)
 SH3-style TDC readouts and controls in the periscope and UZO views.
 
   Under the bearing tape              Beside the periscope raise/lower control
-  [ TDC       |   3 5 7 ° (o) ]       [ Scope TDC Controls ]
+  [ TDC       |   3 5 7 ° (o) ]       [ Scope TDC Controls  v ]   (v = roll up / out)
   [ Parallaxe | + 0 0 1 °     ]       [ (o) ZIELPEILUNG ]
   [ BUG       |   3 5 4 °     ]       [ FOLGEN ][ NICHT FOLGEN ]
                                       [ PARALLAXENMODUS ]
                                       [ VORN ][ ACHTERN ]
                                       [ FENSTER       ]
-                                      [x] Schusswinkel
+                                      [x] Schusswinkel (gyro angles)
                                       [x] Rechnerscheiben
                                       [x] Schusswahl
                                       [x] Richtungswahl
                                       [x] Abfeuerhebel
+                                      [ RESET WINDOW SIZES ]
                                       [ + EINSTELLUNGEN ]
 
-Hover over any element for a pop-up description. Hold Ctrl and drag the
-counters or the panel to move them. The new position is saved automatically.
+Hover over any element for a pop-up description. Drag the background of the
+counters, the panel or a window to move it (dials, switches and levers only
+react on their round faces, so drags beside them move the window). With
+"Ctrl+drag to move" on in the settings, hold Ctrl to move instead. The TDC
+dials, both selector windows and the fire lever can be resized with the grip
+in their bottom-right corner; RESET WINDOW SIZES on the panel sets them back.
+Positions and sizes are saved automatically.
 
 A button in the periscope / UZO screen's left sidebar (counter icon, next to
 the chronometer) shows or hides the control panel and the TDC dials. The
@@ -35,12 +41,12 @@ exact value.
              numbered every 20° (0 = bow on at the top, 180 = stern on at the
              bottom), inner disc solid red on the port half (Bug links) and
              green on the starboard half (Bug rechts), and a window at the
-             bottom where the ones digits roll by (red port, green starboard);
-             brass needle with an arrow tip; readout S/P
-             (Stb/Bb) 000-180°. As on the TDC, turning it moves a pale ghost
-             pointer; on release the TDC's AOB motor turns the brass pointer
-             there (the game switches AOB tracking off meanwhile). Locked
-             while the TDC's locking mechanism is triggered.
+             bottom showing the ones digit: a ring that turns once per 10°
+             with digit pairs red 0 / green 0, red 9 / green 1, red 8 /
+             green 2 ..., read at the index at the bottom (green to
+             starboard, red to port); brass needle with an arrow tip;
+             readout S/P (Stb/Bb) 000-180°. The TDC follows the dial as you
+             turn it. Locked while the TDC's locking mechanism is triggered.
   Speed      0-55 kn, clockwise from just right of the top, like the TDC
   Distance   3-100 hm (300 m - 10 km) on the TDC's stretched scale,
              clockwise from just right of the top; numbers round the rim,
@@ -52,7 +58,8 @@ exact value.
              so it is only shown while the Einzelschuß switch is on a spread
              (Fächer auf geradem Kurs / im Drehen); the window shrinks and
              grows to fit
-  Hold Shift for 10x finer turning. The mouse wheel steps 1° / 0.5 kn /
+  Click a value on a dial's scale to set it directly. Hold Shift for 10x
+  finer turning. The mouse wheel steps 1° / 0.5 kn /
   100 m (with Shift a tenth of that). Ctrl+drag moves the window. Greyed out
   and locked while the TDC is not manned. Shown or hidden with the
   Rechnerscheiben (TDC dials) check box on the control panel.
@@ -60,10 +67,9 @@ exact value.
   Voice callouts (settings drop-down, on by default): the crew member at the
   scope announces what you dial in, with the game's own voice lines and
   subtitles, just as when you send a locked target's values to the TDC
-  ("Attack parameters update... angle on bow, right, 3-0"). Speed and
-  distance are set at once and announced after you let go (or the wheel
-  stops). AOB is set, as in the game, once it has been said: AOB motor and
-  tracking on, the TDC jumps to the new AOB. Changing a value while it is
+  ("Attack parameters update... angle on bow, right, 3-0"). Values take
+  effect as you turn the dials and are announced after you let go (or the
+  wheel stops). Changing a value while it is
   still being said gets one more callout with the latest value. Nobody at
   the scope: values are applied silently. Distances above 9999 m are
   spoken as 9999 (the game's voice lines stop at four digits).
@@ -244,7 +250,7 @@ Gyro angle receiver - Schußrichtung, in the same window
   panel is open, it forces the receiver to Bow whenever any bow tube is
   flooded, even if only the stern tube is checked. This mod replaces that.
 
-  With "Auto set receiver" on (default), the receiver follows the CHECKED
+  With "Auto set gyro receiver" on (default), the receiver follows the CHECKED
   flooded tubes, all the time (torpedo panel open or not):
     - only bow tube(s) checked     -> Bug
     - only stern tube(s) checked   -> Heck
@@ -256,7 +262,7 @@ Gyro angle receiver - Schußrichtung, in the same window
   A manual pick (this panel or the receiver knob in the control room) takes
   priority until you change which tubes are checked.
 
-  With "Auto set receiver" off, checking tubes never changes the receiver;
+  With "Auto set gyro receiver" off, checking tubes never changes the receiver;
   only you do, here or with the knob.
 
   Fire-control box selector: when you check tubes in the scope's torpedo
@@ -277,7 +283,7 @@ Gyro angle receiver - Schußrichtung, in the same window
 
 Parallax mode (Parallaxenmodus: Vorn / Achtern)
   Direction of the TDC's parallax correction: forward for the bow tubes,
-  backward for the stern tubes. While "Auto set parallax" is on, the
+  backward for the stern tubes. While "Auto set parallax mode" is on, the
   buttons only show the direction, which is set by the first rule that
   applies:
     1. checked bow tube(s)      -> forward
@@ -290,14 +296,14 @@ Parallax mode (Parallaxenmodus: Vorn / Achtern)
                                    on the beam)
 
 Settings drop-down (EINSTELLUNGEN / SETTINGS), all on by default
-  Show receiver angle         show the BUG/HECK rows
+  Show gyro receiver angles   show the BUG/HECK rows
   Show active receivers only  on  = only the selected receiver's row
                               off = bow and stern rows always, even when off
-  Show parallax               show the Parallax row
-  Auto set receiver           on  = receiver follows the checked tubes
+  Show parallax angle         show the Parallax row
+  Auto set gyro receiver      on  = receiver follows the checked tubes
                                     (see "Gyro receiver" above)
                               off = only you set the receiver
-  Auto set parallax           on  = direction follows the checked tubes,
+  Auto set parallax mode      on  = direction follows the checked tubes,
                                     else the receiver, else the target
                                     bearing (see "Parallax" above)
                               off = choose it yourself with VORN / ACHTERN
@@ -321,6 +327,9 @@ Settings drop-down (EINSTELLUNGEN / SETTINGS), all on by default
                            off = the TDC calculates unmanned and can be
                                  opened and operated from the station bar;
                                  power loss and damage still switch it off
+  Ctrl+drag to move        off = (default) drag a window's background to move it
+                           on  = hold Ctrl and drag to move windows, counters
+                                 and the panel
   Voice callouts           on  = the man at the scope announces values set
                                  with the TDC dials (see "TDC dials")
                            off = dial values are applied silently
@@ -361,7 +370,9 @@ added in later versions are appended automatically; your values are kept.
   ShowSyncLamp / ShowControls / Tooltips
   ShowReceiverAngle / ActiveReceiverOnly / ShowParallax / AutoReceiver / AutoParallax /
   RealisticTdc / RealisticReceiverSync / SingleTorpedoLaunchFix /
-  TdcOperatorRequired / VoiceCallouts   (also in the drop-down)
+  TdcOperatorRequired / VoiceCallouts / CtrlDragToMove   (also in the drop-down)
+  DialsScale / SwitchesScale / DirectionsScale / LeverScale   window sizes
+                                      (the corner grips set these)
   ControlsAnchor=Elevator | Screen    Screen = place the panel at ControlsX/ControlsY
   Anchor=Compass | Screen             Screen = place the counters at FallbackX/FallbackY
   HideWithGameUI=false                true = also hide this mod's elements with Alt

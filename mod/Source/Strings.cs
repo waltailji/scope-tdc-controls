@@ -81,8 +81,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Peilungsgeber</b>\nLegt fest, welches Sehrohr seine Peilung an den Vorhaltrechner überträgt. Normalerweise wählt das Spiel das Sehrohr, durch das du gerade schaust. Eine Wahl hier hat Vorrang, bis ein neues Ziel aufgeschaltet wird.\n<i>Strg + Ziehen zum Verschieben.</i>",
-                         "<b>Bearing source</b>\nSelects which scope sends its bearing to the TDC. Normally the game picks the scope you are looking through. A pick here takes priority until a new target is locked.\n<i>Ctrl + drag to move.</i>");
+                return T("<b>Peilungsgeber</b>\nLegt fest, welches Sehrohr seine Peilung an den Vorhaltrechner überträgt. Normalerweise wählt das Spiel das Sehrohr, durch das du gerade schaust. Eine Wahl hier hat Vorrang, bis ein neues Ziel aufgeschaltet wird.",
+                         "<b>Bearing source</b>\nSelects which scope sends its bearing to the TDC. Normally the game picks the scope you are looking through. A pick here takes priority until a new target is locked.");
             }
         }
 
@@ -110,8 +110,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Parallaxe</b>\nRichtung der Parallaxkorrektur im Vorhaltrechner: vorn für die Bugrohre, achtern für die Heckrohre.\n<i>Strg + Ziehen zum Verschieben.</i>",
-                         "<b>Parallax</b>\nDirection of the TDC's parallax correction: forward for the bow tubes, backward for the stern tubes.\n<i>Ctrl + drag to move.</i>") + ParallaxAutoNote;
+                return T("<b>Parallaxe</b>\nRichtung der Parallaxkorrektur im Vorhaltrechner: vorn für die Bugrohre, achtern für die Heckrohre.",
+                         "<b>Parallax</b>\nDirection of the TDC's parallax correction: forward for the bow tubes, backward for the stern tubes.") + ParallaxAutoNote;
             }
         }
 
@@ -119,8 +119,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Parallaxe (TDC)</b>\nKorrektur, die der Vorhaltrechner zum Schusswinkel addiert, weil Sehrohr und Torpedorohre nicht am selben Ort sind. Die Richtung (vorn/achtern) wählst du im Seitenfeld.\n<i>Strg + Ziehen zum Verschieben.</i>",
-                         "<b>Parallax (TDC)</b>\nThe correction the TDC adds to the gyro angle, because the periscope and the torpedo tubes are not in the same place. Set the direction (forward/backward) in the side panel.\n<i>Ctrl + drag to move.</i>");
+                return T("<b>Parallaxe (TDC)</b>\nKorrektur, die der Vorhaltrechner zum Schusswinkel addiert, weil Sehrohr und Torpedorohre nicht am selben Ort sind. Die Richtung (vorn/achtern) wählst du im Seitenfeld.",
+                         "<b>Parallax (TDC)</b>\nThe correction the TDC adds to the gyro angle, because the periscope and the torpedo tubes are not in the same place. Set the direction (forward/backward) in the side panel.");
             }
         }
 
@@ -147,9 +147,9 @@ namespace ScopeTdcControls
 
         // ---- settings drop-down ----
         public static string SettingsHeader { get { return T("EINSTELLUNGEN", "SETTINGS"); } }
-        public static string OptShowReceiver { get { return T("Rohrwinkel anzeigen", "Show receiver angle"); } }
+        public static string OptShowReceiver { get { return T("Empfängerwinkel anzeigen", "Show gyro receiver angles"); } }
         public static string OptActiveReceiverOnly { get { return T("Nur aktiven Empfänger zeigen", "Show active receivers only"); } }
-        public static string OptShowParallax { get { return T("Parallaxe anzeigen", "Show parallax"); } }
+        public static string OptShowParallax { get { return T("Parallaxenwinkel anzeigen", "Show parallax angle"); } }
 
         public static string TipOptActiveReceiverOnly
         {
@@ -159,15 +159,15 @@ namespace ScopeTdcControls
                          "<b>Show active receivers only</b>\nOn: only the selected tube group's angle, hidden while the receiver is off.\nOff: the bow and stern angles are always shown, even while the receiver is off. The active one has the bright label.");
             }
         }
-        public static string OptAutoParallax { get { return T("Parallaxe automatisch setzen", "Auto set parallax"); } }
-        public static string OptAutoReceiver { get { return T("Empfänger automatisch setzen", "Auto set receiver"); } }
+        public static string OptAutoParallax { get { return T("Parallaxenmodus automatisch setzen", "Auto set parallax mode"); } }
+        public static string OptAutoReceiver { get { return T("Empfänger automatisch setzen", "Auto set gyro receiver"); } }
 
         public static string TipOptAutoReceiver
         {
             get
             {
                 return T("<b>Empfänger automatisch setzen</b>\nAn: Der Empfänger folgt den angehakten, gefluteten Rohren. Keines angehakt = Aus. Bug- und Heckrohre angehakt = das Ende, in das das Sehrohr blickt (bei eingeschalteter Peilungsfolge). Eine Auswahl von Hand hat Vorrang, bis du die Rohrauswahl änderst.\nAus: Nur du stellst den Empfänger; die Rohrauswahl ändert ihn nicht.",
-                         "<b>Auto set receiver</b>\nOn: the receiver follows the checked, flooded tubes. None checked = Off. Bow and stern both checked = the end the periscope is looking toward (while follow-up is on). A manual pick takes priority until you change which tubes are checked.\nOff: only you set the receiver; checking tubes doesn't change it.");
+                         "<b>Auto set gyro receiver</b>\nOn: the receiver follows the checked, flooded tubes. None checked = Off. Bow and stern both checked = the end the periscope is looking toward (while follow-up is on). A manual pick takes priority until you change which tubes are checked.\nOff: only you set the receiver; checking tubes doesn't change it.");
             }
         }
         public static string OptRealisticTdc { get { return T("Realistischer Rechner-Nachlauf", "Realistic TDC follower"); } }
@@ -176,8 +176,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Parallaxe anzeigen</b>\nZeigt zwischen TDC- und Rohrzähler die Parallaxkorrektur des Rechners mit den Tasten Vorn / Achtern.",
-                         "<b>Show parallax</b>\nShows the TDC's parallax correction, with Forward / Backward buttons, between the TDC and tube counters.");
+                return T("<b>Parallaxenwinkel anzeigen</b>\nZeigt zwischen TDC- und Rohrzähler die Parallaxkorrektur des Rechners mit den Tasten Vorn / Achtern.",
+                         "<b>Show parallax angle</b>\nShows the TDC's parallax correction, with Forward / Backward buttons, between the TDC and tube counters.");
             }
         }
 
@@ -185,8 +185,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Parallaxe automatisch setzen</b>\nAn, erste zutreffende Regel:\n1. Angehakte Rohre: Bugrohre = vorn, Heckrohre = achtern.\n2. Gewählter Empfänger: Bug = vorn, Heck = achtern.\n3. Sonst die Zielpeilung des Rechners: vorn, solange das Ziel vor dem Querab steht, achtern, sobald es achterlicher steht.\nAus: Du wählst die Richtung selbst mit Vorn / Achtern, im realistischen wie im schnellen Rechnermodus.",
-                         "<b>Auto set parallax</b>\nOn, first rule that applies:\n1. Checked tubes: bow tubes = forward, stern tubes = backward.\n2. Selected receiver: Bow = forward, Stern = backward.\n3. Otherwise the TDC's target bearing: forward while the target is ahead of the beam, backward once it is abaft.\nOff: you choose the direction yourself with Forward / Backward, in both realistic and fast TDC mode.");
+                return T("<b>Parallaxenmodus automatisch setzen</b>\nAn, erste zutreffende Regel:\n1. Angehakte Rohre: Bugrohre = vorn, Heckrohre = achtern.\n2. Gewählter Empfänger: Bug = vorn, Heck = achtern.\n3. Sonst die Zielpeilung des Rechners: vorn, solange das Ziel vor dem Querab steht, achtern, sobald es achterlicher steht.\nAus: Du wählst die Richtung selbst mit Vorn / Achtern, im realistischen wie im schnellen Rechnermodus.",
+                         "<b>Auto set parallax mode</b>\nOn, first rule that applies:\n1. Checked tubes: bow tubes = forward, stern tubes = backward.\n2. Selected receiver: Bow = forward, Stern = backward.\n3. Otherwise the TDC's target bearing: forward while the target is ahead of the beam, backward once it is abaft.\nOff: you choose the direction yourself with Forward / Backward, in both realistic and fast TDC mode.");
             }
         }
         public static string OptRealisticSync { get { return T("Realistischer Empfängerabgleich", "Realistic receiver sync"); } }
@@ -205,12 +205,43 @@ namespace ScopeTdcControls
 
         public static string OptVoiceCallouts { get { return T("Sprachmeldungen", "Voice callouts"); } }
 
+        public static string OptCtrlDrag { get { return T("Strg+Ziehen zum Verschieben", "Ctrl+drag to move"); } }
+
+        public static string TipOptCtrlDrag
+        {
+            get
+            {
+                return T("<b>Strg+Ziehen zum Verschieben</b>\nAn: Fenster, Zähler und Bedienfeld werden mit gedrückter Strg-Taste verschoben.\nAus: einfach den Hintergrund eines Fensters ziehen. Scheiben, Schalter und Hebel werden dabei weiter wie gewohnt bedient.",
+                         "<b>Ctrl+drag to move</b>\nOn: hold Ctrl and drag to move the windows, counters and panel.\nOff: just drag a window's background. Dials, switches and levers still work as usual.");
+            }
+        }
+
+        public static string ResetSizes { get { return T("FENSTERGRÖSSEN ZURÜCK", "RESET WINDOW SIZES"); } }
+
+        public static string TipResetSizes
+        {
+            get
+            {
+                return T("<b>Fenstergrößen zurücksetzen</b>\nSetzt Rechnerscheiben, Schusswahl, Richtungswahl und Abfeuerhebel wieder auf ihre normale Größe (die linke obere Ecke bleibt, wo sie ist).",
+                         "<b>Reset window sizes</b>\nPuts the TDC dials, firing selector, direction selector and fire lever back to their normal size (each window's top-left corner stays put).");
+            }
+        }
+
+        public static string TipResize
+        {
+            get
+            {
+                return T("<b>Größe ändern</b>\nZiehen, um das Fenster zu vergrößern oder zu verkleinern. Die linke obere Ecke bleibt stehen; die Größe wird gespeichert.",
+                         "<b>Resize</b>\nDrag to make the window bigger or smaller. Its top-left corner stays put; the size is remembered.");
+            }
+        }
+
         public static string TipOptVoiceCallouts
         {
             get
             {
-                return T("<b>Sprachmeldungen</b>\nAn: Werte, die mit den Rechner-Scheiben links eingestellt werden, meldet der Mann am Sehrohr mit den Sprachmeldungen des Spiels, wie beim Übergeben eines aufgeschalteten Ziels an den Rechner. Fahrt und Entfernung gelten sofort und werden nach dem Loslassen gemeldet; die Lage wird gesetzt, sobald sie ausgesprochen ist.\nAus: Werte gelten ohne Meldung (die Lage dreht der Lage-Motor nach dem Loslassen hin).",
-                         "<b>Voice callouts</b>\nOn: values set with the TDC dials on the left are announced by the crew member at the scope, with the game's own voice lines, as when sending a locked target to the TDC. Speed and distance are set at once and announced after you let go; AOB is set once it has been said.\nOff: values are applied without callouts (the AOB motor turns to the new AOB after you let go).");
+                return T("<b>Sprachmeldungen</b>\nAn: Werte, die mit den Rechner-Scheiben links eingestellt werden, meldet der Mann am Sehrohr mit den Sprachmeldungen des Spiels, wie beim Übergeben eines aufgeschalteten Ziels an den Rechner. Die Werte gelten sofort beim Drehen und werden nach dem Loslassen gemeldet.\nAus: Werte gelten ohne Meldung.",
+                         "<b>Voice callouts</b>\nOn: values set with the TDC dials on the left are announced by the crew member at the scope, with the game's own voice lines, as when sending a locked target to the TDC. Values take effect as you turn the dials and are announced after you let go.\nOff: values are applied without callouts.");
             }
         }
 
@@ -252,13 +283,13 @@ namespace ScopeTdcControls
 
         // ---- window toggles on the control panel ----
         public static string WindowsHeader { get { return T("FENSTER", "WINDOWS"); } }
-        public static string WinGyros { get { return T("Schusswinkel", "Gyros"); } }
+        public static string WinGyros { get { return T("Schusswinkel", "Gyro angles"); } }
         public static string TipWinGyros
         {
             get
             {
                 return T("<b>Schusswinkel</b>\nDie Schusswinkelzähler unter dem Peilungsband (Rechner, Parallaxe, Bug/Heck) ein- oder ausblenden.",
-                         "<b>Gyros</b>\nShow or hide the gyro angle counters under the bearing tape (TDC, parallax, bow/stern).");
+                         "<b>Gyro angles</b>\nShow or hide the gyro angle counters under the bearing tape (TDC, parallax, bow/stern).");
             }
         }
         public static string WinDials { get { return T("Rechnerscheiben", "TDC dials"); } }
@@ -267,6 +298,14 @@ namespace ScopeTdcControls
 
         public static string ModTitle { get { return "Scope TDC Controls"; } }
         public static string ByAuthor { get { return T("von CrzyDmnd", "by CrzyDmnd"); } }
+        public static string TipCollapse
+        {
+            get
+            {
+                return T("<b>Ein-/ausklappen</b>\nBedienfeld auf die Titelleiste einrollen oder wieder ausklappen.",
+                         "<b>Collapse / expand</b>\nRoll the panel up to its title bar, or out again.");
+            }
+        }
 
         public static string TipWinDirections
         {
@@ -303,7 +342,7 @@ namespace ScopeTdcControls
             get
             {
                 return T("<b>Schußrichtung</b> (Schusswinkelempfänger)\nWählt, welche Rohrgruppe den Schusswinkel des Rechners bekommt: Bug, Heck oder Aus. Mit „Empfänger automatisch“ folgt er den angehakten Rohren; eine Wahl hier gilt, bis sich die Rohrauswahl ändert." + SwitchUsageDe,
-                         "<b>Gyro receiver</b> (Schußrichtung)\nSelects which tube group receives the TDC's gyro angle: bow, stern or off. With \"Auto set receiver\" on it follows the checked tubes; a pick here holds until the tube selection changes." + SwitchUsageEn);
+                         "<b>Gyro receiver</b> (Schußrichtung)\nSelects which tube group receives the TDC's gyro angle: bow, stern or off. With \"Auto set gyro receiver\" on it follows the checked tubes; a pick here holds until the tube selection changes." + SwitchUsageEn);
             }
         }
 
@@ -363,8 +402,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Abfeuerhebel</b>\nDer Hebel ist gefedert und ruht auf Aus. Zum Abfeuern auf den Hebel drücken: er geht auf Schuß und feuert die gewählten (angehakten) Rohre, wie der Hebel im Boot, bleibt unten, solange die Maustaste gedrückt ist, und federt beim Loslassen zurück. Feuert nur bei grüner Lampe (Maus über die Lampe für Einzelheiten). Strg+Ziehen verschiebt das Fenster.",
-                         "<b>Fire lever</b>\nThe lever is spring-loaded and rests at Off. To fire, press on the lever: it goes to Fire and fires the selected (checked) tubes, like the lever in the boat, stays down while the mouse button is held, and springs back when you let go. Fires only while the lamp is green (hover the lamp for details). Ctrl+drag moves the window.");
+                return T("<b>Abfeuerhebel</b>\nDer Hebel ist gefedert und ruht auf Aus. Zum Abfeuern auf den Hebel drücken: er geht auf Schuß und feuert die gewählten (angehakten) Rohre, wie der Hebel im Boot, bleibt unten, solange die Maustaste gedrückt ist, und federt beim Loslassen zurück. Feuert nur bei grüner Lampe (Maus über die Lampe für Einzelheiten).",
+                         "<b>Fire lever</b>\nThe lever is spring-loaded and rests at Off. To fire, press on the lever: it goes to Fire and fires the selected (checked) tubes, like the lever in the boat, stays down while the mouse button is held, and springs back when you let go. Fires only while the lamp is green (hover the lamp for details).");
             }
         }
 
@@ -392,8 +431,8 @@ namespace ScopeTdcControls
         public static string LeverBridge { get { return T("Brücke", "Bridge"); } }
         public static string LeverTower { get { return T("Turm", "Tower"); } }
 
-        const string SwitchUsageDe = "\nBeschriftung anklicken, um dorthin zu schalten; Griff anklicken (links = weiter, rechts = zurück), Mausrad oder Ziehen zum Weiterschalten. Strg+Ziehen verschiebt das Fenster. Wie der Schalter am Schaltkasten T-Abf.-Anl.; es werden nur die Stellungen deines Bootes angeboten.";
-        const string SwitchUsageEn = "\nClick a label to switch there; click the handle (left = on, right = back), use the mouse wheel or drag to turn it. Ctrl+drag moves the window. Works like the knob on the fire-control switch box; only your boat's positions are offered.";
+        const string SwitchUsageDe = "\nBeschriftung anklicken, um dorthin zu schalten; Griff anklicken (links = weiter, rechts = zurück), Mausrad oder Ziehen zum Weiterschalten. Wie der Schalter am Schaltkasten T-Abf.-Anl.; es werden nur die Stellungen deines Bootes angeboten.";
+        const string SwitchUsageEn = "\nClick a label to switch there; click the handle (left = on, right = back), use the mouse wheel or drag to turn it. Works like the knob on the fire-control switch box; only your boat's positions are offered.";
 
         public static string TipSwitchSingle
         {
@@ -443,15 +482,15 @@ namespace ScopeTdcControls
         public static string Port { get { return T("Bb", "P"); } }
         public static string Starboard { get { return T("Stb", "S"); } }
 
-        const string DialUsageDe = "\nZum Einstellen die Scheibe greifen und um ihre Mitte drehen, wie am Rechner. Umschalt = 10x feiner, Mausrad = in Schritten. Strg+Ziehen verschiebt das Fenster.";
-        const string DialUsageEn = "\nGrab the dial and turn it around its centre, like on the TDC. Shift = 10x finer, mouse wheel = steps. Ctrl+drag moves the window.";
+        const string DialUsageDe = "\nZum Einstellen die Scheibe greifen und um ihre Mitte drehen, wie am Rechner, oder einen Wert auf der Skala anklicken. Umschalt = 10x feiner, Mausrad = in Schritten.";
+        const string DialUsageEn = "\nGrab the dial and turn it around its centre, like on the TDC, or click a value on the scale. Shift = 10x finer, mouse wheel = steps.";
 
         public static string TipDialAob
         {
             get
             {
-                return T("<b>Lage</b>\nLagewinkel des Ziels, wie die Lage-Scheibe am Vorhaltrechner: 0 = Bug auf uns zu, 180 = Heck. Steuerbordhälfte grün, Backbordhälfte rot. Wie am Rechner stellt das Drehen nur den hellen Hilfszeiger; beim Loslassen dreht der Lage-Motor des Rechners den Zeiger dorthin (die Lage-Nachführung wird dafür kurz abgeschaltet). Gesperrt, solange die Sperre ausgelöst ist. Mausrad: 1°, wird übernommen, sobald das Rad stillsteht." + DialUsageDe,
-                         "<b>AOB</b>\nThe target's angle on the bow, as on the TDC's AOB dial: 0 = bow on, 180 = stern on. Starboard half green, port half red. As on the TDC, turning it only sets the pale ghost pointer; on release the TDC's AOB motor turns the pointer there (AOB tracking is switched off meanwhile). Locked while the locking mechanism is triggered. Mouse wheel: 1°, sent once the wheel stops." + DialUsageEn);
+                return T("<b>Lage</b>\nLagewinkel des Ziels, wie die Lage-Scheibe am Vorhaltrechner: 0 = Bug auf uns zu, 180 = Heck. Steuerbordhälfte grün, Backbordhälfte rot; im Fenster unten die Einer (grün Steuerbord, rot Backbord). Der Rechner folgt der Scheibe sofort beim Drehen. Gesperrt, solange die Sperre ausgelöst ist. Mausrad: 1°." + DialUsageDe,
+                         "<b>AOB</b>\nThe target's angle on the bow, as on the TDC's AOB dial: 0 = bow on, 180 = stern on. Starboard half green, port half red; the window at the bottom shows the ones digit (green starboard, red port). The TDC follows the dial as you turn it. Locked while the locking mechanism is triggered. Mouse wheel: 1°." + DialUsageEn);
             }
         }
 
@@ -486,8 +525,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Rohrwinkel anzeigen</b>\nZeigt unter dem TDC-Zähler den Winkel, auf den die Kreisel der gewählten Rohrgruppe eingestellt sind.",
-                         "<b>Show receiver angle</b>\nShows the angle the selected tube group's gyros are set to, under the TDC counter.");
+                return T("<b>Empfängerwinkel anzeigen</b>\nZeigt unter dem TDC-Zähler den Winkel, auf den die Kreisel der gewählten Rohrgruppe eingestellt sind.",
+                         "<b>Show gyro receiver angles</b>\nShows the angle the selected tube group's gyros are set to, under the TDC counter.");
             }
         }
 
@@ -522,7 +561,7 @@ namespace ScopeTdcControls
                 return T("<b>Schusswinkel der Rohre</b>\nWinkel, auf den die Kreisel dieser Rohrgruppe (Bug oder Heck) tatsächlich eingestellt sind. Die empfangende Gruppe läuft dem TDC-Wert nach, bis die Lampe grün ist.",
                          "<b>Tube gyro angle</b>\nThe angle this tube group's (bow or stern) gyros are actually set to. The receiving group catches up with the TDC value until the lamp turns green.")
                        + dbl
-                       + T("\n<i>Strg + Ziehen zum Verschieben.</i>", "\n<i>Ctrl + drag to move.</i>");
+                      ;
             }
         }
 
@@ -538,7 +577,7 @@ namespace ScopeTdcControls
                        + range
                        + T(" Ausgegraut, solange niemand am Rechner sitzt; die übrigen Zähler sind dann ausgeblendet.",
                            " Greyed out while nobody is at the TDC; the other counters are hidden then.")
-                       + T("\n<i>Strg + Ziehen zum Verschieben.</i>", "\n<i>Ctrl + drag to move.</i>");
+                      ;
             }
         }
 
@@ -555,8 +594,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Zielpeilung</b>\nOb der Vorhaltrechner der Peilung dieses Sehrohrs bzw. der UZO folgt. Die Lampe leuchtet <color=#6af>blau</color>, solange er NICHT folgt, und ist dunkel, solange er folgt.\n<i>Strg + Ziehen zum Verschieben.</i>",
-                         "<b>Target bearing</b>\nWhether the TDC follows this periscope's or the UZO's bearing. The lamp is lit <color=#6af>blue</color> while it is NOT following, and dark while it is following.\n<i>Ctrl + drag to move.</i>");
+                return T("<b>Zielpeilung</b>\nOb der Vorhaltrechner der Peilung dieses Sehrohrs bzw. der UZO folgt. Die Lampe leuchtet <color=#6af>blau</color>, solange er NICHT folgt, und ist dunkel, solange er folgt.",
+                         "<b>Target bearing</b>\nWhether the TDC follows this periscope's or the UZO's bearing. The lamp is lit <color=#6af>blue</color> while it is NOT following, and dark while it is following.");
             }
         }
 
@@ -587,7 +626,7 @@ namespace ScopeTdcControls
                            ? T(" Folgt automatisch den angehakten, gefluteten Rohren (keines = Aus); eine Auswahl hier hat Vorrang, bis du die Rohrauswahl änderst.",
                                " Follows the checked, flooded tubes automatically (none = Off); a pick here takes priority until you change which tubes are checked.")
                            : T(" Automatik aus: nur du stellst ihn.", " Auto set receiver is off: only you set it."))
-                       + T("\n<i>Strg + Ziehen zum Verschieben.</i>", "\n<i>Ctrl + drag to move.</i>");
+                      ;
             }
         }
 

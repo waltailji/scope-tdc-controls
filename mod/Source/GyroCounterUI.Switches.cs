@@ -27,7 +27,8 @@ namespace ScopeTdcControls
     public partial class GyroCounterUI
     {
         const float KnobSize = 112f;
-        const float KnobGap = 10f;
+        const float KnobGap = 24f;
+        const float KnobRim = 10f;   // the black face reaches this far beyond the knob's layout square
         const float KnobLabelRadius = KnobSize * 0.5f - 13f;
         const float KnobHandleLength = KnobSize * 0.52f;
         const float SwitchRetry = 2f;
@@ -253,7 +254,7 @@ namespace ScopeTdcControls
             switchesPanel.gameObject.AddComponent<WheelGuard>();
             AddDrag(switchesPanel.gameObject, false).Switches = true;
 
-            float x = DialPad;
+            float x = DialPad + KnobRim;
             Func<string>[] tips = { () => Strings.TipSwitchSingle, () => Strings.TipSwitchSalvo, () => Strings.TipSwitchLever };
             string[] titles = { Strings.SwitchSingle, Strings.SwitchSalvo, Strings.SwitchLever };
             foreach (var kv in specs)
@@ -263,9 +264,9 @@ namespace ScopeTdcControls
                 x += KnobSize + KnobGap;
             }
 
-            float h = DialPad + KnobSize + 8f + 18f + 4f + 18f + DialPad;
-            switchesPanel.sizeDelta = new Vector2(x - KnobGap + DialPad, h);
-            switchesPanel.localScale = Vector3.one * GyroConfig.Scale;
+            float h = DialPad + KnobRim + KnobSize + KnobRim + 8f + 18f + 4f + 18f + DialPad;
+            switchesPanel.sizeDelta = new Vector2(x - KnobGap + KnobRim + DialPad, h);
+            AddResizeGrip(switchesPanel, ResizableWindow.Switches);
             RaiseOverlays(); // panel and pop-ups stay on top
         }
 
@@ -277,14 +278,16 @@ namespace ScopeTdcControls
         /// <summary>A rotary switch (face, labels, handle, name plate, readout) in a window.</summary>
         void AddKnob(TMP_FontAsset font, RectTransform panel, List<KnobSpec> list, float x, string title, Func<string> tip, KnobSpec spec)
         {
-            float y = -DialPad;
+            float y = -DialPad - KnobRim;
             var holder = NewRect("Knob", panel);
             PlaceV(holder, x, y, KnobSize, KnobSize);
             // sharp black rim, the face filling it (no soft brass ring)
-            Disc("Edge", holder, SharpCircleSprite(), KnobSize + 6f, Color.black);
-            var face = Disc("Face", holder, SharpCircleSprite(), KnobSize + 3f, DialFace);
+            Disc("Edge", holder, SharpCircleSprite(), KnobSize + KnobRim * 2f, Color.black);
+            var face = Disc("Face", holder, SharpCircleSprite(), KnobSize + KnobRim * 2f - 3f, DialFace); // larger, so the labels sit well inside
             face.raycastTarget = true;
+            face.alphaHitTestMinimumThreshold = 0.5f; // only the round face catches the mouse; drags just outside it move the window
             spec.Face = face.rectTransform;
+            FaintRing(face.rectTransform, KnobSize * 0.5f - 37f); // round the hub, under the handle
 
             // position labels and marks (inner marks round the hub, as on the boat's tube / salvo switches)
             for (int i = 0; i < spec.Values.Length; i++)
@@ -334,7 +337,7 @@ namespace ScopeTdcControls
             relay.Owner = this;
             relay.Spec = spec;
             if (tip != null) AddTooltip(face.gameObject, tip);
-            y -= KnobSize + 8f;
+            y -= KnobSize + KnobRim + 8f; // below the black face
 
             // name plate
             var plate = NewRect("Plate", panel);
@@ -504,6 +507,16 @@ namespace ScopeTdcControls
 
         static UBOAT.Game.Scene.Audio.ISoundEffectsDatabase soundDb;
         static AudioListener listener;
+        static AudioSource uiAudio;
+        const float SwitchVolume = 0.25f; // well below the clip itself
+        static bool soundLogged;
+
+        static void LogSoundOnce(string what)
+        {
+            if (soundLogged) return;
+            soundLogged = true;
+            Debug.Log(ScopeTdcControlsMod.Tag + " switch sounds: " + what);
+        }
 
         /// <summary>
         /// Play the boat's knob click for our switch, through the game's sound database
@@ -517,19 +530,28 @@ namespace ScopeTdcControls
         /// <summary>Play one of the game's sound effects by name, unpositioned.</summary>
         static void PlayGameSound(string sound)
         {
-            if (string.IsNullOrEmpty(sound)) return;
+            if (string.IsNullOrEmpty(sound)) { LogSoundOnce("this knob has no sound name"); return; }
             try
             {
                 if (soundDb == null)
                     soundDb = AccessTools.Field(typeof(PresetDial), "soundEffectsDatabase").GetValue(null) as UBOAT.Game.Scene.Audio.ISoundEffectsDatabase;
-                if (soundDb == null) return;
-                // the game's clips are 3D: GetClip(tag, shuffle) would put it at the world
-                // origin, far out of earshot, so play it right at the listener instead
+                if (soundDb == null) { LogSoundOnce("no sound database"); return; }
+                // take the clip the game would play for that knob, but play it ourselves as a
+                // plain 2D UI sound: the game's own pooled 3D sources are placed in the boat
+                // (and its interior mix is quiet or muted while looking through the scope)
                 if (listener == null || !listener.isActiveAndEnabled) listener = UnityEngine.Object.FindObjectOfType<AudioListener>();
-                Vector3 at = listener != null ? listener.transform.position : (Camera.main != null ? Camera.main.transform.position : Vector3.zero);
-                var clip = soundDb.GetClip(sound, at, false);
-                if (clip != null) clip.Play();
-                else if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " no sound clip '" + sound + "'");
+                Vector3 at = listener != null ? listener.transform.position : Vector3.zero;
+                var effect = soundDb.GetClip(sound, at, false);
+                var clip = effect != null ? effect.clip : null;
+                if (clip == null) { LogSoundOnce("no clip for '" + sound + "'"); return; }
+                if (uiAudio == null && instance != null)
+                {
+                    uiAudio = instance.gameObject.AddComponent<AudioSource>();
+                    uiAudio.playOnAwake = false;
+                    uiAudio.spatialBlend = 0f;     // 2D: same loudness wherever the camera is
+                    uiAudio.ignoreListenerPause = true;
+                }
+                if (uiAudio != null) uiAudio.PlayOneShot(clip, SwitchVolume);
             }
             catch (Exception e)
             {

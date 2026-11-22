@@ -40,7 +40,7 @@ A spring-loaded Aus / Schuß lever: pull it to Schuß to fire the selected tubes
 Two buttons above and below the stock periscope raise/lower control run the periscope all the way up or down at its normal speed.
 
 ### Settings (saved between sessions)
-Show receiver angle · Show active receivers only · Show parallax · Auto set receiver · Auto set parallax · Realistic TDC follower · Realistic receiver sync · Single torpedo launch fix · TDC operator required · Voice callouts
+Show gyro receiver angles · Show active receivers only · Show parallax angle · Auto set gyro receiver · Auto set parallax mode · Realistic TDC follower · Realistic receiver sync · Single torpedo launch fix · TDC operator required · Voice callouts
 
 ### Fixes to the base game
 - **Single torpedo launch fix**: a tube checked a few seconds after pressing fire is no longer launched too

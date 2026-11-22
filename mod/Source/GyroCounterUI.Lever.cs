@@ -123,7 +123,7 @@ namespace ScopeTdcControls
             y -= 22f;
 
             leverPanel.sizeDelta = new Vector2(LeverW + DialPad * 2f, -y + DialPad);
-            leverPanel.localScale = Vector3.one * GyroConfig.Scale;
+            AddResizeGrip(leverPanel, ResizableWindow.Lever);
             leverSound = null;          // looked up again for this boat
             leverSoundPos = LeverPos.Off;
             leverPos = LeverPos.Off;

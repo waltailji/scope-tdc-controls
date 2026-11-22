@@ -84,15 +84,15 @@ namespace ScopeTdcControls
             directionsPanel.gameObject.AddComponent<WheelGuard>();
             AddDrag(directionsPanel.gameObject, false).Directions = true;
 
-            float x = DialPad;
+            float x = DialPad + KnobRim;
             AddKnob(font, directionsPanel, dirKnobs, x, Strings.DirTarget, () => Strings.TipDirTarget, tx);
             x += KnobSize + KnobGap;
             AddKnob(font, directionsPanel, dirKnobs, x, Strings.DirShot, () => Strings.TipDirShot, rx);
             x += KnobSize + KnobGap;
 
-            float h = DialPad + KnobSize + 8f + 18f + 4f + 18f + DialPad;
-            directionsPanel.sizeDelta = new Vector2(x - KnobGap + DialPad, h);
-            directionsPanel.localScale = Vector3.one * GyroConfig.Scale;
+            float h = DialPad + KnobRim + KnobSize + KnobRim + 8f + 18f + 4f + 18f + DialPad;
+            directionsPanel.sizeDelta = new Vector2(x - KnobGap + KnobRim + DialPad, h);
+            AddResizeGrip(directionsPanel, ResizableWindow.Directions);
             RaiseOverlays(); // panel and pop-ups stay on top
         }
 

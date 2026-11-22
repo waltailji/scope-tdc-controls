@@ -12,37 +12,58 @@ Compact mechanical-style counters sit under the bearing tape. Every drum rolls o
 If nobody is manning the TDC, the TDC counter greys out with a "TDC not manned" note.
 [b]Double-click a Bow/Stern counter[/b] to switch to that receiver: the scope swings round until the TDC angle matches what those tubes are already set to, so they're ready instantly.
 
-[h2]Fire-control panel[/h2]
-Change TDC or torpedo selector options:
+[h2]Control panel[/h2]
+The "Scope TDC Controls" panel beside the periscope raise/lower control (roll it up to its title bar with the caret):
 [list]
-[*][b]Target bearing[/b] – Following / Not following, with a blue lamp while not following
-[*][b]Bearing source[/b] – None, UZO, Observation or Attack periscope
-[*][b]Gyro angle receiver[/b] – Off, Bow or Stern
+[*][b]Target bearing[/b] – Follow / Not follow, with a blue lamp while not following
 [*][b]Parallax mode[/b] – Forward or Backward
+[*][b]Windows[/b] – check boxes to show or hide the gyro angle counters, TDC dials, firing selector, direction selector and fire lever, plus a button to reset window sizes
+[*][b]Settings[/b] drop-down (see below)
 [/list]
-A button in the scope screen's stock left sidebar (next to the chronometer) shows or hides the fire-control panel and the TDC dials.
+A button in the scope screen's stock left sidebar (next to the chronometer) shows or hides the panel and all its windows.
 
 [h2]TDC dials[/h2]
-Set up your firing solution without leaving the scope: a window on the left of the scope view holds the TDC's [b]AOB[/b], [b]target speed[/b] and [b]target distance[/b] dials, styled after the real ones.
+Set up your firing solution without leaving the scope: a window holding the TDC's [b]AOB[/b], [b]target speed[/b], [b]target distance[/b] and [b]target length[/b] dials, styled after the real ones.
 [list]
-[*]Grab a dial and turn it, just like on the TDC; hold Shift for fine adjustment, or use the mouse wheel to step
-[*][b]AOB[/b] – works like the TDC's own dial: turning it moves a ghost pointer, and on release the TDC's AOB motor turns to it (the readout shows "current > target" meanwhile)
-[*][b]Target speed[/b] – 0–55 kn; [b]Target distance[/b] – 3–100 hm on the TDC's own stretched scale
-[*]Exact readout under each dial; scrolling over the window no longer drops you out of the scope view
+[*]Grab a dial and turn it, just like on the TDC, or click a value on its scale; hold Shift for fine adjustment, or use the mouse wheel to step
+[*][b]AOB (Lagenwinkel)[/b] – red port / green starboard halves and a window with the rolling ones digits; the TDC follows the dial as you turn it
+[*][b]Target speed[/b] – 0–55 kn; [b]Target distance[/b] – 3–100 hm on the TDC's own stretched scale, with the TDC's knob
+[*][b]Target length (Streubreite)[/b] – 100–200 m on a turning ring, shown only while a spread is selected
+[*][b]Voice callouts[/b] – the crew member at the scope announces what you dial in, with the game's own voice lines
 [*]Greyed out and locked while the TDC isn't manned
 [/list]
+
+[h2]Firing selector & direction selector[/h2]
+The boat's rotary switches, in off-white windows like the real switch boxes, with the boat's own knob clicks:
+[list]
+[*][b]Firing selector[/b] – Einzelschuß (single tube / spread), Fächerschuß (salvo tubes) and T.Abf. Schalter (firing station); only your sub's positions are offered
+[*][b]Direction selector[/b] – Zielrichtung (bearing source: attack periscope, UZO, observation periscope or off) and Schußrichtung (gyro angle receiver: bow, stern or off)
+[/list]
+
+[h2]Fire lever[/h2]
+A spring-loaded Aus / Schuß lever: press and hold it to fire the selected tubes through the boat's own launch lever. Its ready lamp only turns green when the shot makes sense – hover it to see why it's red:
+[list]
+[*]no tube selected, or a selected tube not flooded
+[*]gyro angle receiver not on the selected tubes' end
+[*]target beyond the torpedo's run (the TDC's "max distance to target" drum) – how the watch officer made the system safe
+[*]gyro angle past the ±135° stop
+[*]dark = no power: the firing station switch is on Off
+[/list]
+While the lamp is red, the lever does not fire.
 
 [h2]Periscope - Raise fully / lower fully[/h2]
 Two buttons above and below the stock periscope raise/lower control run the periscope all the way up or down. Click again (or use a stock raise/lower button) to stop.
 
 [h2]Settings (saved between sessions)[/h2]
 [list]
-[*][b]Show receiver angle / Show active receivers only / Show parallax[/b] – Control which gyro and parallax angles you want to see 
-[*][b]Auto set receiver[/b] – automatically sets the selected gyro angle receiver based on what torpedo tubes are flooded and selected (none = off; bow and stern both checked = the direction your scope is viewing)
-[*][b]Auto set parallax[/b] – automatically sets parallax mode (forward/backward) based on your selected tube, gyro receiver, or (when none selected) the direction of your scope.
+[*][b]Show gyro receiver angles / Show active receivers only / Show parallax angle[/b] – Control which gyro and parallax angles you want to see
+[*][b]Auto set gyro receiver[/b] – automatically sets the selected gyro angle receiver based on what torpedo tubes are flooded and selected (none = off; bow and stern both checked = the direction your scope is viewing)
+[*][b]Auto set parallax mode[/b] – automatically sets parallax mode (forward/backward) based on your selected tube, gyro receiver, or (when none selected) the direction of your scope.
 [*][b]Realistic TDC follower[/b] – turn off for the TDC gyro angle calculation to update 10x faster when moving your scope around.
 [*][b]Realistic receiver sync[/b] – turn off for your gyro angle receivers to synchronize 10× faster; no more waiting ages for you to use your aft torpedoes.
 [*][b]TDC operator required[/b] – turn off to use the TDC without a crew member at it
+[*][b]Voice callouts[/b] – crew announcements for values set with the TDC dials
+[*][b]Ctrl+drag to move[/b] – off (default): drag a window's background to move it; on: hold Ctrl to move
 [/list]
 
 [h2]Fixes to the base game[/h2]
@@ -62,7 +83,7 @@ Two buttons above and below the stock periscope raise/lower control run the peri
 [*]Switch to "None" on the gyro receiver selector.
 [*]Turn your scope to a point to a relative bearing of 180 degrees.
 [*]Switch to "Stern" on the gyro angle receiver selector and allow the stern gyro to fully synchronize.
-[*]Select "None" on the gyro receiver selector. 
+[*]Select "None" on the gyro receiver selector.
 [/olist]
 
 Keeping your gyros set to the correct directions, and leaving the gyro angle receiver selector set to "None" when switching directions or when not on an active attack will help save a lot of time and frustration with making rapid successive torpedo launches in both directions (in the middle of a convoy).  The stock system lead to a lot of unnecessary gyro chasing when performing routine scanning with the scopes and made it difficult to optimize attack planning in both directions.
@@ -71,14 +92,15 @@ Keeping your gyros set to the correct directions, and leaving the gyro angle rec
 [list]
 [*]English and German, following the game's language
 [*]Pop-up description on every element
-[*]Hold Ctrl and drag the counters, panel or dial window to move them
-[*]Hiding the game UI (Alt) doesn't move them
+[*]Drag a window's background to move it; resize the dial, selector and lever windows with their corner grip
+[*]Hiding the game UI (Alt) doesn't move them; the overlay stays out of loading screens and disappears as soon as you quit
 [*]Works with or without the Torpedo Room mod
 [*]Stores nothing in your save game; all settings live in [i]scope-tdc-controls-config.txt[/i]
 [/list]
 
 [h2]Version history[/h2]
 [list]
+[*][b]1.2[/b] – TDC dials restyled after the real TDC (Lagenwinkel AOB, knob distance dial, turning target length ring for spreads), click-to-set and voice callouts; firing selector and direction selector windows with the boat's knob clicks; spring-loaded fire lever with a ready lamp; reworked control panel (title, collapse caret, window check boxes); off-white resizable windows; plain drag to move; overlay hidden during loading and on quit
 [*][b]1.1[/b] – TDC dial window (AOB, target speed, target distance); add bottom toolbar button to show/hide the panel and dials; raise fully / lower fully buttons; gyros display now start in the right place right after loading a game
 [*][b]1.0[/b] – first release
 [/list]

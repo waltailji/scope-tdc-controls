@@ -77,6 +77,13 @@ namespace ScopeTdcControls
         static void Prefix() { GyroCounterUI.OnGameQuitting(); }
     }
 
+    /// <summary>Quit to the menu (or the save-then-quit path) goes through here too: hide before the screen goes dark.</summary>
+    [HarmonyPatch(typeof(UBOAT.Game.Core.GameState), "ExitToMenu")]
+    static class GameState_ExitToMenu_Patch
+    {
+        static void Prefix() { GyroCounterUI.OnGameQuitting(); }
+    }
+
     /// <summary>Tracks the on-screen bearing tape so the counter can sit next to it.</summary>
     [HarmonyPatch(typeof(CompassUI), "LateUpdate")]
     static class CompassUI_LateUpdate_Patch

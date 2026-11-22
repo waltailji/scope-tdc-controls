@@ -17,13 +17,11 @@ namespace ScopeTdcControls
     ///    "Update - Target Speed X" + knots, "Update - Distance To Target X" in
     ///    metres), led in with "Attack Parameters Update" when nothing else is
     ///    being reported;
-    ///  - AOB reaches the TDC when the line ends, exactly as in
-    ///    Periscope.CourseTicket_Stopped; speed and distance are already set
-    ///    by the dial and are only announced.
+    ///  - the dials have already set the value on the TDC; the crew only
+    ///    announces it after you let go.
     /// Changing a value while its line is still being spoken queues one more
     /// line with the latest value. Nobody at the scope (or the speech helper
-    /// missing after a game update): returns false so the caller applies the
-    /// value silently.
+    /// missing after a game update): nothing is said.
     /// </summary>
     public static class VoiceCallouts
     {
@@ -32,7 +30,6 @@ namespace ScopeTdcControls
         sealed class Channel
         {
             public Func<InteractiveCharacter, float, IStatementTicket> Say;
-            public Action<TorpedoCalculator, float> Apply; // null = value already set
             public IStatementTicket Ticket;
             public float Started;
             public float Spoken;
@@ -45,7 +42,7 @@ namespace ScopeTdcControls
         static MethodInfo passShort, passLong;   // Periscope.PassNumericValueToTorpedoCalculator (5 / 6 args)
         static string[] meterKeys;
 
-        static readonly Channel aob = new Channel { Say = SayAob, Apply = ApplyAob };
+        static readonly Channel aob = new Channel { Say = SayAob }; // the dial has already set it
         static readonly Channel speed = new Channel { Say = SaySpeed };
         static readonly Channel distance = new Channel { Say = SayDistance };
 
@@ -121,24 +118,12 @@ namespace ScopeTdcControls
             }) as IStatementTicket;
         }
 
-        /// <summary>Periscope.CourseTicket_Stopped: AOB motor and tracking on, impact angle set for the new AOB.</summary>
-        static void ApplyAob(TorpedoCalculator tdc, float value)
-        {
-            if (tdc == null) return;
-            tdc.IsAOBMotorOn = true;
-            tdc.ApplyCourseChanges = true;
-            float impact = tdc.ComputeImpactAngleForDesiredAOB(Mathf.DeltaAngle(0f, value), tdc.ImpactAngle);
-            if (float.IsNaN(impact) || float.IsInfinity(impact)) return;
-            tdc.DesiredImpactAngle = impact;
-            tdc.ImpactAngle = impact;
-        }
-
         // ---- requests from the dials
 
-        /// <summary>Speak the AOB; it reaches the TDC when the line ends. False = not spoken, apply it yourself.</summary>
-        public static bool RequestAob(TorpedoCalculator tdc, float value) { return Request(aob, tdc, value); }
-
         /// <summary>Announce a speed already set on the TDC.</summary>
+        /// <summary>Announce an AOB already set on the TDC.</summary>
+        public static void AnnounceAob(TorpedoCalculator tdc, float value) { Request(aob, tdc, value); }
+
         public static void AnnounceSpeed(TorpedoCalculator tdc, float value) { Request(speed, tdc, value); }
 
         /// <summary>Announce a distance already set on the TDC.</summary>
@@ -190,10 +175,9 @@ namespace ScopeTdcControls
         {
             if (!ReferenceEquals(c.Ticket, t)) return;
             c.Ticket = null;
-            if (c.Apply != null) c.Apply(c.Tdc, c.Spoken);
             if (!c.Queued) return;
             c.Queued = false;
-            if (!Start(c, c.Tdc, c.QueuedValue) && c.Apply != null) c.Apply(c.Tdc, c.QueuedValue);
+            Start(c, c.Tdc, c.QueuedValue); // one more line with the latest value
         }
 
         /// <summary>Safety net for a line whose end is never reported.</summary>

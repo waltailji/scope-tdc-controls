@@ -94,7 +94,7 @@ namespace ScopeTdcControls
         TextMeshProUGUI tipText;
         Lamp syncLamp, followLamp;
         Btn btnSettings;
-        Btn btnFollow, btnNoFollow;
+        Btn btnFollow, btnNoFollow, btnResetSizes;
         RectTransform settingsPanel;      // drop-down under the control panel
         bool settingsOpen;
         readonly List<Check> checks = new List<Check>();
@@ -164,6 +164,7 @@ namespace ScopeTdcControls
         public static void Attach(PeriscopeUI ui)
         {
             periscopeUI = ui;
+            quitting = false; // back in a game after "exit to menu"
             GyroConfig.Load();
             Strings.Resolve();
             TdcOperator.Apply(); // so the station bar's TDC button reflects the setting
@@ -582,7 +583,7 @@ namespace ScopeTdcControls
             Frame(controlsPanel, true);
 
             // width = widest label
-            string[] labels = { Strings.BearingHeader, Strings.ParallaxHeader, Strings.WindowsHeader, "+ " + Strings.SettingsHeader };
+            string[] labels = { Strings.BearingHeader, Strings.ParallaxHeader, Strings.WindowsHeader, Strings.ResetSizes, "+ " + Strings.SettingsHeader };
             string[] windowLabels = { Strings.WinGyros, Strings.WinDials, Strings.WinSwitches, Strings.WinDirections, Strings.WinLever };
             float inner = 80f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 18f);
@@ -603,7 +604,26 @@ namespace ScopeTdcControls
             title.raycastTarget = true;
             PlaceV(title.rectTransform, CPad, y, inner, RowH);
             AddTooltip(title.gameObject, () => "<b>" + Strings.ModTitle + "</b>\nv" + ScopeTdcControlsMod.Version + " " + Strings.ByAuthor);
+            // caret at the right of the title: roll the panel up to its title bar and down again
+            var caretHit = NewRect("Caret", controlsPanel);
+            PlaceV(caretHit, CPad + inner - RowH, y, RowH, RowH);
+            var caretBg = caretHit.gameObject.AddComponent<Image>();
+            caretBg.color = Color.clear;
+            var caretBtn = caretHit.gameObject.AddComponent<Button>();
+            caretBtn.transition = Selectable.Transition.None;
+            caretBtn.targetGraphic = caretBg;
+            caretBtn.onClick.AddListener(TogglePanelCollapsed);
+            AddTooltip(caretHit.gameObject, () => Strings.TipCollapse);
+            caretArrow = NewRect("Arrow", caretHit);
+            caretArrow.anchorMin = caretArrow.anchorMax = caretArrow.pivot = new Vector2(0.5f, 0.5f);
+            caretArrow.sizeDelta = new Vector2(9f, 7f);
+            var caretImg = caretArrow.gameObject.AddComponent<Image>();
+            caretImg.sprite = TriangleSprite();
+            caretImg.color = DigitLight;
+            caretImg.raycastTarget = false;
+            controlsTitleObjects = new List<GameObject> { title.gameObject, caretHit.gameObject };
             y -= RowH + RowGap;
+            controlsCollapsedH = CPad + RowH + CPad;
             Divider(ref y, inner);
 
             // --- target bearing follow-up: blue lamp in the header = NOT following ---
@@ -636,16 +656,51 @@ namespace ScopeTdcControls
             MakeCheck(font, Strings.WinSwitches, ref y, inner, () => GyroConfig.ShowSwitches, v => { if (v != GyroConfig.ShowSwitches) ToggleSwitchesWindow(); }, () => Strings.TipWinSwitches, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinDirections, ref y, inner, () => GyroConfig.ShowDirections, v => { if (v != GyroConfig.ShowDirections) ToggleDirectionsWindow(); }, () => Strings.TipWinDirections, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinLever, ref y, inner, () => GyroConfig.ShowLever, v => { if (v != GyroConfig.ShowLever) ToggleLeverWindow(); }, () => Strings.TipWinLever, controlsPanel, windowChecks);
+            btnResetSizes = MakeButton(controlsPanel, font, Strings.ResetSizes, ref y, inner, ResetWindowSizes, () => Strings.TipResetSizes);
             Divider(ref y, inner);
 
             // --- settings drop-down toggle ---
             btnSettings = MakeButton(controlsPanel, font, SettingsLabel(), ref y, inner, ToggleSettings, () => Strings.TipSettings);
 
             controlsPanel.sizeDelta = new Vector2(inner + CPad * 2f, -y + CPad - RowGap);
+            controlsFullH = controlsPanel.sizeDelta.y;
             controlsPanel.localScale = Vector3.one * GyroConfig.Scale;
+
+            // everything under the title bar, for rolling the panel up (the drop-down is handled on its own)
+            controlsBody.Clear();
+            foreach (Transform child in controlsPanel)
+                if (!controlsTitleObjects.Contains(child.gameObject)) controlsBody.Add(child.gameObject);
 
             AddDrag(controlsPanel.gameObject, true);
             BuildSettings(font);
+            ApplyPanelCollapsed();
+        }
+
+        // ------------------------------------------------------------------ roll the panel up / down
+
+        RectTransform caretArrow;
+        List<GameObject> controlsTitleObjects = new List<GameObject>();
+        readonly List<GameObject> controlsBody = new List<GameObject>();
+        float controlsFullH, controlsCollapsedH;
+
+        void TogglePanelCollapsed()
+        {
+            GyroConfig.PanelCollapsed = !GyroConfig.PanelCollapsed;
+            GyroConfig.Save("PanelCollapsed", GyroConfig.PanelCollapsed);
+            HideTip();
+            ApplyPanelCollapsed();
+            if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
+        }
+
+        /// <summary>Rolled up: only the title bar shows (and no drop-down); the caret points right, else down.</summary>
+        void ApplyPanelCollapsed()
+        {
+            if (controlsPanel == null) return;
+            bool up = GyroConfig.PanelCollapsed;
+            foreach (var go in controlsBody) if (go != null && go.activeSelf == up) go.SetActive(!up);
+            if (settingsPanel != null) settingsPanel.gameObject.SetActive(!up && settingsOpen);
+            controlsPanel.sizeDelta = new Vector2(controlsPanel.sizeDelta.x, up ? controlsCollapsedH : controlsFullH);
+            if (caretArrow != null) caretArrow.localEulerAngles = new Vector3(0f, 0f, up ? -90f : 180f);
         }
 
         void Divider(ref float y, float inner)
@@ -699,7 +754,7 @@ namespace ScopeTdcControls
         void ToggleSettings()
         {
             settingsOpen = !settingsOpen;
-            if (settingsPanel != null) settingsPanel.gameObject.SetActive(settingsOpen);
+            if (settingsPanel != null) settingsPanel.gameObject.SetActive(settingsOpen && !GyroConfig.PanelCollapsed);
             if (settingsOpen) RaiseOverlays(); // the drop-down over any of our windows below the panel
             if (btnSettings != null) btnSettings.Label.text = SettingsLabel();
         }
@@ -710,7 +765,7 @@ namespace ScopeTdcControls
             settingsPanel = NewRect("GyroSettings", controlsPanel);
             Frame(settingsPanel, true);
 
-            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts };
+            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag };
             float inner = 0f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f);
 
@@ -760,6 +815,10 @@ namespace ScopeTdcControls
                 () => GyroConfig.VoiceCallouts,
                 v => { GyroConfig.VoiceCallouts = v; GyroConfig.Save("VoiceCallouts", v); },
                 () => Strings.TipOptVoiceCallouts);
+            MakeCheck(font, Strings.OptCtrlDrag, ref y, inner,
+                () => GyroConfig.CtrlDragToMove,
+                v => { GyroConfig.CtrlDragToMove = v; GyroConfig.Save("CtrlDragToMove", v); },
+                () => Strings.TipOptCtrlDrag);
 
             settingsPanel.sizeDelta = new Vector2(inner + CPad * 2f, -y + CPad - RowGap);
             settingsPanel.gameObject.SetActive(settingsOpen);
@@ -1189,7 +1248,7 @@ namespace ScopeTdcControls
 
             public void OnBeginDrag(PointerEventData e)
             {
-                dragging = CtrlHeld;
+                dragging = CtrlHeld || !GyroConfig.CtrlDragToMove; // setting off: a plain drag on the background moves it
                 if (!dragging) { e.pointerDrag = null; return; }
                 if (Owner != null) Owner.HideTip();
             }
@@ -1504,6 +1563,7 @@ namespace ScopeTdcControls
         /// <summary>The player confirmed quitting the game: hide at once (the game fades out before it really quits).</summary>
         public static void OnGameQuitting()
         {
+            if (!quitting) Debug.Log(ScopeTdcControlsMod.Tag + " leaving the game: overlay hidden");
             quitting = true;
             if (instance != null)
             {
@@ -1767,6 +1827,7 @@ namespace ScopeTdcControls
             if (followLamp != null) followLamp.Set(!follow, LampBlue); // blue = NOT following, dark = following
             if (btnFollow != null) btnFollow.Paint(follow, true);
             if (btnNoFollow != null) btnNoFollow.Paint(!follow, true);
+            if (btnResetSizes != null) btnResetSizes.Paint(false, true);
             if (btnSettings != null) btnSettings.Paint(settingsOpen, true);
             PaintChecks(windowChecks);
             if (settingsOpen) PaintChecks(checks);
@@ -2007,7 +2068,8 @@ namespace ScopeTdcControls
                 pivot = new Vector2(0.5f, 0.5f);
             }
             controlsPanel.pivot = pivot;
-            controlsPanel.anchoredPosition = basePos + new Vector2(GyroConfig.ControlsOffsetX, GyroConfig.ControlsOffsetY);
+            controlsPanel.anchoredPosition = basePos + new Vector2(GyroConfig.ControlsOffsetX, GyroConfig.ControlsOffsetY)
+                + new Vector2(0f, (controlsFullH - controlsPanel.sizeDelta.y) * (1f - pivot.y) * GyroConfig.Scale); // rolled up: the title bar stays put
 
             if (settingsPanel != null)
             {
