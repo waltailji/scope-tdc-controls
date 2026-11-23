@@ -31,6 +31,7 @@ namespace ScopeTdcControls
         static readonly string[] Templates = { "chronometerButton", "chronometerButton2" };
 
         static readonly List<Toggle> buttons = new List<Toggle>();
+        static readonly Dictionary<Toggle, Toggle> clones = new Dictionary<Toggle, Toggle>(); // stock button -> our copy
         static readonly Dictionary<Sprite, Sprite> redrawn = new Dictionary<Sprite, Sprite>();
         static MethodInfo swapToggleRefresh;
         static bool loggedLayout;
@@ -53,9 +54,12 @@ namespace ScopeTdcControls
                 catch { }
                 if (template == null) continue;
 
-                var parent = template.transform.parent;
-                var existing = parent != null ? parent.Find(CloneName) : null;
-                Toggle button = existing != null ? existing.GetComponent<Toggle>() : Create(template, onChanged);
+                Toggle button;
+                if (!clones.TryGetValue(template, out button) || button == null)
+                {
+                    button = Create(template, onChanged);
+                    clones[template] = button;
+                }
                 if (button == null) continue;
                 if (!buttons.Contains(button)) buttons.Add(button);
                 button.gameObject.SetActive(GyroConfig.ShowControls);
@@ -91,8 +95,8 @@ namespace ScopeTdcControls
             {
                 var go = UnityEngine.Object.Instantiate(template.gameObject, template.transform.parent);
                 go.name = CloneName;
-                go.transform.SetSiblingIndex(template.transform.GetSiblingIndex() + 1);
                 go.SetActive(true);
+                Place(go.transform as RectTransform, template.transform as RectTransform);
 
                 var toggle = go.GetComponent<Toggle>();
                 if (toggle == null) { UnityEngine.Object.Destroy(go); return null; }
@@ -148,6 +152,64 @@ namespace ScopeTdcControls
                 return null;
             }
         }
+
+        /// <summary>
+        /// Put our button in the toolbar row, right after the stock button's own item. The
+        /// chronometer (velocity tool) button sits inside "Velocity Group" with the velocity
+        /// input, which doesn't lay out its children, so a copy left in there landed on top
+        /// of it. So: climb to the item that the nearest layout group arranges and insert
+        /// after it; with no layout group up there, place it beside the stock button by hand.
+        /// </summary>
+        static void Place(RectTransform rect, RectTransform template)
+        {
+            if (rect == null || template == null) return;
+            Transform item = template, container = template.parent;
+            for (int depth = 0; depth < 4 && container != null; depth++)
+            {
+                if (container.GetComponent<LayoutGroup>() != null)
+                {
+                    rect.SetParent(container, false);
+                    rect.SetSiblingIndex(item.GetSiblingIndex() + 1);
+                    Log("in layout '" + container.name + "' after '" + item.name + "'");
+                    return;
+                }
+                item = container;
+                container = container.parent;
+            }
+
+            // no layout: same parent, shifted one button along the toolbar (the way its buttons run)
+            rect.SetSiblingIndex(template.GetSiblingIndex() + 1);
+            bool vertical = RunsVertically(template);
+            float gap = 4f;
+            Vector2 step = vertical ? new Vector2(0f, -(template.rect.height + gap)) : new Vector2(template.rect.width + gap, 0f);
+            rect.anchoredPosition = template.anchoredPosition + step;
+            Log("beside '" + template.name + "' in '" + (template.parent != null ? template.parent.name : "?") + "' (" + (vertical ? "below" : "to the right") + ")");
+        }
+
+        /// <summary>Whether the stock buttons next to this one are stacked rather than in a row.</summary>
+        static bool RunsVertically(RectTransform template)
+        {
+            var parent = template.parent;
+            if (parent == null) return false;
+            float dx = 0f, dy = 0f;
+            foreach (Transform sibling in parent)
+            {
+                var r = sibling as RectTransform;
+                if (r == null || r == template || r.name == CloneName || r.GetComponent<Selectable>() == null) continue;
+                dx = Mathf.Max(dx, Mathf.Abs(r.anchoredPosition.x - template.anchoredPosition.x));
+                dy = Mathf.Max(dy, Mathf.Abs(r.anchoredPosition.y - template.anchoredPosition.y));
+            }
+            return dy > dx;
+        }
+
+        static void Log(string where)
+        {
+            if (loggedPlace) return;
+            loggedPlace = true;
+            Debug.Log(ScopeTdcControlsMod.Tag + " sidebar button placed " + where);
+        }
+
+        static bool loggedPlace;
 
         // ------------------------------------------------------------------ artwork
 

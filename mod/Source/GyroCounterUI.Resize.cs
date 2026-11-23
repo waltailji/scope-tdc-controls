@@ -13,7 +13,7 @@ namespace ScopeTdcControls
     /// </summary>
     public partial class GyroCounterUI
     {
-        enum ResizableWindow { Dials, Switches, Directions, Lever, Torpedo }
+        enum ResizableWindow { Dials, Switches, Directions, Lever, Torpedo, Spread, TurnRate, Tubes }
 
         const float GripSize = 12f;
 
@@ -25,6 +25,9 @@ namespace ScopeTdcControls
                 case ResizableWindow.Switches: return GyroConfig.SwitchesScale;
                 case ResizableWindow.Directions: return GyroConfig.DirectionsScale;
                 case ResizableWindow.Torpedo: return GyroConfig.TorpedoScale;
+                case ResizableWindow.Spread: return GyroConfig.SpreadScale;
+                case ResizableWindow.TurnRate: return GyroConfig.TurnRateScale;
+                case ResizableWindow.Tubes: return GyroConfig.TubesScale;
                 default: return GyroConfig.LeverScale;
             }
         }
@@ -37,6 +40,9 @@ namespace ScopeTdcControls
                 case ResizableWindow.Switches: return switchesPanel;
                 case ResizableWindow.Directions: return directionsPanel;
                 case ResizableWindow.Torpedo: return torpedoPanel;
+                case ResizableWindow.Spread: return spreadPanel;
+                case ResizableWindow.TurnRate: return turnPanel;
+                case ResizableWindow.Tubes: return tubesPanel;
                 default: return leverPanel;
             }
         }
@@ -68,6 +74,9 @@ namespace ScopeTdcControls
                 case ResizableWindow.Switches: GyroConfig.SwitchesScale = scale; break;
                 case ResizableWindow.Directions: GyroConfig.DirectionsScale = scale; break;
                 case ResizableWindow.Torpedo: GyroConfig.TorpedoScale = scale; break;
+                case ResizableWindow.Spread: GyroConfig.SpreadScale = scale; break;
+                case ResizableWindow.TurnRate: GyroConfig.TurnRateScale = scale; break;
+                case ResizableWindow.Tubes: GyroConfig.TubesScale = scale; break;
                 default: GyroConfig.LeverScale = scale; break;
             }
             if (panel != null) panel.localScale = Vector3.one * EffectiveScale(w);
@@ -79,9 +88,12 @@ namespace ScopeTdcControls
             switch (w)
             {
                 case ResizableWindow.Dials: GyroConfig.DialsOffsetX += by.x; GyroConfig.DialsOffsetY += by.y; break;
-                case ResizableWindow.Switches: GyroConfig.SwitchesOffsetX += by.x; GyroConfig.SwitchesOffsetY += by.y; break;
+                case ResizableWindow.Switches: ShiftAnchorable(AnchoredWindow.Switches, by); break;
                 case ResizableWindow.Directions: GyroConfig.DirectionsOffsetX += by.x; GyroConfig.DirectionsOffsetY += by.y; break;
                 case ResizableWindow.Torpedo: GyroConfig.TorpedoOffsetX += by.x; GyroConfig.TorpedoOffsetY += by.y; break;
+                case ResizableWindow.Spread: ShiftAnchorable(AnchoredWindow.Spread, by); break;
+                case ResizableWindow.TurnRate: ShiftAnchorable(AnchoredWindow.TurnRate, by); break;
+                case ResizableWindow.Tubes: GyroConfig.TubesOffsetX += by.x; GyroConfig.TubesOffsetY += by.y; break;
                 default: GyroConfig.LeverOffsetX += by.x; GyroConfig.LeverOffsetY += by.y; break;
             }
         }
@@ -96,11 +108,23 @@ namespace ScopeTdcControls
                     break;
                 case ResizableWindow.Switches:
                     GyroConfig.SavePrecise("SwitchesScale", GyroConfig.SwitchesScale);
-                    GyroConfig.Save("SwitchesOffsetX", GyroConfig.SwitchesOffsetX); GyroConfig.Save("SwitchesOffsetY", GyroConfig.SwitchesOffsetY);
+                    SaveAnchoring(AnchoredWindow.Switches);
                     break;
                 case ResizableWindow.Torpedo:
                     GyroConfig.SavePrecise("TorpedoScale", GyroConfig.TorpedoScale);
                     GyroConfig.Save("TorpedoOffsetX", GyroConfig.TorpedoOffsetX); GyroConfig.Save("TorpedoOffsetY", GyroConfig.TorpedoOffsetY);
+                    break;
+                case ResizableWindow.Tubes:
+                    GyroConfig.SavePrecise("TubesScale", GyroConfig.TubesScale);
+                    GyroConfig.Save("TubesOffsetX", GyroConfig.TubesOffsetX); GyroConfig.Save("TubesOffsetY", GyroConfig.TubesOffsetY);
+                    break;
+                case ResizableWindow.TurnRate:
+                    GyroConfig.SavePrecise("TurnRateScale", GyroConfig.TurnRateScale);
+                    SaveAnchoring(AnchoredWindow.TurnRate);
+                    break;
+                case ResizableWindow.Spread:
+                    GyroConfig.SavePrecise("SpreadScale", GyroConfig.SpreadScale);
+                    SaveAnchoring(AnchoredWindow.Spread);
                     break;
                 case ResizableWindow.Directions:
                     GyroConfig.SavePrecise("DirectionsScale", GyroConfig.DirectionsScale);
@@ -117,7 +141,7 @@ namespace ScopeTdcControls
         void ResetWindowSizes()
         {
             HideTip();
-            foreach (ResizableWindow w in new[] { ResizableWindow.Dials, ResizableWindow.Switches, ResizableWindow.Directions, ResizableWindow.Lever, ResizableWindow.Torpedo })
+            foreach (ResizableWindow w in new[] { ResizableWindow.Dials, ResizableWindow.Switches, ResizableWindow.Directions, ResizableWindow.Lever, ResizableWindow.Torpedo, ResizableWindow.Spread, ResizableWindow.TurnRate, ResizableWindow.Tubes })
             {
                 float normal = w == ResizableWindow.Torpedo ? GyroConfig.TorpedoScaleDefault : 1f; // the torpedo window is smaller by design
                 if (Mathf.Abs(WindowScale(w) - normal) > 0.0001f) SetWindowScale(w, normal, true);

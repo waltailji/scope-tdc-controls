@@ -155,13 +155,13 @@ namespace ScopeTdcControls
         /// torpedo's run, or the gyro angle past its stop. <paramref name="blocking"/>
         /// is kept for callers; it is true whenever a problem is returned.
         /// </summary>
-        string LeverProblem(PlayerShip ship, out string ready, out bool blocking)
+        string LeverProblem(PlayerShip ship, out string ready, out bool blocking, bool evenWhileLaunching = false)
         {
             ready = null;
             blocking = true;
             if (ship == null) return Strings.LeverNoBoat;
             if (!LeverEnergized()) return Strings.LeverNoPower;
-            if (ship.IsPreparingToLaunchTorpedoes) return null;
+            if (ship.IsPreparingToLaunchTorpedoes && !evenWhileLaunching) return null;
             var tubes = ship.TorpedoLaunchers;
             if (tubes == null) return Strings.LeverNothing;
             var boxes = Boxes();

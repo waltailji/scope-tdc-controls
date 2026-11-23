@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.3  (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.4  (UBOAT 2026.1 patch 21)
 =================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -12,8 +12,11 @@ SH3-style TDC readouts and controls in the periscope and UZO views.
                                       [ FENSTER       ]
                                       [x] Schusswinkel (gyro angles)
                                       [x] Rechnerscheiben
+                                      [x] Fächer (salvo spread)
+                                      [x] Drehgeschwindigkeit (angular speed)
                                       [x] Schusswahl
                                       [x] Richtungswahl
+                                      [x] Rohranzeige (torpedo tubes)
                                       [x] Torpedoeinstellung
                                       [x] Abfeuerhebel
                                       [ RESET WINDOW SIZES ]
@@ -33,8 +36,7 @@ counters stay visible. The choice is remembered (ControlsVisible in the
 settings file).
 
 TDC dials: a window on the left of the scope with the TDC's target dials,
-stacked: LAGE / GEGNERFAHRT / ENTFERNUNG / STREUBREITE (AOB / TARGET SPEED /
-TARGET DISTANCE / TARGET LENGTH).
+stacked: LAGE / GEGNERFAHRT / ENTFERNUNG (AOB / TARGET SPEED / TARGET DISTANCE).
 They work like the dials on the TDC itself: grab a dial and turn it around
 its centre, and the TDC value follows. The readout under each dial shows the
 exact value.
@@ -48,22 +50,51 @@ exact value.
              starboard, red to port); brass needle with an arrow tip;
              readout S/P (Stb/Bb) 000-180°. The TDC follows the dial as you
              turn it. Locked while the TDC's locking mechanism is triggered.
+  AOB motor  LAGEMOTOR flip switch under the AOB dial (click to flip): Ein =
+             the TDC keeps the AOB in step as the bearing or own course
+             changes (AOB tracking); Aus = the AOB stays as set. The AOB dial
+             leaves the switch as it is
   Speed      0-55 kn, clockwise from just right of the top, like the TDC
   Distance   3-100 hm (300 m - 10 km) on the TDC's stretched scale,
              clockwise from just right of the top; numbers round the rim,
              marks inside them (dots on the half-way marks) and a four-lobed
              knob with a white triangle pointer, like the TDC
-  Length     100-200 m, like the TDC's Streubreite dial: the numbers are on
-             a ring that turns, and the value under the fixed index at the
-             top is the one set. With the distance it gives the spread angle,
-             so it is only shown while the Einzelschuß switch is on a spread
-             (Fächer auf geradem Kurs / im Drehen); the window shrinks and
-             grows to fit
   Click a value on a dial's scale to set it directly. Hold Shift for 10x
   finer turning. The mouse wheel steps 1° / 0.5 kn /
   100 m (with Shift a tenth of that). Ctrl+drag moves the window. Greyed out
   and locked while the TDC is not manned. Shown or hidden with the
   Rechnerscheiben (TDC dials) check box on the control panel.
+
+Salvo spread (Fächer): a window just right of the TDC dials, stacked:
+  Target length  STREUBREITE, 100-200 m, like the TDC's dial: the numbers are
+                 on a ring that turns; the value under the fixed index at the
+                 top is the one set (click, drag or wheel as on the TDC dials)
+  Spread angle   STREUWINKEL, 0° at the top clockwise to 20° at the bottom,
+                 like the TDC's dial. Brass needle: the angle the TDC works
+                 out from target length and distance. Red flag: the angle set
+                 (sent to the tubes, shown in the readout); turn, click or
+                 wheel (0.5°) to move it
+  Spread motor   STREUMOTOR flip switch, click to flip. Ein: the TDC drives
+                 the red flag to the computed angle (set the spread with the
+                 target length; a flag moved by hand is driven back). Aus:
+                 the flag stays where you put it
+  The Fächer (Salvo spread) check box under FENSTER shows it all the time.
+  Unchecked, it pops up only while the Einzelschuß switch is on a spread
+  position (Fächer auf geradem Kurs / im Drehen) and "Auto display spread
+  settings" (settings drop-down, on by default) is on, and hides again at any
+  other position. The anchor icon at its top right keeps it beside the TDC
+  dials (dark = anchored: it follows them, dragging moves it relative to
+  them) or lets it stand free (faint); switching keeps it where it is.
+  Resize with the corner grip.
+
+Own angular speed (Drehgeschwindigkeit): a window right of the TDC dials, its
+  bottom level with theirs (the salvo spread window sits above it), with the
+  TDC's rate-of-turn knob: -3 to 3 °/s, Bb (port) left / Stb (starboard) right,
+  a four-lobed knob like the TDC's. The TDC leads the gyro angle by it when
+  firing while turning. Mouse wheel 0.1 °/s. Shown with the Drehgeschwindigkeit
+  (Angular speed) check box under FENSTER, and only on boats whose TDC has the
+  knob (the check box is greyed out on the others). Anchor icon and corner
+  grip as on the salvo spread window.
 
   Voice callouts (settings drop-down, on by default): the crew member at the
   scope announces what you dial in, with the game's own voice lines and
@@ -87,8 +118,28 @@ three switches of the Schaltkasten T-Abf.-Anl.:
   boat turns along. Click a label to switch there; click the handle (left =
   on, right = back), use the mouse wheel or drag to turn it. Ctrl+drag moves
   the window. Shown and hidden with the sidebar button.
+  Red lamp on the right (Abfeuerkreis, firing circuit): lit for 4 s after a
+  fire command given while the launch lever lamp was green. While it is lit
+  the three switches can't be turned; hover it for its state.
+  Anchor icon at the top right: dark = anchored to the direction selector
+  (sits left of it, bottom level with it, and follows it), faint = free (the
+  default); switching keeps it where it is.
   Shown or hidden with the Schusswahl (Firing selector) check box on the control
   panel.
+
+Torpedo tubes (Rohranzeige): a compact window, by default above the bottom
+  windows in the centre, with one numbered circle per tube: bow tubes on the
+  first row (Bug / Fore), stern tubes on the second (Heck / Aft), as many as your boat
+  has. Colours: black = empty (or loading), grey = loaded, not flooded, blue =
+  flooded (filling while it floods), green = flooded and selected.
+  Click a flooded tube to select it for a single shot: the Einzelschuss switch
+  turns to it and Faecherschuss to Aus, as on the switch box (not while the
+  firing circuit lamp is lit). Double-click a loaded tube to flood it, or to
+  drain it when flooded or flooding, as the game's torpedo panel does. Clicking
+  the selected tube again, or draining it, deselects it (Einzelschuss to Aus).
+  Hover a tube for its state and what a click / double-click does. Drag to
+  move, resize with the corner grip. Shown or hidden with the Rohranzeige (Torpedo
+  tubes) check box.
 
 Torpedo settings (Torpedoeinstellung): appears at the bottom, right of the
   centre, while a checked tube holds a torpedo (loaded, flooding or flooded):
@@ -139,6 +190,30 @@ button, to stop. Hidden in the UZO and while the game UI is hidden.
 (ElevatorButtons=false in the settings file removes them.)
 
 Version history
+  1.4  The scope screen button no longer overlaps the velocity tool button.
+       Firing selector: red firing circuit lamp, lit for 4 s after a fire
+       command given with a green launch lever lamp; its switches can't be
+       turned while it is lit.
+       New setting "Auto select tube when flooding" (off by default): flooding
+       a tube no longer checks it or moves the firing selector switches.
+       Target length moved to a new salvo spread window (Fächer) with the
+       spread angle dial; it pops up on its own for spreads ("Auto display
+       spread settings", on by default), or always with its check box.
+       Own angular speed knob (-3 to 3 °/s) in its own window beside the TDC
+       dials, shown with its check box under FENSTER (WINDOWS).
+       Salvo spread window: red spread angle flag (set by hand) and a spread
+       motor switch that drives it to the computed angle.
+       TDC dials: AOB motor flip switch under the AOB dial.
+       Anchor icons: salvo spread and angular speed windows follow the TDC
+       dials, the firing selector can follow the direction selector. Salvo
+       spread check box = always shown.
+       Red / blue interior light tint is darker and now covers everything in
+       the off-white windows (text, scales, pointers, knobs; dark parts get a
+       faint glow), lamps and tube circles excepted; "Tint panels with sub
+       lighting" setting (on by default) turns it off.
+       New torpedo tube indicator (SH3 style): one circle per tube, bow and
+       stern rows, coloured by state; click selects, double-click floods or
+       drains.
   1.3  Torpedo settings window (depth, speed, pistol) while a tube is checked;
        works with the Torpedo Room mod's per-torpedo settings.
        Gyro-set lamp moved to the selected receiver's counter; the TDC counter
@@ -347,6 +422,11 @@ Settings drop-down (EINSTELLUNGEN / SETTINGS), all on by default
                               off = choose it yourself with VORN / ACHTERN
                                     (FORWARD / BACKWARD), in realistic and
                                     fast mode
+  Auto select tube when      on  = base game: a tube is checked when it
+  flooding                          starts flooding and the firing selector
+                                    switches follow
+                              off = (default) flooding leaves the tube
+                                    selection and the switches alone
   Realistic TDC follower   off = the TDC's motors (bearing follow-up, impact
                                  angle, parallax correction) run 10x faster
   Realistic receiver sync  off = the tube gyro setting motors run 10x faster
@@ -407,6 +487,7 @@ added in later versions are appended automatically; your values are kept.
   RollSpeed=90                        drum follow speed in deg/s (0 = instant)
   ShowSyncLamp / ShowControls / Tooltips
   ShowReceiverAngle / ActiveReceiverOnly / ShowParallax / AutoReceiver / AutoParallax /
+  AutoSelectFloodedTube / AutoSpread / ShowAngularSpeed / TintPanels /
   RealisticTdc / RealisticReceiverSync / SingleTorpedoLaunchFix /
   TdcOperatorRequired / VoiceCallouts / CtrlDragToMove   (also in the drop-down)
   DialsScale / SwitchesScale / DirectionsScale / LeverScale   window sizes

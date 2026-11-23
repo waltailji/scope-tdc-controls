@@ -47,6 +47,7 @@ namespace ScopeTdcControls
         public static bool RealisticTdc = true;           // false = TDC motors run 10x faster
         public static bool RealisticReceiverSync = true;  // false = tube gyro motors run 10x faster
         public static bool SingleTorpedoLaunchFix = true; // fire only the tubes selected when fire was pressed
+        public static bool AutoSelectFloodedTube = false; // true = the game checks a tube when it floods (base game)
         public static bool TdcOperatorRequired = true;    // false = TDC works without a crew member at it
         public static bool CtrlDragToMove = false;        // false = plain drag on a window background moves it (default for new installs)
         public const float WindowScaleMin = 0.6f, WindowScaleMax = 2.0f;
@@ -56,6 +57,23 @@ namespace ScopeTdcControls
         public static bool ShowTorpedo = true;            // torpedo settings window (shown while a checked tube holds a torpedo)
         public static float TorpedoX = 0.62f, TorpedoY = 0.11f; // bottom, right of centre
         public static float TorpedoOffsetX = 0f, TorpedoOffsetY = 0f;
+        public static bool ShowSpread = false;            // salvo spread window (target length + spread angle) when not shown automatically
+        public static bool AutoSpread = true;             // show the spread window only while Einzelschuß is on a spread position
+        public static bool ShowAngularSpeed = false;      // own angular speed knob in its own window beside the TDC dials
+        public static bool TintPanels = true;             // the off-white windows take on the boat's interior light colour
+        public static float SpreadScale = 1f;
+        public static float SpreadOffsetX = 0f, SpreadOffsetY = 0f; // from its place right of the TDC dials
+        public static float TurnRateScale = 1f;
+        public static float TurnRateOffsetX = 0f, TurnRateOffsetY = 0f; // from its place right of the TDC dials, bottom level with theirs
+        // anchoring (the anchor icon on the window): anchored windows follow another window,
+        // using their *Offset; free windows use their *Free position (canvas units)
+        public static bool SpreadAnchored = true, TurnRateAnchored = true, SwitchesAnchored = false;
+        public static float SpreadFreeX = 0f, SpreadFreeY = 0f, TurnRateFreeX = 0f, TurnRateFreeY = 0f;
+        public static float SwitchesAnchorOffsetX = 0f, SwitchesAnchorOffsetY = 0f; // from its place left of the direction selector
+        public static bool ShowTubes = true;              // SH3-style torpedo tube indicator
+        public static float TubesScale = 1f;
+        public static float TubesX = 0.5f, TubesY = 0.24f; // above the bottom windows, centred
+        public static float TubesOffsetX = 0f, TubesOffsetY = 0f;
         public static bool VoiceCallouts = true;          // dial window: the officer at the scope announces the values
 
         // controls panel
@@ -170,6 +188,10 @@ RealisticReceiverSync=true
 # true = a fire command fires only the tubes selected when it was given;
 #        tubes checked afterwards wait for the next fire command
 SingleTorpedoLaunchFix=true
+# true = a tube is checked (selected for firing) when it starts flooding, and the
+#        firing selector switches follow (base game)
+# false = flooding leaves the tube selection and the switches alone
+AutoSelectFloodedTube=false
 # true = the TDC only works with a crew member at it (base game)
 # false = the TDC calculates and can be opened from the station bar unmanned
 TdcOperatorRequired=true
@@ -189,6 +211,41 @@ TorpedoX=0.62
 TorpedoY=0.11
 TorpedoOffsetX=0
 TorpedoOffsetY=0
+# ---- Salvo spread window (target length, spread angle; right of the TDC dials) ----
+# ShowSpread=true: always shown; false: shown only while the Einzelschuss switch is on
+# a spread position, and only with AutoSpread=true
+AutoSpread=true
+# true = an own angular speed knob (-3..3 deg/s) in its own window beside the TDC dials
+ShowAngularSpeed=false
+# true = the off-white windows take on the colour of the boat's interior lights (red / blue)
+TintPanels=true
+ShowSpread=false
+SpreadScale=1
+SpreadOffsetX=0
+SpreadOffsetY=0
+# ---- Own angular speed window (right of the TDC dials, bottom level with them) ----
+TurnRateScale=1
+TurnRateOffsetX=0
+TurnRateOffsetY=0
+# ---- Anchoring (the anchor icon at the top right of these windows) ----
+# true = the salvo spread / angular speed windows follow the TDC dials, the firing
+# selector follows the direction selector (sitting left of it)
+SpreadAnchored=true
+TurnRateAnchored=true
+SwitchesAnchored=false
+SpreadFreeX=0
+SpreadFreeY=0
+TurnRateFreeX=0
+TurnRateFreeY=0
+SwitchesAnchorOffsetX=0
+SwitchesAnchorOffsetY=0
+# ---- Torpedo tube indicator (one circle per tube: bow row, stern row) ----
+ShowTubes=true
+TubesScale=1
+TubesX=0.5
+TubesY=0.24
+TubesOffsetX=0
+TubesOffsetY=0
 VoiceCallouts=true
 
 # ---- Follow-up / gyro receiver panel ----
@@ -422,6 +479,7 @@ DebugLog=false
                 case "realistictdc": RealisticTdc = Bool(v, RealisticTdc); break;
                 case "realisticreceiversync": RealisticReceiverSync = Bool(v, RealisticReceiverSync); break;
                 case "singletorpedolaunchfix": SingleTorpedoLaunchFix = Bool(v, SingleTorpedoLaunchFix); break;
+                case "autoselectfloodedtube": AutoSelectFloodedTube = Bool(v, AutoSelectFloodedTube); break;
                 case "tdcoperatorrequired": TdcOperatorRequired = Bool(v, TdcOperatorRequired); break;
                 case "ctrldragtomove": CtrlDragToMove = Bool(v, CtrlDragToMove); break;
                 case "dialsscale": DialsScale = Mathf.Clamp(Num(v, DialsScale), WindowScaleMin, WindowScaleMax); break;
@@ -434,6 +492,31 @@ DebugLog=false
                 case "torpedoy": TorpedoY = Mathf.Clamp01(Num(v, TorpedoY)); break;
                 case "torpedooffsetx": TorpedoOffsetX = Num(v, TorpedoOffsetX); break;
                 case "torpedooffsety": TorpedoOffsetY = Num(v, TorpedoOffsetY); break;
+                case "showspread": ShowSpread = Bool(v, ShowSpread); break;
+                case "autospread": AutoSpread = Bool(v, AutoSpread); break;
+                case "showangularspeed": ShowAngularSpeed = Bool(v, ShowAngularSpeed); break;
+                case "tintpanels": TintPanels = Bool(v, TintPanels); break;
+                case "spreadscale": SpreadScale = Mathf.Clamp(Num(v, SpreadScale), WindowScaleMin, WindowScaleMax); break;
+                case "spreadoffsetx": SpreadOffsetX = Num(v, SpreadOffsetX); break;
+                case "spreadoffsety": SpreadOffsetY = Num(v, SpreadOffsetY); break;
+                case "turnratescale": TurnRateScale = Mathf.Clamp(Num(v, TurnRateScale), WindowScaleMin, WindowScaleMax); break;
+                case "turnrateoffsetx": TurnRateOffsetX = Num(v, TurnRateOffsetX); break;
+                case "turnrateoffsety": TurnRateOffsetY = Num(v, TurnRateOffsetY); break;
+                case "spreadanchored": SpreadAnchored = Bool(v, SpreadAnchored); break;
+                case "turnrateanchored": TurnRateAnchored = Bool(v, TurnRateAnchored); break;
+                case "switchesanchored": SwitchesAnchored = Bool(v, SwitchesAnchored); break;
+                case "spreadfreex": SpreadFreeX = Num(v, SpreadFreeX); break;
+                case "spreadfreey": SpreadFreeY = Num(v, SpreadFreeY); break;
+                case "turnratefreex": TurnRateFreeX = Num(v, TurnRateFreeX); break;
+                case "turnratefreey": TurnRateFreeY = Num(v, TurnRateFreeY); break;
+                case "switchesanchoroffsetx": SwitchesAnchorOffsetX = Num(v, SwitchesAnchorOffsetX); break;
+                case "switchesanchoroffsety": SwitchesAnchorOffsetY = Num(v, SwitchesAnchorOffsetY); break;
+                case "showtubes": ShowTubes = Bool(v, ShowTubes); break;
+                case "tubesscale": TubesScale = Mathf.Clamp(Num(v, TubesScale), WindowScaleMin, WindowScaleMax); break;
+                case "tubesx": TubesX = Mathf.Clamp01(Num(v, TubesX)); break;
+                case "tubesy": TubesY = Mathf.Clamp01(Num(v, TubesY)); break;
+                case "tubesoffsetx": TubesOffsetX = Num(v, TubesOffsetX); break;
+                case "tubesoffsety": TubesOffsetY = Num(v, TubesOffsetY); break;
                 case "voicecallouts": VoiceCallouts = Bool(v, VoiceCallouts); break;
                 case "showcontrols": ShowControls = Bool(v, ShowControls); break;
                 case "controlsanchor": ControlsAtElevator = !v.Equals("screen", StringComparison.OrdinalIgnoreCase); break;

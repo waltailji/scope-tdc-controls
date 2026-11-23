@@ -105,6 +105,8 @@ namespace ScopeTdcControls
             public Image Fill;
             public Image Bg;
             public Func<bool> Get;
+            public Func<bool> Enabled;   // null = always; false = greyed out and can't be clicked
+            public TextMeshProUGUI Label;
             public bool Hover;
         }
         CounterRow tdcRow;   // TDC gyro angle (the movable panel)
@@ -238,6 +240,22 @@ namespace ScopeTdcControls
             if (leverPanel != null) Destroy(leverPanel.gameObject);
             if (directionsPanel != null) Destroy(directionsPanel.gameObject);
             if (torpedoPanel != null) Destroy(torpedoPanel.gameObject);
+            if (spreadPanel != null) Destroy(spreadPanel.gameObject);
+            spreadPanel = null;
+            spreadGroup = null;
+            spreadDials.Clear();
+            spreadMotorSwitch = null;
+            aobMotorSwitch = null;
+            anchorIcons.Clear();
+            if (tubesPanel != null) Destroy(tubesPanel.gameObject);
+            tubesPanel = null;
+            tubeDots.Clear();
+            tubesFor = null;
+            tubesRetryAt = 0f;
+            if (turnPanel != null) Destroy(turnPanel.gameObject);
+            turnPanel = null;
+            turnGroup = null;
+            turnDials.Clear();
             torpedoPanel = null;
             torpedoSignature = null;
             torpKnobs.Clear();
@@ -269,6 +287,8 @@ namespace ScopeTdcControls
             if (GyroConfig.ShowDials) BuildDials(font);
             if (GyroConfig.ShowSwitches) BuildSwitches(font);
             BuildLever(font); // always built; ShowLever only hides it
+            BuildSpread(font); // always built; shown by the Einzelschuß switch or its check box
+            BuildTurnRate(font); // always built; shown with "Show angular speed setting"
             if (GyroConfig.ShowDirections) BuildDirections(font);
             BuildTooltip(font);
             RaiseOverlays();
@@ -281,6 +301,7 @@ namespace ScopeTdcControls
         /// </summary>
         void RaiseOverlays()
         {
+            contentScanAt = 0f; // every build ends here: tint its new parts this frame, before they are drawn white
             if (controlsPanel != null) controlsPanel.SetAsLastSibling();
             if (tipPanel != null) tipPanel.SetAsLastSibling();
         }
@@ -611,7 +632,7 @@ namespace ScopeTdcControls
 
             // width = widest label
             string[] labels = { Strings.BearingHeader, Strings.ParallaxHeader, Strings.WindowsHeader, Strings.ResetSizes, "+ " + Strings.SettingsHeader };
-            string[] windowLabels = { Strings.WinGyros, Strings.WinDials, Strings.WinSwitches, Strings.WinDirections, Strings.WinTorpedo, Strings.WinLever };
+            string[] windowLabels = { Strings.WinGyros, Strings.WinDials, Strings.WinSpread, Strings.WinTurnRate, Strings.WinSwitches, Strings.WinDirections, Strings.WinTubes, Strings.WinTorpedo, Strings.WinLever };
             float inner = 80f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 18f);
             foreach (var s in windowLabels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f); // check box rows
@@ -680,8 +701,14 @@ namespace ScopeTdcControls
             windowChecks.Clear();
             MakeCheck(font, Strings.WinGyros, ref y, inner, () => GyroConfig.ShowGyros, v => { GyroConfig.ShowGyros = v; GyroConfig.Save("ShowGyros", v); HideTip(); }, () => Strings.TipWinGyros, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinDials, ref y, inner, () => GyroConfig.ShowDials, v => { if (v != GyroConfig.ShowDials) ToggleDialsWindow(); }, () => Strings.TipWinDials, controlsPanel, windowChecks);
+            MakeCheck(font, Strings.WinSpread, ref y, inner, () => GyroConfig.ShowSpread, v => { if (v != GyroConfig.ShowSpread) ToggleSpreadWindow(); }, () => Strings.TipWinSpread, controlsPanel, windowChecks);
+            MakeCheck(font, Strings.WinTurnRate, ref y, inner, () => GyroConfig.ShowAngularSpeed,
+                v => { GyroConfig.ShowAngularSpeed = v; GyroConfig.Save("ShowAngularSpeed", v); HideTip(); },
+                () => TurnRateAvailable() ? Strings.TipWinTurnRate : Strings.TipWinTurnRate + Strings.TurnRateUnavailable,
+                controlsPanel, windowChecks, TurnRateAvailable); // greyed out on a TDC without the knob
             MakeCheck(font, Strings.WinSwitches, ref y, inner, () => GyroConfig.ShowSwitches, v => { if (v != GyroConfig.ShowSwitches) ToggleSwitchesWindow(); }, () => Strings.TipWinSwitches, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinDirections, ref y, inner, () => GyroConfig.ShowDirections, v => { if (v != GyroConfig.ShowDirections) ToggleDirectionsWindow(); }, () => Strings.TipWinDirections, controlsPanel, windowChecks);
+            MakeCheck(font, Strings.WinTubes, ref y, inner, () => GyroConfig.ShowTubes, v => { GyroConfig.ShowTubes = v; GyroConfig.Save("ShowTubes", v); HideTip(); }, () => Strings.TipWinTubes, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinTorpedo, ref y, inner, () => GyroConfig.ShowTorpedo, v => { GyroConfig.ShowTorpedo = v; GyroConfig.Save("ShowTorpedo", v); HideTip(); }, () => Strings.TipWinTorpedo, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinLever, ref y, inner, () => GyroConfig.ShowLever, v => { if (v != GyroConfig.ShowLever) ToggleLeverWindow(); }, () => Strings.TipWinLever, controlsPanel, windowChecks);
             btnResetSizes = MakeButton(controlsPanel, font, Strings.ResetSizes, ref y, inner, ResetWindowSizes, () => Strings.TipResetSizes);
@@ -793,7 +820,7 @@ namespace ScopeTdcControls
             settingsPanel = NewRect("GyroSettings", controlsPanel);
             Frame(settingsPanel, true);
 
-            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag };
+            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptAutoSpread, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag };
             float inner = 0f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f);
 
@@ -823,6 +850,18 @@ namespace ScopeTdcControls
                 () => GyroConfig.AutoParallax,
                 v => { GyroConfig.AutoParallax = v; GyroConfig.Save("AutoParallax", v); },
                 () => Strings.TipOptAutoParallax);
+            MakeCheck(font, Strings.OptAutoSelectTube, ref y, inner,
+                () => GyroConfig.AutoSelectFloodedTube,
+                v => { GyroConfig.AutoSelectFloodedTube = v; GyroConfig.Save("AutoSelectFloodedTube", v); },
+                () => Strings.TipOptAutoSelectTube);
+            MakeCheck(font, Strings.OptAutoSpread, ref y, inner,
+                () => GyroConfig.AutoSpread,
+                v => { GyroConfig.AutoSpread = v; GyroConfig.Save("AutoSpread", v); HideTip(); },
+                () => Strings.TipOptAutoSpread);
+            MakeCheck(font, Strings.OptTintPanels, ref y, inner,
+                () => GyroConfig.TintPanels,
+                v => { GyroConfig.TintPanels = v; GyroConfig.Save("TintPanels", v); }, // the windows recolour on the next frame
+                () => Strings.TipOptTintPanels);
             MakeCheck(font, Strings.OptRealisticTdc, ref y, inner,
                 () => GyroConfig.RealisticTdc,
                 v => { GyroConfig.RealisticTdc = v; GyroConfig.Save("RealisticTdc", v); },
@@ -853,7 +892,7 @@ namespace ScopeTdcControls
         }
 
         void MakeCheck(TMP_FontAsset font, string text, ref float y, float width, Func<bool> get, Action<bool> set, Func<string> tip,
-                       RectTransform parent = null, List<Check> list = null)
+                       RectTransform parent = null, List<Check> list = null, Func<bool> enabled = null)
         {
             var row = NewRect("Opt_" + text, parent != null ? parent : settingsPanel);
             PlaceV(row, CPad, y, width, RowH);
@@ -889,7 +928,7 @@ namespace ScopeTdcControls
             lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one;
             lr.offsetMin = new Vector2(22f, 0f); lr.offsetMax = Vector2.zero;
 
-            var check = new Check { Fill = fillImg, Bg = bg, Get = get };
+            var check = new Check { Fill = fillImg, Bg = bg, Get = get, Enabled = enabled, Label = label };
             var button = row.gameObject.AddComponent<Button>();
             button.transition = Selectable.Transition.None;
             var nav = new Navigation(); nav.mode = Navigation.Mode.None;
@@ -897,6 +936,7 @@ namespace ScopeTdcControls
             button.targetGraphic = bg;
             button.onClick.AddListener(() =>
             {
+                if (enabled != null && !enabled()) return; // greyed out
                 try { set(!get()); }
                 catch (Exception e) { Debug.LogException(e); }
                 if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
@@ -1272,6 +1312,9 @@ namespace ScopeTdcControls
             public bool Lever;    // the launch lever window
             public bool Directions; // the direction selector window
             public bool Torpedo;  // the torpedo settings window
+            public bool Spread;   // the salvo spread window
+            public bool TurnRate; // the own angular speed window
+            public bool Tubes;    // the torpedo tube indicator
             bool dragging;
 
             static bool CtrlHeld { get { return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl); } }
@@ -1288,10 +1331,13 @@ namespace ScopeTdcControls
                 if (!dragging || Owner == null) return;
                 float k = Owner.canvas != null && Owner.canvas.scaleFactor > 0f ? Owner.canvas.scaleFactor : 1f;
                 Vector2 d = e.delta / k;
-                if (Torpedo) { GyroConfig.TorpedoOffsetX += d.x; GyroConfig.TorpedoOffsetY += d.y; }
+                if (Tubes) { GyroConfig.TubesOffsetX += d.x; GyroConfig.TubesOffsetY += d.y; }
+                else if (TurnRate) DragAnchorable(AnchoredWindow.TurnRate, d);
+                else if (Spread) DragAnchorable(AnchoredWindow.Spread, d);
+                else if (Torpedo) { GyroConfig.TorpedoOffsetX += d.x; GyroConfig.TorpedoOffsetY += d.y; }
                 else if (Directions) { GyroConfig.DirectionsOffsetX += d.x; GyroConfig.DirectionsOffsetY += d.y; }
                 else if (Lever) { GyroConfig.LeverOffsetX += d.x; GyroConfig.LeverOffsetY += d.y; }
-                else if (Switches) { GyroConfig.SwitchesOffsetX += d.x; GyroConfig.SwitchesOffsetY += d.y; }
+                else if (Switches) DragAnchorable(AnchoredWindow.Switches, d);
                 else if (Dials) { GyroConfig.DialsOffsetX += d.x; GyroConfig.DialsOffsetY += d.y; }
                 else if (Controls) { GyroConfig.ControlsOffsetX += d.x; GyroConfig.ControlsOffsetY += d.y; }
                 else { GyroConfig.OffsetX += d.x; GyroConfig.OffsetY += d.y; }
@@ -1301,7 +1347,10 @@ namespace ScopeTdcControls
             {
                 if (!dragging) return;
                 dragging = false;
-                if (Torpedo)
+                if (Tubes) { GyroConfig.Save("TubesOffsetX", GyroConfig.TubesOffsetX); GyroConfig.Save("TubesOffsetY", GyroConfig.TubesOffsetY); }
+                else if (TurnRate) SaveAnchoring(AnchoredWindow.TurnRate);
+                else if (Spread) SaveAnchoring(AnchoredWindow.Spread);
+                else if (Torpedo)
                 {
                     GyroConfig.Save("TorpedoOffsetX", GyroConfig.TorpedoOffsetX);
                     GyroConfig.Save("TorpedoOffsetY", GyroConfig.TorpedoOffsetY);
@@ -1316,11 +1365,7 @@ namespace ScopeTdcControls
                     GyroConfig.Save("LeverOffsetX", GyroConfig.LeverOffsetX);
                     GyroConfig.Save("LeverOffsetY", GyroConfig.LeverOffsetY);
                 }
-                else if (Switches)
-                {
-                    GyroConfig.Save("SwitchesOffsetX", GyroConfig.SwitchesOffsetX);
-                    GyroConfig.Save("SwitchesOffsetY", GyroConfig.SwitchesOffsetY);
-                }
+                else if (Switches) SaveAnchoring(AnchoredWindow.Switches);
                 else if (Dials)
                 {
                     GyroConfig.Save("DialsOffsetX", GyroConfig.DialsOffsetX);
@@ -1830,6 +1875,13 @@ namespace ScopeTdcControls
             }
             bool dialsOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowDials && dialsPanel != null;
             if (dialsPanel != null && dialsPanel.gameObject.activeSelf != dialsOn) dialsPanel.gameObject.SetActive(dialsOn);
+            bool spreadOn = show && GyroConfig.ControlsVisible && spreadPanel != null && SpreadWanted();
+            if (spreadPanel != null && spreadPanel.gameObject.activeSelf != spreadOn) spreadPanel.gameObject.SetActive(spreadOn);
+            bool turnOn = show && GyroConfig.ControlsVisible && turnPanel != null && TurnRateWanted();
+            if (turnPanel != null && turnPanel.gameObject.activeSelf != turnOn) turnPanel.gameObject.SetActive(turnOn);
+            if (show && GyroConfig.ControlsVisible && GyroConfig.ShowTubes) ValidateTubes();
+            bool tubesOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowTubes && tubesPanel != null;
+            if (tubesPanel != null && tubesPanel.gameObject.activeSelf != tubesOn) tubesPanel.gameObject.SetActive(tubesOn);
             if (show && GyroConfig.ControlsVisible) ValidateSwitches();
             bool switchesOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowSwitches && switchesPanel != null;
             if (switchesPanel != null && switchesPanel.gameObject.activeSelf != switchesOn) switchesPanel.gameObject.SetActive(switchesOn);
@@ -1851,6 +1903,21 @@ namespace ScopeTdcControls
             {
                 UpdateDials(tdc, IsTdcManned(tdc));
                 PositionDials();
+            }
+            if (spreadOn)
+            {
+                UpdateSpread(tdc, IsTdcManned(tdc));
+                PositionSpread(); // after the dials: it sits beside them
+            }
+            if (turnOn)
+            {
+                UpdateTurnRate(tdc, IsTdcManned(tdc));
+                PositionTurnRate(); // after the dials: it sits beside them
+            }
+            if (tubesOn)
+            {
+                UpdateTubes();
+                PositionTubes();
             }
             if (switchesOn)
             {
@@ -2017,8 +2084,11 @@ namespace ScopeTdcControls
         {
             foreach (var c in list)
             {
+                bool on = c.Enabled == null || c.Enabled();
                 c.Fill.enabled = c.Get();
-                c.Bg.color = c.Hover ? new Color(BtnHover.r, BtnHover.g, BtnHover.b, 0.6f) : Color.clear;
+                c.Fill.color = on ? BtnSelected : new Color(BtnSelected.r, BtnSelected.g, BtnSelected.b, 0.35f);
+                if (c.Label != null) c.Label.color = on ? DigitLight : new Color(DigitLight.r, DigitLight.g, DigitLight.b, 0.38f);
+                c.Bg.color = c.Hover && on ? new Color(BtnHover.r, BtnHover.g, BtnHover.b, 0.6f) : Color.clear;
             }
         }
 

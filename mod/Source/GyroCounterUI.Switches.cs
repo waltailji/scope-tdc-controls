@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using HarmonyLib;
 using TMPro;
 using UBOAT.Game.Core.Data;
+using UBOAT.Game.Scene.Entities;
 using UBOAT.Game.Scene.Items;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -53,7 +54,8 @@ namespace ScopeTdcControls
             public string[] Labels;           // printed on the face
             public string[] Names;            // full names for the readout (null = Labels)
             public bool InnerTicks;           // marks round the hub at every position
-            public float LabelSize = 8.5f;    // face label font size
+            public float LabelSize = 10f;     // face label font size (switch box knobs)
+            public Func<bool> Locked;         // can't be turned while this is true
             public string Sound;              // the boat's knob click (its PresetDial audio keyword)
             public Func<TorpedoFireControlBoxes, int> Get;
             public Action<TorpedoFireControlBoxes, int> Set;
@@ -261,13 +263,26 @@ namespace ScopeTdcControls
             foreach (var kv in specs)
             {
                 int tipIndex = Array.IndexOf(titles, kv.Key);
+                kv.Value.Locked = () => FiringCircuitLive; // not while the firing circuit is energized
                 AddKnob(font, x, kv.Key, tipIndex >= 0 ? tips[tipIndex] : null, kv.Value);
                 x += KnobSize + KnobGap;
             }
 
+            // firing circuit lamp in a narrow column on the right, level with the knobs' centres
+            float lampX = x - KnobGap + KnobRim + FiringLampCol * 0.5f;
+            float lampY = -DialPad - TitleH - TitleGap - ControlH * 0.5f;
+            firingLamp = MakeLamp(switchesPanel, new Vector2(0f, 1f), new Vector2(lampX, lampY), 12f, LampRed);
+            var lampHover = NewRect("FiringLampHover", switchesPanel);
+            PlaceV(lampHover, lampX - 14f, lampY + 14f, 28f, 28f);
+            var hoverImg = lampHover.gameObject.AddComponent<Image>();
+            hoverImg.color = Color.clear;   // invisible, only catches the mouse for the pop-up
+            AddTooltip(lampHover.gameObject, () => FiringCircuitLive ? Strings.TipFiringLampOn : Strings.TipFiringLampOff);
+            firingLamp.Set(FiringCircuitLive, LampRed);
+
             float h = DialPad + ControlColumnH + DialPad;
-            switchesPanel.sizeDelta = new Vector2(x - KnobGap + KnobRim + DialPad, h);
+            switchesPanel.sizeDelta = new Vector2(x - KnobGap + KnobRim + FiringLampCol + DialPad, h);
             AddResizeGrip(switchesPanel, ResizableWindow.Switches);
+            AddAnchorIcon(switchesPanel, AnchoredWindow.Switches); // follow the direction selector
             RaiseOverlays(); // panel and pop-ups stay on top
         }
 
@@ -309,7 +324,7 @@ namespace ScopeTdcControls
                 label.lineSpacing = -18f;
                 var lr = label.rectTransform;
                 lr.anchorMin = lr.anchorMax = lr.pivot = new Vector2(0.5f, 0.5f);
-                lr.sizeDelta = new Vector2(40f, 24f);
+                lr.sizeDelta = new Vector2(44f, 26f); // room for the larger labels (they wrap onto two lines)
                 lr.anchoredPosition = new Vector2(Mathf.Sin(a) * r, Mathf.Cos(a) * r);
             }
 
@@ -446,6 +461,32 @@ namespace ScopeTdcControls
         {
             if (switchesPanel == null || switchesBoxes == null) return;
             UpdateKnobs(knobs, switchesBoxes);
+            if (firingLamp != null) firingLamp.Set(FiringCircuitLive, LampRed);
+        }
+
+        // ------------------------------------------------------------------ firing circuit lamp
+
+        const float FiringLampTime = 4f;   // seconds the circuit stays energized after a fire command
+        const float FiringLampCol = 28f;   // width of the lamp's column
+        Lamp firingLamp;
+        static float firingCircuitUntil = float.NegativeInfinity;
+
+        /// <summary>The firing circuit is energized: lamp lit, the three switches can't be turned.</summary>
+        static bool FiringCircuitLive { get { return Time.time < firingCircuitUntil; } }
+
+        /// <summary>
+        /// A fire command was given (launch lever or the game's fire key). If the launch
+        /// lever's lamp would have been green (every circuit energized), the firing circuit
+        /// lamp lights for <see cref="FiringLampTime"/> seconds of game time.
+        /// </summary>
+        public static void OnFireCommand(PlayerShip ship)
+        {
+            if (instance == null || ship == null) return;
+            string ready;
+            bool blocking;
+            if (instance.LeverProblem(ship, out ready, out blocking, true) != null) return;
+            firingCircuitUntil = Time.time + FiringLampTime;
+            if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " firing circuit energized (" + ready + ")");
         }
 
         /// <summary>Turn each knob's handle to the box's current value and show its name.</summary>
@@ -462,14 +503,8 @@ namespace ScopeTdcControls
             }
         }
 
-        void PositionSwitches()
-        {
-            if (switchesPanel == null) return;
-            Vector2 local;
-            var screen = new Vector2(Screen.width * GyroConfig.SwitchesX, Screen.height * GyroConfig.SwitchesY);
-            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screen, null, out local))
-                switchesPanel.anchoredPosition = local + new Vector2(GyroConfig.SwitchesOffsetX, GyroConfig.SwitchesOffsetY);
-        }
+        /// <summary>Free: its screen position plus offset; anchored: left of the direction selector (GyroCounterUI.Anchor.cs).</summary>
+        void PositionSwitches() { PlaceAnchorable(AnchoredWindow.Switches); }
 
         /// <summary>Boat changed, or the knobs weren't loaded when the scope opened: (re)build.</summary>
         void ValidateSwitches()
@@ -588,6 +623,7 @@ namespace ScopeTdcControls
         {
             var boxes = Boxes();
             if (boxes == null || index < 0 || index >= spec.Values.Length) return;
+            if (spec.Locked != null && spec.Locked()) return;
             if (spec.Get(boxes) == spec.Values[index]) return;
             spec.Set(boxes, spec.Values[index]);
             PlayKnobClick(spec);

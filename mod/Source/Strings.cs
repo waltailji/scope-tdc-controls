@@ -161,6 +161,16 @@ namespace ScopeTdcControls
         }
         public static string OptAutoParallax { get { return T("Parallaxenmodus automatisch setzen", "Auto set parallax mode"); } }
         public static string OptAutoReceiver { get { return T("Empfänger automatisch setzen", "Auto set gyro receiver"); } }
+        public static string OptAutoSelectTube { get { return T("Rohr beim Fluten anwählen", "Auto select tube when flooding"); } }
+
+        public static string TipOptAutoSelectTube
+        {
+            get
+            {
+                return T("<b>Rohr beim Fluten anwählen</b>\nAn: Wie im Spiel wird ein Rohr angehakt, sobald es geflutet wird, und die Schusswahl-Schalter folgen.\nAus: Das Fluten ändert weder die Rohrauswahl noch die Schalter; du wählst die Rohre selbst.",
+                         "<b>Auto select tube when flooding</b>\nOn: as in the base game, a tube is checked as soon as it starts flooding, and the firing selector switches follow.\nOff: flooding changes neither the tube selection nor the switches; you select the tubes yourself.");
+            }
+        }
 
         public static string TipOptAutoReceiver
         {
@@ -421,6 +431,32 @@ namespace ScopeTdcControls
 
         // ---- torpedo settings window ----
         public static string WinTorpedo { get { return T("Torpedoeinstellung", "Torpedo settings"); } }
+
+        // ---- torpedo tube indicator ----
+        public static string WinTubes { get { return T("Rohranzeige", "Torpedo tubes"); } }
+        public static string TipWinTubes
+        {
+            get
+            {
+                return T("<b>Rohranzeige</b>\nEin kleines Fenster mit einem Kreis je Rohr (oben Bug, unten Heck): schwarz = leer, grau = geladen, blau = geflutet, grün = geflutet und gewählt. Klicken wählt ein geflutetes Rohr, Doppelklick flutet oder lenzt.",
+                         "<b>Torpedo tubes</b>\nA small window with one circle per tube (bow on top, stern below): black = empty, grey = loaded, blue = flooded, green = flooded and selected. Click selects a flooded tube, double-click floods or drains it.");
+            }
+        }
+        public static string TubesBowShort { get { return T("Bug", "Fore"); } }
+        public static string TubesSternShort { get { return T("Heck", "Aft"); } }
+        public static string TubeEmpty { get { return T("Leer", "Empty"); } }
+        public static string TubeLoading { get { return T("Wird geladen", "Loading"); } }
+        public static string TubeLoaded { get { return T("Geladen, nicht geflutet", "Loaded, not flooded"); } }
+        public static string TubeFlooding { get { return T("Wird geflutet", "Flooding"); } }
+        public static string TubeDraining { get { return T("Wird gelenzt", "Draining"); } }
+        public static string TubeLaunching { get { return T("Schuss", "Launching"); } }
+        public static string TubeFlooded { get { return T("Geladen und geflutet", "Loaded and flooded"); } }
+        public static string TubeFloodedSelected { get { return T("Geladen, geflutet und gewählt", "Loaded, flooded and selected"); } }
+        public static string TubeClickSelect { get { return T("Klicken: dieses Rohr für einen Einzelschuss wählen (Schusswahl folgt)", "Click: select this tube for a single shot (the firing selector follows)"); } }
+        public static string TubeClickDeselect { get { return T("Klicken: Rohr abwählen (Einzelschuß auf Aus)", "Click: deselect this tube (single shot switch to Off)"); } }
+        public static string TubeClickNeedsFlood { get { return T("Klicken: wählbar, sobald das Rohr geflutet ist", "Click: selectable once the tube is flooded"); } }
+        public static string TubeDoubleFlood { get { return T("Doppelklick: Rohr fluten", "Double-click: flood the tube"); } }
+        public static string TubeDoubleDrain { get { return T("Doppelklick: Rohr lenzen", "Double-click: drain the tube"); } }
         public static string TorpDepth { get { return T("TIEFE", "DEPTH"); } }
         public static string TorpSpeed { get { return T("FAHRSTUFE", "SPEED"); } }
         public static string TorpPistol { get { return T("PISTOLE", "PISTOL"); } }
@@ -505,6 +541,24 @@ namespace ScopeTdcControls
             }
         }
 
+        public static string TipFiringLampOn
+        {
+            get
+            {
+                return T("<b>Abfeuerkreis</b>\nSchalter können nicht betätigt werden, solange der Abfeuerkreis unter Spannung steht.",
+                         "<b>Firing circuit</b>\nCannot use switches while firing circuit is energized.");
+            }
+        }
+
+        public static string TipFiringLampOff
+        {
+            get
+            {
+                return T("<b>Abfeuerkreis</b>\nSchalter können gefahrlos betätigt werden.",
+                         "<b>Firing circuit</b>\nSwitches can be safely changed.");
+            }
+        }
+
         public static string TipSwitchLever
         {
             get
@@ -531,9 +585,107 @@ namespace ScopeTdcControls
                          "<b>Target length</b>\nThe target's length (100 to 200 m), as on the TDC's target length (Streubreite) dial. With the distance, the TDC works out the spread angle for a salvo from it. Mouse wheel: 1 m." + DialUsageEn);
             }
         }
+
+        public static string DialSpreadAngle { get { return T("STREUWINKEL", "SPREAD ANGLE"); } }
+        public static string SpreadUnit { get { return "Grad"; } }
+
+        public static string TipDialSpreadAngle
+        {
+            get
+            {
+                return T("<b>Streuwinkel</b>\nMessingzeiger: der Fächerwinkel, den der Rechner aus Streubreite und Entfernung errechnet (0 bis 20 Grad). Rote Fahne: der eingestellte Winkel, der an die Rohre geht; die Anzeige darunter.\nScheibe drehen, auf der Skala anklicken oder Mausrad (0,5 Grad), um die Fahne zu stellen. Bei eingeschaltetem Streuwinkelmotor fährt der Rechner die Fahne selbst auf den errechneten Winkel.",
+                         "<b>Spread angle</b>\nBrass needle: the salvo spread angle the TDC works out from the target length and distance (0 to 20 degrees). Red flag: the angle set, which goes to the tubes; the readout shows it.\nTurn the dial, click the scale or use the mouse wheel (0.5°) to move the flag. With the spread motor on, the TDC drives the flag to the computed angle itself.");
+            }
+        }
+
+        public static string SwitchOn { get { return T("Ein", "On"); } }
+        public static string SpreadMotor { get { return T("STREUMOTOR", "SPREAD MOTOR"); } }
+        public static string AobMotor { get { return T("LAGEMOTOR", "AOB MOTOR"); } }
+
+        public static string TipAobMotor
+        {
+            get
+            {
+                return T("<b>Lagenwinkelmotor</b>\nKlicken zum Umlegen.\nEin: Der Rechner führt die Lage nach, wenn sich Peilung oder eigener Kurs ändern (Lagenwinkel-Nachführung).\nAus: Die Lage bleibt stehen, wie eingestellt. Die Lage-Scheibe ändert die Schalterstellung nicht.",
+                         "<b>AOB motor</b>\nClick to flip.\nOn: the TDC keeps the AOB in step as the bearing or your own course changes (AOB tracking).\nOff: the AOB stays as set. The AOB dial doesn't change the switch.");
+            }
+        }
+
+        public static string TipSpreadMotor
+        {
+            get
+            {
+                return T("<b>Streuwinkelmotor</b>\nKlicken zum Umlegen.\nEin: Der Rechner fährt die rote Fahne auf den errechneten Streuwinkel; eingestellt wird über die Streubreite.\nAus: Die Fahne bleibt, wo du sie mit der Streuwinkel-Scheibe hinstellst.",
+                         "<b>Spread motor</b>\nClick to flip.\nOn: the TDC drives the red flag to the computed spread angle; set it with the target length.\nOff: the flag stays where you put it with the spread angle dial.");
+            }
+        }
+
+        public static string WinSpread { get { return T("Fächer", "Salvo spread"); } }
+
+        public static string TipWinSpread
+        {
+            get
+            {
+                return T("<b>Fächer</b>\nAngehakt: Das Fenster mit Streubreite und Streuwinkel ist immer zu sehen.\nNicht angehakt: Es erscheint nur, solange der Einzelschuß-Schalter auf Fächer steht und \"Fächereinstellung automatisch anzeigen\" an ist.",
+                         "<b>Salvo spread</b>\nChecked: the window with the target length and spread angle is always shown.\nUnchecked: it appears only while the single shot switch is on a spread position and \"Auto display spread settings\" is on.");
+            }
+        }
+
+        public static string OptTintPanels { get { return T("Fenster nach Bootsbeleuchtung tönen", "Tint panels with sub lighting"); } }
+
+        public static string TipOptTintPanels
+        {
+            get
+            {
+                return T("<b>Fenster nach Bootsbeleuchtung tönen</b>\nAn: Die hellen Fenster (Rechnerscheiben, Schalter, Hebel ...) nehmen die Farbe der Innenbeleuchtung an: rötlich unter Rotlicht, bläulich unter Blaulicht.\nAus: Sie bleiben immer wie unter normalem Licht.",
+                         "<b>Tint panels with sub lighting</b>\nOn: the off-white windows (TDC dials, switches, lever ...) take on the colour of the boat's interior lights: reddish under the red lights, bluish under the blue.\nOff: they always look as under the normal lights.");
+            }
+        }
+
+        public static string OptAutoSpread { get { return T("Fächereinstellung automatisch anzeigen", "Auto display spread settings"); } }
+
+        public static string TipOptAutoSpread
+        {
+            get
+            {
+                return T("<b>Fächereinstellung automatisch anzeigen</b>\nAn: Das Fächer-Fenster erscheint, sobald der Einzelschuß-Schalter auf \"Fächer Kurs\" oder \"Fächer Drehen\" gestellt wird, und verschwindet bei jeder anderen Stellung.\nAus: Das Fächer-Fenster erscheint nur, wenn sein Häkchen unter FENSTER gesetzt ist (dann immer).",
+                         "<b>Auto display spread settings</b>\nOn: the salvo spread window pops up when the single shot switch is set to spread straight or spread turning, and hides at any other position.\nOff: the salvo spread window appears only while its check box under WINDOWS is checked (then always).");
+            }
+        }
         public static string UnitKnots { get { return T("sm/Std", "kn"); } }
         public static string Port { get { return T("Bb", "P"); } }
         public static string Starboard { get { return T("Stb", "S"); } }
+        // printed on the TDC's angular speed knob (German on the real one)
+        public static string PortLong { get { return "Bb"; } }
+        public static string StarboardLong { get { return "Stb"; } }
+
+        public static string DialTurnRate { get { return T("DREHGESCHW.", "OWN ANGULAR SPEED"); } }
+
+        public static string TipDialTurnRate
+        {
+            get
+            {
+                return T("<b>Eigene Drehgeschwindigkeit</b>\nWie schnell das eigene Boot dreht (0 bis 3 Grad je Sekunde nach Bb oder Stb), wie der Drehgeschwindigkeits-Knopf am Vorhaltrechner. Der Rechner hält den Schusswinkel damit vor, wenn im Drehen geschossen wird. Mausrad: 0,1 °/s." + DialUsageDe,
+                         "<b>Own angular speed</b>\nHow fast your own boat is turning (0 to 3 degrees per second to port or starboard), as on the TDC's angular speed knob. The TDC leads the gyro angle by it when firing while turning. Mouse wheel: 0.1 °/s." + DialUsageEn);
+            }
+        }
+
+        public static string WinTurnRate { get { return T("Drehgeschwindigkeit", "Angular speed"); } }
+        public static string TurnRateUnavailable { get { return T("\n<i>Der Vorhaltrechner dieses Boots hat keinen Drehgeschwindigkeits-Knopf.</i>", "\n<i>This boat's TDC has no angular speed knob.</i>"); } }
+
+        public static string TipWinTurnRate
+        {
+            get
+            {
+                return T("<b>Drehgeschwindigkeit</b>\nAngehakt: ein eigenes Fenster neben den Rechnerscheiben mit einem Knopf für die eigene Drehgeschwindigkeit (-3 bis 3 Grad je Sekunde, Bb/Stb), die der Rechner beim Schuss im Drehen einrechnet.\nNicht angehakt: Fenster ausgeblendet (der eingestellte Wert bleibt im Rechner).",
+                         "<b>Angular speed</b>\nChecked: a window beside the TDC dials with an own angular speed knob (-3 to 3 degrees per second, port/starboard), which the TDC allows for when firing while turning.\nUnchecked: window hidden (the value set stays in the TDC).");
+            }
+        }
+
+        public static string AnchorToDials { get { return T("den Rechnerscheiben", "the TDC dials"); } }
+        public static string AnchorToDirections { get { return T("der Richtungswahl", "the direction selector"); } }
+        public static string TipAnchorOn { get { return T("<b>Verankert</b>\nDas Fenster folgt {0}. Ziehen verschiebt es gegen sie.\nKlicken: lösen (es bleibt, wo es ist).", "<b>Anchored</b>\nThis window follows {0}. Dragging moves it relative to them.\nClick: detach (it stays where it is)."); } }
+        public static string TipAnchorOff { get { return T("<b>Nicht verankert</b>\nDas Fenster steht frei.\nKlicken: an {0} verankern (es bleibt, wo es ist, und folgt dann).", "<b>Not anchored</b>\nThis window stands on its own.\nClick: anchor it to {0} (it stays where it is, then follows them)."); } }
 
         const string DialUsageDe = "\nZum Einstellen die Scheibe greifen und um ihre Mitte drehen, wie am Rechner, oder einen Wert auf der Skala anklicken. Umschalt = 10x feiner, Mausrad = in Schritten.";
         const string DialUsageEn = "\nGrab the dial and turn it around its centre, like on the TDC, or click a value on the scale. Shift = 10x finer, mouse wheel = steps.";

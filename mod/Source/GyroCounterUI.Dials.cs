@@ -51,13 +51,15 @@ namespace ScopeTdcControls
         CanvasGroup dialsGroup;
         float dialsFullH;                // window height with every dial shown
         readonly List<DialSpec> dials = new List<DialSpec>();
+        FlipSwitch aobMotorSwitch;
 
         enum PointerStyle
         {
             Needle,   // thin brass needle (speed)
             Arrow,    // needle with an arrow tip (AOB)
             Knob,     // turning knob grip with a painted arrow (distance)
-            Ring      // the scale ring turns under a fixed index at the top (target length)
+            Ring,     // the scale ring turns under a fixed index at the top (target length)
+            Flag      // a red flag set by hand (or by a motor), and a brass needle for a second value (spread angle)
         }
 
         /// <summary>One TDC dial: how it reads/writes the TDC and how it is drawn.</summary>
@@ -79,6 +81,8 @@ namespace ScopeTdcControls
             public float Height;                              // its share of the window height
             public PointerStyle Style;                        // how the value is shown
             public RectTransform Needle;                      // Ring style: the turning scale ring
+            public RectTransform Needle2;                     // Flag style: the brass needle
+            public Func<TorpedoCalculator, float> Get2;        // Flag style: the value the brass needle shows
             public TextMeshProUGUI Readout;
             public RectTransform Face;
 
@@ -161,6 +165,12 @@ namespace ScopeTdcControls
                 Format = FormatAob
             }, (spec, f) => DrawAobScale(spec, f), "");
 
+            // AOB motor (Lagenwinkelmotor): on = the TDC keeps the AOB in step with own course and
+            // bearing changes (needed for AOB tracking); not hidden, so it can sit between the dials
+            y += 12f - 4f; // AddDial leaves 12 below the readout
+            aobMotorSwitch = AddFlipSwitch(dialsPanel, font, x0, ref y, inner, Strings.AobMotor, () => Strings.TipAobMotor,
+                t => t.IsAOBMotorOn, (t, v) => t.IsAOBMotorOn = v, typeof(TorpedoCalculatorAOBMotorSwitch));
+
             // target speed: 0..55 kn, clockwise from just right of the top round to just left of it
             y = AddDial(font, x0, y, inner, Strings.DialSpeed, () => Strings.TipDialSpeed, new DialSpec
             {
@@ -187,19 +197,9 @@ namespace ScopeTdcControls
                 WheelStep = -100f,   // wheel toward you = more
                 Format = v => Mathf.RoundToInt(v).ToString(CultureInfo.InvariantCulture) + " m"
             }, (spec, f) => DrawDistanceScale(spec, f), ""); // "hm" is printed on the rim
+            // target length: in the salvo spread window (GyroCounterUI.Spread.cs)
 
-            // target length (Streubreite): 100..200 m printed round the right half of a turning ring;
-            // the value under the fixed index at the top is the one set (as on the TDC)
-            y = AddDial(font, x0, y, inner, Strings.DialLength, () => Strings.TipDialLength, new DialSpec
-            {
-                Get = t => t.TargetLength,
-                Set = (t, v) => t.TargetLength = v,
-                Style = PointerStyle.Ring,
-                Visible = SpreadSelected,   // only needed for a spread (Fächer)
-                Values = new[] { 100f, 200f }, Rots = new[] { 180f, 0f },
-                WheelStep = -1f,     // wheel toward you = more
-                Format = v => Mathf.RoundToInt(v).ToString(CultureInfo.InvariantCulture) + " m"
-            }, (spec, f) => DrawLengthScale(spec, f), "");
+            // own angular speed: its own window beside the TDC dials (GyroCounterUI.TurnRate.cs)
 
             dialsPanel.sizeDelta = new Vector2(x0 + inner + DialPad, -y + DialPad - 6f);
             dialsFullH = dialsPanel.sizeDelta.y;
@@ -296,10 +296,11 @@ namespace ScopeTdcControls
         }
 
         float AddDial(TMP_FontAsset font, float x, float y, float inner, string title, Func<string> tip, DialSpec spec,
-                      Action<DialSpec, TMP_FontAsset> drawScale, string unit)
+                      Action<DialSpec, TMP_FontAsset> drawScale, string unit,
+                      RectTransform parent = null, List<DialSpec> list = null)
         {
             // everything of one dial in a group, so it can be hidden as a whole
-            spec.Group = NewRect("DialGroup", dialsPanel);
+            spec.Group = NewRect("DialGroup", parent ?? dialsPanel);
             spec.Group.anchorMin = spec.Group.anchorMax = spec.Group.pivot = new Vector2(0f, 1f);
             spec.Group.sizeDelta = Vector2.zero;
             float yStart = y;
@@ -359,6 +360,14 @@ namespace ScopeTdcControls
                     spec.Needle = MakeKnobPointer(face.rectTransform);
                     break;
 
+                case PointerStyle.Flag:
+                    // brass needle for the computed value, the red flag (the value set) over it at the rim
+                    spec.Needle2 = MakePointer(face.rectTransform, "Needle", DialNeedle, 4f, true);
+                    Disc("Hub", face.rectTransform, SharpCircleSprite(), 22f, Color.black);
+                    Disc("HubCap", face.rectTransform, SharpCircleSprite(), 10f, new Color(0.18f, 0.18f, 0.18f, 1f));
+                    spec.Needle = MakeFlagPointer(face.rectTransform);
+                    break;
+
                 default:
                     bool arrow = spec.Style == PointerStyle.Arrow;
                     spec.Needle = MakePointer(face.rectTransform, "Needle", DialNeedle, 4f, arrow);
@@ -367,9 +376,12 @@ namespace ScopeTdcControls
                     break;
             }
 
-            var relay = face.gameObject.AddComponent<DialRelay>();
-            relay.Owner = this;
-            relay.Spec = spec;
+            if (spec.Set != null) // read-only dials (spread angle) don't turn
+            {
+                var relay = face.gameObject.AddComponent<DialRelay>();
+                relay.Owner = this;
+                relay.Spec = spec;
+            }
             AddTooltip(face.gameObject, tip);
             y -= ControlH + ReadoutGap;
 
@@ -378,7 +390,7 @@ namespace ScopeTdcControls
             y -= ReadoutH + 12f;
 
             spec.Height = yStart - y;
-            dials.Add(spec);
+            (list ?? dials).Add(spec);
             return y;
         }
 
@@ -438,6 +450,29 @@ namespace ScopeTdcControls
             tri.SetAsLastSibling(); // over the knob
             return holder;
         }
+
+        /// <summary>A red flag at the rim pointing in at the scale (the TDC's spread angle flag); returns the turning holder.</summary>
+        static RectTransform MakeFlagPointer(RectTransform face)
+        {
+            var holder = NewRect("Flag", face);
+            holder.anchorMin = holder.anchorMax = holder.pivot = new Vector2(0.5f, 0.5f);
+            holder.sizeDelta = Vector2.zero;
+            var flag = NewRect("Pointer", holder);
+            flag.anchorMin = flag.anchorMax = flag.pivot = new Vector2(0.5f, 0.5f);
+            flag.sizeDelta = new Vector2(14f, 13f);
+            flag.anchoredPosition = new Vector2(0f, DialSize * 0.5f - 8f);
+            flag.localEulerAngles = new Vector3(0f, 0f, 180f); // points in, at the marks
+            var img = flag.gameObject.AddComponent<Image>();
+            img.sprite = TriangleSprite();
+            img.color = FlagRed;
+            img.raycastTarget = false;
+            var edge = flag.gameObject.AddComponent<Outline>();
+            edge.effectColor = new Color(0f, 0f, 0f, 0.8f);
+            edge.effectDistance = new Vector2(0.8f, -0.8f);
+            return holder;
+        }
+
+        static readonly Color FlagRed = new Color(0.90f, 0.16f, 0.12f, 1f);
 
         /// <summary>The TDC's four-lobed knob with a slotted brass screw in the middle.</summary>
         static void AddCrossKnob(RectTransform parent, float size)
@@ -604,7 +639,7 @@ namespace ScopeTdcControls
                     red[g].rectTransform.localEulerAngles = green[g].rectTransform.localEulerAngles = new Vector3(0f, 0f, tilt);
                     marks[g].localEulerAngles = new Vector3(0f, 0f, -rot);
                     float fade = Mathf.Clamp01((AobWindowHalf - 6f - edge) / 10f); // fade at the window's sides
-                    Color rc = AobFineRed, gc = DialStarboard;
+                    Color rc = Tinted(AobFineRed, lastTint), gc = Tinted(DialStarboard, lastTint); // set every frame: tint here
                     rc.a = fade * (toPort ? 1f : 0.45f); // the side the needle is on reads bright
                     gc.a = fade * (toPort ? 0.45f : 1f);
                     red[g].color = rc;
@@ -699,6 +734,68 @@ namespace ScopeTdcControls
             // faint circle just inside the marks: the base of the knob
             FaintRing(spec.Face, DistTickR - 9f);
             ScaleLabel(spec.Face, font, 0f, "hm", DialScale, 9f, false, DistLabelR);
+        }
+
+        const float TurnRateMax = 3f; // °/s either way, as on the TDC's knob
+
+        static TorpedoCalculator turnRateCheckedFor;
+        static bool turnRateAvailable;
+
+        /// <summary>
+        /// Whether this boat's TDC has the own angular speed knob. Not every TDC model has
+        /// one (the smaller boats' calculator does not), and which model a boat carries is in
+        /// its 3D model, so this looks for a TorpedoCalculatorOwnAngularSpeedDial wired to this
+        /// TDC. Searched once per TDC (the scene search is slow); the result is logged.
+        /// </summary>
+        static bool TurnRateAvailable()
+        {
+            var tdc = Tdc();
+            if (tdc == null) return false;
+            if (ReferenceEquals(tdc, turnRateCheckedFor)) return turnRateAvailable;
+            turnRateCheckedFor = tdc;
+            turnRateAvailable = false;
+            try
+            {
+                var calc = AccessTools.Field(typeof(TorpedoCalculatorOwnAngularSpeedDial), "calculator");
+                foreach (var d in Resources.FindObjectsOfTypeAll<TorpedoCalculatorOwnAngularSpeedDial>())
+                {
+                    if (d == null || !d.gameObject.scene.IsValid()) continue;
+                    var c = calc != null ? calc.GetValue(d) as TorpedoCalculator : null;
+                    if (c == null || ReferenceEquals(c, tdc)) { turnRateAvailable = true; break; }
+                }
+                bool c36 = false;
+                try { c36 = (bool)AccessTools.Field(typeof(TorpedoCalculator), "isC36Calculator").GetValue(tdc); } catch { }
+                Debug.Log(ScopeTdcControlsMod.Tag + " TDC '" + tdc.name + "' (C36 calculator: " + c36 + "): own angular speed knob "
+                          + (turnRateAvailable ? "found" : "not on this TDC, setting disabled"));
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(ScopeTdcControlsMod.Tag + " angular speed knob check failed: " + e.Message);
+            }
+            return turnRateAvailable;
+        }
+
+        static string FormatTurnRate(float v)
+        {
+            float a = Mathf.Abs(v);
+            string side = a < 0.05f ? "" : (v < 0f ? Strings.Port : Strings.Starboard) + " ";
+            return side + a.ToString("0.0", CultureInfo.InvariantCulture) + " °/s";
+        }
+
+        /// <summary>As on the TDC's angular speed knob: 3 2 1 0 1 2 3 over the top, half marks between, Bb / Stb at the sides.</summary>
+        void DrawTurnRateScale(DialSpec spec, TMP_FontAsset font)
+        {
+            for (int h = -6; h <= 6; h++)
+            {
+                float v = h * 0.5f;
+                float r = spec.ToRot(v);
+                if (h % 2 != 0) { DrawTick(spec.Face, r, 4f, 1.2f, DialScale, DistTickR); continue; }
+                DrawTick(spec.Face, r, 7f, 2f, DialScale, DistTickR);
+                ScaleLabel(spec.Face, font, r, Mathf.Abs(h / 2).ToString(CultureInfo.InvariantCulture), DialScale, 10f, false, DistLabelR);
+            }
+            FaintRing(spec.Face, DistTickR - 9f);
+            ScaleLabel(spec.Face, font, -97f, Strings.PortLong, DialScale, 10f, false, DistLabelR - 2f);
+            ScaleLabel(spec.Face, font, 97f, Strings.StarboardLong, DialScale, 10f, false, DistLabelR - 2f);
         }
 
         /// <summary>A mark pointing in from the scale with a small dot on its inner tip.</summary>
@@ -814,7 +911,8 @@ namespace ScopeTdcControls
         /// again every frame of a drag remembered "off" and left tracking off for good (the
         /// AOB then stopped following the bearing). Instead the impact angle is set directly,
         /// and the TDC's AOB-bearing sum with it, so the tracking sees no course change to
-        /// undo. Like the crew's AOB report, it switches the AOB motor and tracking on.
+        /// undo. Like the crew's AOB report it switches AOB tracking on; the AOB motor is left
+        /// as set on its switch (tracking only follows the bearing while the motor is on).
         /// </remarks>
         static void ApplyAobNow(TorpedoCalculator tdc, float aob)
         {
@@ -822,10 +920,8 @@ namespace ScopeTdcControls
             float impact = tdc.ComputeImpactAngleForDesiredAOB(aob, tdc.ImpactAngle);
             if (float.IsNaN(impact) || float.IsInfinity(impact)) return;
 
-            // as the crew's AOB report does (Periscope.CourseTicket_Stopped): AOB motor and AOB
-            // tracking on, so the TDC then keeps the target's course as the bearing changes
-            // (its tracking only works while the AOB motor is on)
-            if (!tdc.IsAOBMotorOn) tdc.IsAOBMotorOn = true;
+            // AOB tracking on, as the crew's AOB report does (Periscope.CourseTicket_Stopped); the
+            // AOB motor stays as it is on the AOB motor switch
             if (!tdc.ApplyCourseChanges) tdc.ApplyCourseChanges = true;
             ResolveAobFields();
             if (restoreTracking != null) restoreTracking(tdc) = false; // nothing left to restore
@@ -871,7 +967,13 @@ namespace ScopeTdcControls
                 foreach (var d in dials) if (!d.Group.gameObject.activeSelf) h -= d.Height;
                 dialsPanel.sizeDelta = new Vector2(dialsPanel.sizeDelta.x, h);
             }
-            foreach (var d in dials)
+            foreach (var d in dials) UpdateDialValue(tdc, d);
+            UpdateFlipSwitch(aobMotorSwitch, tdc);
+        }
+
+        /// <summary>One dial's needle (or ring) and readout from the TDC.</summary>
+        void UpdateDialValue(TorpedoCalculator tdc, DialSpec d)
+        {
             {
                 float v = d.Get(tdc);
                 // a value outside the dial's (the game's) range, e.g. from an old save, would
@@ -883,7 +985,7 @@ namespace ScopeTdcControls
                     d.Set(tdc, fixedV);
                     v = d.Get(tdc);
                 }
-                if (float.IsNaN(v) || float.IsInfinity(v)) continue;
+                if (float.IsNaN(v) || float.IsInfinity(v)) return;
                 if (d.Announce != null && !d.Dragging && !float.IsNaN(d.AnnounceAt) && Time.unscaledTime >= d.AnnounceAt)
                 {
                     d.AnnounceAt = float.NaN;
@@ -896,6 +998,11 @@ namespace ScopeTdcControls
 
                 d.Readout.text = d.Format(shown);
                 if (d.Extra != null) d.Extra(d, shown);
+                if (d.Needle2 != null && d.Get2 != null)
+                {
+                    float v2 = d.Get2(tdc);
+                    if (!float.IsNaN(v2) && !float.IsInfinity(v2)) d.Needle2.localEulerAngles = new Vector3(0f, 0f, -d.ToRot(Mathf.Clamp(v2, d.Min, d.Max)));
+                }
             }
         }
 

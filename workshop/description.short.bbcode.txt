@@ -20,13 +20,26 @@ Beside the periscope raise/lower control (roll it up with the caret):
 A sidebar button on the scope screen shows or hides the panel and its windows.
 
 [h2]TDC dials[/h2]
-[b]AOB[/b], [b]target speed[/b], [b]target distance[/b] and [b]target length[/b], styled after the real TDC.
+[b]AOB[/b], [b]target speed[/b] and [b]target distance[/b], styled after the real TDC.
 [list]
 [*]Turn a dial, click a value on its scale, or use the mouse wheel; Shift = fine
-[*][b]AOB[/b] – red/green halves with rolling ones digits; switches on the TDC's AOB tracking like the crew's report
-[*][b]Target length[/b] – shown only while a spread is selected
+[*][b]AOB[/b] – red/green halves with rolling ones digits, plus the TDC's [b]AOB motor[/b] switch (AOB tracking)
 [*][b]Voice callouts[/b] – the crew member at the scope announces what you dial in
 [/list]
+
+[h2]Salvo spread[/h2]
+Pops up for spreads (or always, with its check box), anchored beside the TDC dials:
+[list]
+[*][b]Target length[/b] – the turning ring dial
+[*][b]Spread angle[/b] – brass needle = computed angle, red flag = angle set (drag it by hand)
+[*][b]Spread motor[/b] switch – on: the TDC drives the flag to the computed angle
+[/list]
+
+[h2]Own angular speed[/h2]
+Optional window with the TDC's rate-of-turn knob (-3 to 3 °/s), allowed for when firing while turning. Only on boats whose TDC has the knob.
+
+[h2]Torpedo tubes[/h2]
+SH3-style circles, fore and aft rows: black = empty, grey = loaded, blue = flooded, green = selected. Click to select or deselect, double-click to flood or drain.
 
 [h2]Torpedo settings[/h2]
 An SH3-style window while a tube is selected:
@@ -43,6 +56,7 @@ The boat's rotary switches, with its own knob clicks:
 [*][b]Firing selector[/b] – Einzelschuß, Fächerschuß and T.Abf. Schalter (your sub's positions only)
 [*][b]Direction selector[/b] – Zielrichtung (bearing source) and Schußrichtung (gyro angle receiver)
 [/list]
+A red [b]firing circuit lamp[/b] locks the switches for 4 s after each fire command.
 
 [h2]Launch lever[/h2]
 Spring-loaded Aus / Schuß: press to fire the selected tubes. It fires only while its lamp is green (hover for the reason). Red: no tube selected or not flooded, receiver on the wrong end, target out of range, or gyro angle past the ±135° stop. Dark: firing station switch off.
@@ -55,6 +69,8 @@ Buttons above and below the stock periscope control run the scope all the way up
 [*][b]Show gyro receiver angles / active receivers only / parallax angle[/b]
 [*][b]Auto set gyro receiver[/b] – follows the checked, flooded tubes (both ends = the way the scope looks)
 [*][b]Auto set parallax mode[/b] – follows tube, receiver or scope direction
+[*][b]Auto select tube when flooding[/b] – off = flooding leaves your selection alone
+[*][b]Auto display spread settings[/b], [b]Tint panels with sub lighting[/b]
 [*][b]Realistic TDC follower / receiver sync[/b] – off = 10× faster TDC and gyros
 [*][b]TDC operator required[/b] – off = use the TDC unmanned
 [*][b]Voice callouts[/b], [b]Ctrl+drag to move[/b]
@@ -80,13 +96,15 @@ With the gyros pre-set and the receiver off while scanning, you avoid the stock 
 [h2]Details[/h2]
 [list]
 [*]English and German, following the game's language; pop-up help on every element
-[*]Windows move by dragging and resize with the corner grip; they take on the boat's red or blue interior lighting
+[*]Windows move by dragging and resize with the corner grip; anchor icons keep related windows together
+[*]Windows take on the boat's red or blue interior lighting
 [*]Hidden while the game's menus are open; stores nothing in your save
 [*]Full documentation: [url=https://github.com/waltailji/scope-tdc-controls]GitHub[/url]
 [/list]
 
 [h2]Version history[/h2]
 [list]
+[*][b]1.4[/b] – salvo spread and angular speed windows, torpedo tube indicator, AOB and spread motor switches, firing circuit lamp, anchoring, stronger light tint, sidebar button fix
 [*][b]1.3[/b] – torpedo settings window (Torpedo Room aware), lamps on the counters, hidden in menus, interior light tint, unified dial layout, AOB tracking and parallax fixes
 [*][b]1.2[/b] – realistic TDC dials, voice callouts, firing and direction selectors, launch lever, resizable windows
 [*][b]1.1[/b] – TDC dials, sidebar button, raise/lower fully

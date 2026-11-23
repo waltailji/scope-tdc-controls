@@ -179,10 +179,22 @@ namespace ScopeTdcControls
         }
     }
 
-    /// <summary>The game auto-checks a tube when it finishes flooding (autoMarkForLaunch).</summary>
+    /// <summary>
+    /// The game auto-checks a tube when it starts flooding (autoMarkForLaunch, on a tube
+    /// state change), and the checked tubes then set the firing selector switches (several
+    /// tubes flooded one after another turn them to a spread / salvo).
+    ///   - "Auto select tube when flooding" off (default): no auto-check at all, so the
+    ///     tube selection and the switches are left alone.
+    ///   - On (base game): the auto-check happens, then "one end at a time" applies.
+    /// </summary>
     [HarmonyPatch(typeof(TorpedoLauncherUI), "ValidateState")]
     static class TorpedoLauncherUI_ValidateState_Patch
     {
+        static void Prefix(ref bool autoMarkForLaunch)
+        {
+            if (!GyroConfig.AutoSelectFloodedTube) autoMarkForLaunch = false;
+        }
+
         static void Postfix(TorpedoLauncherUI __instance, bool autoMarkForLaunch)
         {
             if (!autoMarkForLaunch) return;

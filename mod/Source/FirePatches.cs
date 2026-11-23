@@ -61,6 +61,8 @@ namespace ScopeTdcControls
         {
             try { FireCommand.Record(__instance); }
             catch (Exception e) { Debug.LogException(e); }
+            try { GyroCounterUI.OnFireCommand(__instance); } // firing circuit lamp on the firing selector
+            catch (Exception e) { Debug.LogException(e); }
         }
     }
 
