@@ -17,7 +17,7 @@ Beside the periscope raise/lower control (roll it up with the caret):
 [*][b]Parallax mode[/b] – Forward / Backward
 [*][b]Windows[/b] – show or hide each window, reset their sizes
 [/list]
-A sidebar button on the scope screen shows or hides the panel and its windows.
+A sidebar button on the scope screen shows or hides the panel, its windows and the counters.
 
 [h2]TDC dials[/h2]
 [b]AOB[/b], [b]target speed[/b] and [b]target distance[/b], styled after the real TDC.
@@ -36,10 +36,10 @@ Pops up for spreads (or always, with its check box), anchored beside the TDC dia
 [/list]
 
 [h2]Own angular speed[/h2]
-Optional window with the TDC's rate-of-turn knob (-3 to 3 °/s), allowed for when firing while turning. Only on boats whose TDC has the knob.
+Optional window with the TDC's rate-of-turn knob (-3 to 3 °/s), allowed for when firing while turning; pops up for a salvo in a turn. Only on boats whose TDC has the knob.
 
 [h2]Torpedo tubes[/h2]
-SH3-style circles, fore and aft rows: black = empty, grey = loaded, blue = flooded, green = selected. Click to select or deselect, double-click to flood or drain.
+SH3-style circles, fore and aft rows: black = empty, grey = loaded, yellow = in maintenance, blue = flooded, green = selected. Click to select or deselect, double-click to flood or drain.
 
 [h2]Torpedo settings[/h2]
 An SH3-style window while a tube is selected:
@@ -53,7 +53,7 @@ With the Torpedo Room mod installed, the settings are stored on each selected to
 [h2]Firing & direction selectors[/h2]
 The boat's rotary switches, with its own knob clicks:
 [list]
-[*][b]Firing selector[/b] – Einzelschuß, Fächerschuß and T.Abf. Schalter (your sub's positions only)
+[*][b]Firing selector[/b] – Einzelschuß (launch mode), Fächerschuß (salvo mode) and T.Abf. Schalter, laid out as on your boat's box
 [*][b]Direction selector[/b] – Zielrichtung (bearing source) and Schußrichtung (gyro angle receiver)
 [/list]
 A red [b]firing circuit lamp[/b] locks the switches for 4 s after each fire command.
@@ -73,7 +73,7 @@ Buttons above and below the stock periscope control run the scope all the way up
 [*][b]Auto display spread settings[/b], [b]Tint panels with sub lighting[/b]
 [*][b]Realistic TDC follower / receiver sync[/b] – off = 10× faster TDC and gyros
 [*][b]TDC operator required[/b] – off = use the TDC unmanned
-[*][b]Voice callouts[/b], [b]Ctrl+drag to move[/b]
+[*][b]Voice callouts[/b], [b]Ctrl+drag to move[/b], [b]Hotkey[/b] – click and press a key to show / hide the mod
 [/list]
 
 [h2]Fixes to the base game[/h2]
@@ -104,6 +104,7 @@ With the gyros pre-set and the receiver off while scanning, you avoid the stock 
 
 [h2]Version history[/h2]
 [list]
+[*][b]1.4.1[/b] – hotkey field; the sidebar button and hotkey hide the counters too; switch box layouts per boat (Type II, VII, IX); maintenance colour on the tubes; angular speed pops up for a salvo in a turn
 [*][b]1.4[/b] – salvo spread and angular speed windows, torpedo tube indicator, AOB and spread motor switches, firing circuit lamp, anchoring, stronger light tint, sidebar button fix
 [*][b]1.3[/b] – torpedo settings window (Torpedo Room aware), lamps on the counters, hidden in menus, interior light tint, unified dial layout, AOB tracking and parallax fixes
 [*][b]1.2[/b] – realistic TDC dials, voice callouts, firing and direction selectors, launch lever, resizable windows

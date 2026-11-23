@@ -420,6 +420,13 @@ DebugLog=false
             SaveText(key, value.ToString("0.#####", CultureInfo.InvariantCulture));
         }
 
+        /// <summary>The show / hide hotkey (KeyCode.None = no hotkey: an empty entry).</summary>
+        public static void SaveToggleKey(KeyCode key)
+        {
+            ToggleKey = key;
+            SaveText("ToggleKey", key == KeyCode.None ? "" : key.ToString());
+        }
+
         public static void Save(string key, bool value)
         {
             SaveText(key, value ? "true" : "false");

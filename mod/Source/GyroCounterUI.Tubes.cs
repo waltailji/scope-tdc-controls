@@ -27,6 +27,7 @@ namespace ScopeTdcControls
         static readonly Color TubeEmpty = new Color(0.05f, 0.05f, 0.05f, 1f);
         static readonly Color TubeLoaded = new Color(0.55f, 0.55f, 0.53f, 1f);
         static readonly Color TubeFlooded = new Color(26f / 255f, 26f / 255f, 1f, 1f);      // #1A1AFF
+        static readonly Color TubeMaintenance = new Color(242f / 255f, 204f / 255f, 26f / 255f, 1f); // #F2CC1A: crew servicing the torpedo
         static readonly Color TubeSelected = new Color(46f / 255f, 184f / 255f, 46f / 255f, 1f); // #2EB82E
 
         sealed class TubeDot
@@ -157,6 +158,7 @@ namespace ScopeTdcControls
                 Color fill;
                 bool light;   // light number on a dark fill
                 if (!TubeHasTorpedo(l)) { fill = TubeEmpty; light = true; }
+                else if (l.CurrentState == TorpedoLauncher.State.Preheating) { fill = TubeMaintenance; light = false; } // in maintenance
                 else if (l.IsFlooded && l.IsMarkedForLaunch) { fill = TubeSelected; light = false; }
                 else if (l.IsFlooded) { fill = TubeFlooded; light = true; }
                 else
@@ -247,6 +249,7 @@ namespace ScopeTdcControls
             else if (s == TorpedoLauncher.State.Flooding) state = Strings.TubeFlooding;
             else if (s == TorpedoLauncher.State.Draining) state = Strings.TubeDraining;
             else if (s == TorpedoLauncher.State.Launching) state = Strings.TubeLaunching;
+            else if (s == TorpedoLauncher.State.Preheating) state = Strings.TubeMaintenance;
             else if (l.IsFlooded) state = l.IsMarkedForLaunch ? Strings.TubeFloodedSelected : Strings.TubeFlooded;
             else state = Strings.TubeLoaded;
             sb.Append(state);

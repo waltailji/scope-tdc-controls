@@ -274,6 +274,8 @@ namespace ScopeTdcControls
             btnParFwd = btnParBack = null;
             followLamp = null;
             btnSettings = null;
+            btnHotkey = null;
+            capturingKey = false;
             settingsPanel = null; // destroyed with controlsPanel
             checks.Clear();
             windowChecks.Clear();
@@ -804,6 +806,35 @@ namespace ScopeTdcControls
             HideTip();
         }
 
+        Btn btnHotkey;
+        bool capturingKey;      // waiting for the key to use as the hotkey
+        static KeyCode[] allKeys;
+
+        string HotkeyLabel()
+        {
+            if (capturingKey) return Strings.HotkeyPress;
+            return Strings.HotkeyPrefix + (GyroConfig.ToggleKey == KeyCode.None ? Strings.HotkeyNone : GyroConfig.ToggleKey.ToString());
+        }
+
+        /// <summary>While the hotkey field waits: the next keyboard key becomes the hotkey (Backspace / Delete = none, Esc = cancel).</summary>
+        void CaptureHotkey()
+        {
+            if (!settingsOpen || settingsPanel == null || !settingsPanel.gameObject.activeInHierarchy) { capturingKey = false; return; }
+            if (!Input.anyKeyDown) return;
+            if (allKeys == null) allKeys = (KeyCode[])Enum.GetValues(typeof(KeyCode));
+            foreach (var k in allKeys)
+            {
+                if (k == KeyCode.None || k >= KeyCode.Mouse0) continue; // keyboard only (no mouse or joystick buttons)
+                if (!Input.GetKeyDown(k)) continue;
+                if (k == KeyCode.Escape) { }                                    // cancel: keep the old one
+                else if (k == KeyCode.Backspace || k == KeyCode.Delete) GyroConfig.SaveToggleKey(KeyCode.None);
+                else GyroConfig.SaveToggleKey(k);
+                capturingKey = false;
+                if (btnHotkey != null) btnHotkey.Label.text = HotkeyLabel();
+                return;
+            }
+        }
+
         string SettingsLabel() { return (settingsOpen ? "- " : "+ ") + Strings.SettingsHeader; }
 
         void ToggleSettings()
@@ -820,7 +851,7 @@ namespace ScopeTdcControls
             settingsPanel = NewRect("GyroSettings", controlsPanel);
             Frame(settingsPanel, true);
 
-            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptAutoSpread, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag };
+            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptAutoSpread, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag, Strings.HotkeyPress, Strings.HotkeyPrefix + "RightControl" };
             float inner = 0f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f);
 
@@ -886,6 +917,14 @@ namespace ScopeTdcControls
                 () => GyroConfig.CtrlDragToMove,
                 v => { GyroConfig.CtrlDragToMove = v; GyroConfig.Save("CtrlDragToMove", v); },
                 () => Strings.TipOptCtrlDrag);
+            // the show / hide hotkey: click, then press a key (Backspace / Delete = none, Esc = cancel)
+            capturingKey = false;
+            btnHotkey = MakeButton(settingsPanel, font, HotkeyLabel(), ref y, inner, () =>
+            {
+                capturingKey = !capturingKey;
+                HideTip();
+                if (btnHotkey != null) btnHotkey.Label.text = HotkeyLabel();
+            }, () => Strings.TipHotkey);
 
             settingsPanel.sizeDelta = new Vector2(inner + CPad * 2f, -y + CPad - RowGap);
             settingsPanel.gameObject.SetActive(settingsOpen);
@@ -1845,12 +1884,12 @@ namespace ScopeTdcControls
             PeriscopeTravel.Tick();
             VoiceCallouts.Tick();
 
+            if (capturingKey) { CaptureHotkey(); return; } // the next key pressed becomes the hotkey
+
+            // the hotkey does what the sidebar button does: panel, windows and counters hide, the
+            // raise / lower fully buttons stay
             if (GyroConfig.ToggleKey != KeyCode.None && periscopeUI != null && Input.GetKeyDown(GyroConfig.ToggleKey))
-            {
-                userHidden = !userHidden;
-                SetVisible(!userHidden);
-                if (userHidden) HideTip();
-            }
+                OnSidebarButton(!GyroConfig.ControlsVisible);
 
             if (pendingTip != null)
             {
@@ -1867,7 +1906,7 @@ namespace ScopeTdcControls
             bool uiHidden = GameUiHidden();
             var tdc = Tdc();
             bool show = tdc != null && !(uiHidden && GyroConfig.HideWithGameUI);
-            counterPanel.gameObject.SetActive(show && GyroConfig.ShowGyros);
+            counterPanel.gameObject.SetActive(show && GyroConfig.ShowGyros && GyroConfig.ControlsVisible); // hidden with the sidebar button too
             if (controlsPanel != null)
             {
                 bool panel = show && GyroConfig.ControlsVisible;
@@ -2076,6 +2115,7 @@ namespace ScopeTdcControls
             if (btnNoFollow != null) btnNoFollow.Paint(!follow, true);
             if (btnResetSizes != null) btnResetSizes.Paint(false, true);
             if (btnSettings != null) btnSettings.Paint(settingsOpen, true);
+            if (btnHotkey != null && settingsOpen) btnHotkey.Paint(capturingKey, true);
             PaintChecks(windowChecks);
             if (settingsOpen) PaintChecks(checks);
         }

@@ -286,8 +286,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Scope TDC Controls</b>\nBedienfeld und die eingeschalteten Fenster (Rechnerscheiben, Schusswahl, Richtungswahl, Abfeuerhebel) ein- oder ausblenden. Die Zähler bleiben sichtbar.",
-                         "<b>Scope TDC Controls</b>\nShow or hide the control panel and the windows switched on there (TDC dials, firing selector, direction selector, launch lever). The counters stay visible.");
+                return T("<b>Scope TDC Controls</b>\nBedienfeld und die eingeschalteten Fenster (Rechnerscheiben, Schusswahl, Richtungswahl, Abfeuerhebel) ein- oder ausblenden, mit den Schusswinkel-Zählern.",
+                         "<b>Scope TDC Controls</b>\nShow or hide the control panel and the windows switched on there (TDC dials, firing selector, direction selector, launch lever), together with the gyro angle counters.");
             }
         }
 
@@ -379,7 +379,7 @@ namespace ScopeTdcControls
             get
             {
                 return T("<b>Schusswahl</b>\nDas Fenster mit den Schaltern Einzelschuß, Fächerschuß und T.Abf. Schalter ein- oder ausblenden.",
-                         "<b>Firing selector</b>\nShow or hide the window with the single shot, salvo and firing station switches.");
+                         "<b>Firing selector</b>\nShow or hide the window with the launch mode, salvo mode and firing station switches.");
             }
         }
 
@@ -450,10 +450,11 @@ namespace ScopeTdcControls
         public static string TubeFlooding { get { return T("Wird geflutet", "Flooding"); } }
         public static string TubeDraining { get { return T("Wird gelenzt", "Draining"); } }
         public static string TubeLaunching { get { return T("Schuss", "Launching"); } }
+        public static string TubeMaintenance { get { return T("In Wartung (Torpedo wird gewartet)", "In maintenance (torpedo being serviced)"); } }
         public static string TubeFlooded { get { return T("Geladen und geflutet", "Loaded and flooded"); } }
         public static string TubeFloodedSelected { get { return T("Geladen, geflutet und gewählt", "Loaded, flooded and selected"); } }
         public static string TubeClickSelect { get { return T("Klicken: dieses Rohr für einen Einzelschuss wählen (Schusswahl folgt)", "Click: select this tube for a single shot (the firing selector follows)"); } }
-        public static string TubeClickDeselect { get { return T("Klicken: Rohr abwählen (Einzelschuß auf Aus)", "Click: deselect this tube (single shot switch to Off)"); } }
+        public static string TubeClickDeselect { get { return T("Klicken: Rohr abwählen (Einzelschuß auf Aus)", "Click: deselect this tube (launch mode switch to Off)"); } }
         public static string TubeClickNeedsFlood { get { return T("Klicken: wählbar, sobald das Rohr geflutet ist", "Click: selectable once the tube is flooded"); } }
         public static string TubeDoubleFlood { get { return T("Doppelklick: Rohr fluten", "Double-click: flood the tube"); } }
         public static string TubeDoubleDrain { get { return T("Doppelklick: Rohr lenzen", "Double-click: drain the tube"); } }
@@ -508,14 +509,15 @@ namespace ScopeTdcControls
         static string TorpRoomDe { get { return TorpedoRoomLink.Present ? "\n<i>Torpedo Room: wird für jeden angehakten Torpedo einzeln gespeichert.</i>" : ""; } }
         static string TorpRoomEn { get { return TorpedoRoomLink.Present ? "\n<i>Torpedo Room: stored on each checked torpedo.</i>" : ""; } }
         // ---- fire-control switch box ----
-        public static string SwitchSingle { get { return T("Einzelschuß", "Single shot"); } }
-        public static string SwitchSalvo { get { return T("Fächerschuß", "Salvo"); } }
+        public static string SwitchSingle { get { return T("Einzelschuß", "Launch mode"); } }
+        public static string SwitchSalvo { get { return T("Fächerschuß", "Salvo mode"); } }
         public static string SwitchLever { get { return T("T.Abf. Schalter", "Firing station"); } }
         public static string TubeWord { get { return T("Rohr", "Tube"); } }
-        public static string SpreadCourse { get { return T("Fächer auf geradem Kurs", "Spread, straight course"); } }
-        public static string SpreadTurning { get { return T("Fächer im Drehen", "Spread while turning"); } }
-        public static string SpreadCourseShort { get { return T("Fächer gerade", "Spread straight"); } }
-        public static string SpreadTurningShort { get { return T("Fächer Drehen", "Spread turning"); } }
+        public static string SpreadCourse { get { return T("Fächer auf geradem Kurs", "Salvo on straight course"); } }
+        public static string SpreadTurning { get { return T("Fächer im Drehen", "Salvo in a turn"); } }
+        public static string SpreadCourseShort { get { return T("Fächer gerade", "Salvo on straight course"); } }
+        public static string SpreadPlain { get { return T("Fächer", "Salvo"); } } // Type II: its only salvo position
+        public static string SpreadTurningShort { get { return T("Fächer Drehen", "Salvo in a turn"); } }
         public static string SwitchOff { get { return T("Aus", "Off"); } }
         public static string LeverBridge { get { return T("Brücke", "Bridge"); } }
         public static string LeverTower { get { return T("Turm", "Tower"); } }
@@ -528,7 +530,7 @@ namespace ScopeTdcControls
             get
             {
                 return T("<b>Einzelschuß</b>\nWählt das Rohr für einen Einzelschuß oder einen Fächer (auf geradem Kurs / im Drehen). Setzt die Rohrauswahl wie der Schalter im Boot." + SwitchUsageDe,
-                         "<b>Single shot</b>\nSelects the tube for a single shot, or a spread (straight course / while turning). Sets the tube selection like the knob in the boat." + SwitchUsageEn);
+                         "<b>Launch mode</b>\nSelects the tube for a single shot, or a salvo on a straight course or in a turn. Sets the tube selection like the knob in the boat." + SwitchUsageEn);
             }
         }
 
@@ -537,7 +539,7 @@ namespace ScopeTdcControls
             get
             {
                 return T("<b>Fächerschuß</b>\nWählt die Rohre, die zusammen als Fächer geschossen werden (Aus = keiner)." + SwitchUsageDe,
-                         "<b>Salvo</b>\nSelects which tubes fire together as a salvo (Off = none)." + SwitchUsageEn);
+                         "<b>Salvo mode</b>\nSelects which tubes fire together as a salvo (Off = none)." + SwitchUsageEn);
             }
         }
 
@@ -627,7 +629,19 @@ namespace ScopeTdcControls
             get
             {
                 return T("<b>Fächer</b>\nAngehakt: Das Fenster mit Streubreite und Streuwinkel ist immer zu sehen.\nNicht angehakt: Es erscheint nur, solange der Einzelschuß-Schalter auf Fächer steht und \"Fächereinstellung automatisch anzeigen\" an ist.",
-                         "<b>Salvo spread</b>\nChecked: the window with the target length and spread angle is always shown.\nUnchecked: it appears only while the single shot switch is on a spread position and \"Auto display spread settings\" is on.");
+                         "<b>Salvo spread</b>\nChecked: the window with the target length and spread angle is always shown.\nUnchecked: it appears only while the launch mode switch is on a salvo / spread position and \"Auto display spread settings\" is on.");
+            }
+        }
+
+        public static string HotkeyPrefix { get { return T("Tastenkürzel: ", "Hotkey: "); } }
+        public static string HotkeyNone { get { return T("keins", "none"); } }
+        public static string HotkeyPress { get { return T("Taste drücken ... (Esc = abbrechen)", "Press a key ... (Esc = cancel)"); } }
+        public static string TipHotkey
+        {
+            get
+            {
+                return T("<b>Tastenkürzel</b>\nBlendet die Mod-Anzeige ein und aus, wie der Knopf in der Seitenleiste.\nKlicken, dann die gewünschte Taste drücken. Rücktaste / Entf = kein Tastenkürzel, Esc = abbrechen.",
+                         "<b>Hotkey</b>\nShows and hides the mod's display, like the sidebar button.\nClick, then press the key you want. Backspace / Delete = no hotkey, Esc = cancel.");
             }
         }
 
@@ -648,8 +662,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Fächereinstellung automatisch anzeigen</b>\nAn: Das Fächer-Fenster erscheint, sobald der Einzelschuß-Schalter auf \"Fächer Kurs\" oder \"Fächer Drehen\" gestellt wird, und verschwindet bei jeder anderen Stellung.\nAus: Das Fächer-Fenster erscheint nur, wenn sein Häkchen unter FENSTER gesetzt ist (dann immer).",
-                         "<b>Auto display spread settings</b>\nOn: the salvo spread window pops up when the single shot switch is set to spread straight or spread turning, and hides at any other position.\nOff: the salvo spread window appears only while its check box under WINDOWS is checked (then always).");
+                return T("<b>Fächereinstellung automatisch anzeigen</b>\nAn: Das Fächer-Fenster erscheint, sobald der Einzelschuß-Schalter auf \"Fächer Kurs\" oder \"Fächer Drehen\" gestellt wird, und verschwindet bei jeder anderen Stellung. Bei \"Fächer Drehen\" erscheint auch das Drehgeschwindigkeits-Fenster.\nAus: Das Fächer-Fenster erscheint nur, wenn sein Häkchen unter FENSTER gesetzt ist (dann immer).",
+                         "<b>Auto display spread settings</b>\nOn: the salvo spread window pops up when the launch mode switch is set to salvo on straight course or salvo in a turn, and hides at any other position. On salvo in a turn the angular speed window pops up too.\nOff: the salvo spread window appears only while its check box under WINDOWS is checked (then always).");
             }
         }
         public static string UnitKnots { get { return T("sm/Std", "kn"); } }
@@ -677,8 +691,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Drehgeschwindigkeit</b>\nAngehakt: ein eigenes Fenster neben den Rechnerscheiben mit einem Knopf für die eigene Drehgeschwindigkeit (-3 bis 3 Grad je Sekunde, Bb/Stb), die der Rechner beim Schuss im Drehen einrechnet.\nNicht angehakt: Fenster ausgeblendet (der eingestellte Wert bleibt im Rechner).",
-                         "<b>Angular speed</b>\nChecked: a window beside the TDC dials with an own angular speed knob (-3 to 3 degrees per second, port/starboard), which the TDC allows for when firing while turning.\nUnchecked: window hidden (the value set stays in the TDC).");
+                return T("<b>Drehgeschwindigkeit</b>\nAngehakt: ein eigenes Fenster neben den Rechnerscheiben mit einem Knopf für die eigene Drehgeschwindigkeit (-3 bis 3 Grad je Sekunde, Bb/Stb), die der Rechner beim Schuss im Drehen einrechnet.\nNicht angehakt: Fenster ausgeblendet (der eingestellte Wert bleibt im Rechner), außer bei \"Fächer Drehen\" mit \"Fächereinstellung automatisch anzeigen\".",
+                         "<b>Angular speed</b>\nChecked: a window beside the TDC dials with an own angular speed knob (-3 to 3 degrees per second, port/starboard), which the TDC allows for when firing while turning.\nUnchecked: window hidden (the value set stays in the TDC), except on salvo in a turn with \"Auto display spread settings\" on.");
             }
         }
 

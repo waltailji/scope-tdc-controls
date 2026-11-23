@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.4  (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.4.1 (UBOAT 2026.1 patch 21)
 =================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -31,8 +31,8 @@ in their bottom-right corner; RESET WINDOW SIZES on the panel sets them back.
 Positions and sizes are saved automatically.
 
 A button in the periscope / UZO screen's left sidebar (counter icon, next to
-the chronometer) shows or hides the control panel and the TDC dials. The
-counters stay visible. The choice is remembered (ControlsVisible in the
+the chronometer) shows or hides the control panel, its windows and the gyro
+angle counters. The choice is remembered (ControlsVisible in the
 settings file).
 
 TDC dials: a window on the left of the scope with the TDC's target dials,
@@ -108,9 +108,9 @@ Own angular speed (Drehgeschwindigkeit): a window right of the TDC dials, its
 
 Firing selector (SCHUSSWAHL): a window near the bottom of the scope with the
 three switches of the Schaltkasten T-Abf.-Anl.:
-  Einzelschuß (Single shot)       tube for a single shot, or a spread on a
+  Einzelschuß (Launch mode)       tube for a single shot, or a salvo on a
                                   straight course / while turning
-  Fächerschuß (Salvo)             which tubes fire together (Aus = none)
+  Fächerschuß (Salvo mode)        which tubes fire together (Aus = none)
   T.Abf. Schalter (Firing station) Brücke (bridge/UZO), Turm (tower) or Aus
   Each switch offers exactly the positions of your boat's own knob, so it
   follows the sub type (salvo labels come from the game's own text), and
@@ -130,7 +130,8 @@ three switches of the Schaltkasten T-Abf.-Anl.:
 Torpedo tubes (Rohranzeige): a compact window, by default above the bottom
   windows in the centre, with one numbered circle per tube: bow tubes on the
   first row (Bug / Fore), stern tubes on the second (Heck / Aft), as many as your boat
-  has. Colours: black = empty (or loading), grey = loaded, not flooded, blue =
+  has. Colours: black = empty (or loading), grey = loaded, not flooded, yellow =
+  in maintenance (the crew servicing the torpedo), blue =
   flooded (filling while it floods), green = flooded and selected.
   Click a flooded tube to select it for a single shot: the Einzelschuss switch
   turns to it and Faecherschuss to Aus, as on the switch box (not while the
@@ -190,6 +191,20 @@ button, to stop. Hidden in the UZO and while the game UI is hidden.
 (ElevatorButtons=false in the settings file removes them.)
 
 Version history
+  1.4.1 The sidebar button now hides the gyro angle counters too; the
+       ToggleKey hotkey works like it (the raise / lower fully buttons stay).
+       Switch box knobs follow each boat: only the bearing sources its knob has
+       (no UZO on the Type II); Type II layouts as on its box; Type VII / IX
+       gyro receiver Bow right, Stern left, bearing source Attack left, UZO
+       top, Obs. right; Type IX salvo mode positions and labels as on its box.
+       No AOB motor switch on a TDC without one.
+       English names: Launch mode, Salvo mode; the spreads are "Salvo on
+       straight course" / "Salvo in a turn".
+       Tube indicator: yellow for a tube in maintenance.
+       With "Auto display spread settings", the angular speed window pops up
+       on "salvo in a turn" too.
+       Hotkey field in the settings drop-down: click, press a key; Backspace /
+       Delete = no hotkey.
   1.4  The scope screen button no longer overlaps the velocity tool button.
        Firing selector: red firing circuit lamp, lit for 4 s after a fire
        command given with a green launch lever lamp; its switches can't be
@@ -496,7 +511,10 @@ added in later versions are appended automatically; your values are kept.
   Anchor=Compass | Screen             Screen = place the counters at FallbackX/FallbackY
   HideWithGameUI=false                true = also hide this mod's elements with Alt
   Language=Auto | DE | EN
-  ToggleKey=F9                        optional show/hide hotkey
+  ToggleKey=F9                        optional hotkey: same as the sidebar button;
+                                      set it with the Hotkey field in the settings
+                                      drop-down (empty = no hotkey)
+                                      (raise / lower fully buttons stay)
   DebugLog=true                       log every torpedo tube check-box change
 
 Troubleshooting: search output_log.txt for "[ScopeTDC]". It logs the

@@ -146,9 +146,33 @@ namespace ScopeTdcControls
         }
 
         /// <summary>"Rohr I II" from the game's tooltip for that salvo preset.</summary>
+        // Type IX salvo presets 1..8, as its box marks them (the game fires: 1 = all four bow tubes,
+        // 2 = I II IV, 3 = I III IV, 4 = I IV, 5 = II III, 6 = I III, 7 = II IV, 8 = the stern tubes)
+        static readonly string[] TypeIXSalvos = { "I III II IV", "I II IV", "I III IV", "I IV", "II III", "I III", "II IV", "V VI" };
+
+        static bool IsTypeIX(TorpedoFireControlBoxes boxes)
+        {
+            try { return boxes != null && boxes.TubesSetup == ShipTubesSetup.TypeIX; }
+            catch { return false; }
+        }
+
+        /// <summary>Type IX salvo knob: preset 1 at the bottom, the rest clockwise, evenly (it has no Off).</summary>
+        static float[] TypeIXSalvoRots(int[] values)
+        {
+            int n = values.Length;
+            var order = new List<int>();
+            foreach (var v in values) if (v != 0) order.Add(v);
+            order.Sort();
+            if (Array.IndexOf(values, 0) >= 0) order.Add(0);
+            var r = new float[n];
+            for (int i = 0; i < n; i++) r[i] = Mathf.Repeat(180f + order.IndexOf(values[i]) * 360f / Mathf.Max(1, n), 360f);
+            return r;
+        }
+
         static string SalvoLabel(TorpedoFireControlBoxes boxes, int v)
         {
             if (v == 0) return Strings.SwitchOff;
+            if (IsTypeIX(boxes) && v >= 1 && v <= TypeIXSalvos.Length) return Strings.TubeWord + " " + TypeIXSalvos[v - 1];
             string key = (boxes.TubesSetup != ShipTubesSetup.TypeVII ? "Tooltips/Torpedo Fire Control Boxes Salvo Type II " : "Tooltips/Torpedo Fire Control Boxes Salvo ") + v;
             string text = GameText(key);
             if (text != null)
@@ -168,6 +192,21 @@ namespace ScopeTdcControls
                 case ActiveLaunchLever.ConningTowerInterior: return Strings.LeverTower;
                 default: return Strings.SwitchOff;
             }
+        }
+
+        /// <summary>The Type II's switch box (its knobs are laid out differently).</summary>
+        static bool IsTypeII(TorpedoFireControlBoxes boxes)
+        {
+            try { return boxes != null && boxes.TubesSetup == ShipTubesSetup.TypeII; }
+            catch { return false; }
+        }
+
+        /// <summary>Off (the first value) at the bottom, the rest evenly round the dial, clockwise.</summary>
+        static float[] EvenRots(int n)
+        {
+            var r = new float[n];
+            for (int i = 0; i < n; i++) r[i] = Mathf.Repeat(180f + i * 360f / Mathf.Max(1, n), 360f);
+            return r;
         }
 
         static float[] SpreadRots(int n, float start)
@@ -195,16 +234,22 @@ namespace ScopeTdcControls
                 var labels = new string[tubes.Length];
                 var names = new string[tubes.Length];
                 for (int i = 0; i < tubes.Length; i++) { labels[i] = TubeLabel(tubes[i], true); names[i] = TubeLabel(tubes[i], false); }
+                // the Type II's box has one salvo position: just "Salvo"
+                if (IsTypeII(boxes))
+                    for (int i = 0; i < tubes.Length; i++)
+                        if (tubes[i] == (int)SelectedTorpedoTube.SalvoCourse) labels[i] = names[i] = Strings.SpreadPlain;
                 specs.Add(new KeyValuePair<string, KnobSpec>(Strings.SwitchSingle, new KnobSpec
                 {
                     Values = tubes, Labels = labels, Names = names, InnerTicks = true, Sound = KnobSound(SceneKnob<TorpedoFireControlBoxesTubeIndexKnob>(boxes)),
-                    Rots = SpreadRots(tubes.Length, 155f), // off just left of the bottom, tube I next, clockwise
+                    Rots = IsTypeII(boxes) ? EvenRots(tubes.Length) : SpreadRots(tubes.Length, 155f), // off just left of the bottom, tube I next, clockwise (Type II: evenly round)
                     Get = b => (int)b.SelectedTorpedoTube,
                     Set = (b, v) => { b.SelectedTorpedoTube = (SelectedTorpedoTube)v; b.ValidateMarkedLaunchersFromSalvoSettings(); }
                 }));
             }
 
             int[] salvos = KnobValues(SceneKnob<TorpedoFireControlBoxesSalvoKnob>(boxes));
+            // the Type IX's salvo knob has no Off position: eight salvos, 45 degrees apart
+            if (salvos != null && IsTypeIX(boxes)) salvos = Array.FindAll(salvos, v => v != 0);
             if (salvos != null)
             {
                 var labels = new string[salvos.Length];
@@ -212,13 +257,16 @@ namespace ScopeTdcControls
                 specs.Add(new KeyValuePair<string, KnobSpec>(Strings.SwitchSalvo, new KnobSpec
                 {
                     Values = salvos, Labels = labels, InnerTicks = true, Sound = KnobSound(SceneKnob<TorpedoFireControlBoxesSalvoKnob>(boxes)),
-                    Rots = SpreadRots(salvos.Length, 180f), // off at the bottom, clockwise
+                    Rots = IsTypeIX(boxes) ? TypeIXSalvoRots(salvos) : IsTypeII(boxes) ? EvenRots(salvos.Length) : SpreadRots(salvos.Length, 180f), // off at the bottom, clockwise (Type II: evenly round; Type IX: as its box)
                     Get = b => b.SelectedTorpedoSalvoPreset,
                     Set = (b, v) => { b.SelectedTorpedoSalvoPreset = v; b.ValidateMarkedLaunchersFromSalvoSettings(); }
                 }));
             }
 
             int[] levers = KnobValues(SceneKnob<TorpedoFireControlBoxesActiveLaunchLeverKnob>(boxes));
+            // Type II box: off at the top, tower at the bottom (one off position)
+            if (levers != null && IsTypeII(boxes) && Array.IndexOf(levers, (int)ActiveLaunchLever.Off) >= 0)
+                levers = Array.FindAll(levers, v => v != (int)ActiveLaunchLever.Off2);
             if (levers != null)
             {
                 var labels = new string[levers.Length];
@@ -227,6 +275,12 @@ namespace ScopeTdcControls
                 {
                     labels[i] = LeverLabel(levers[i]);
                     // as on the box: bridge at the top, tower at the bottom, off left and right
+                    if (IsTypeII(boxes))
+                    {
+                        var lv = (ActiveLaunchLever)levers[i];
+                        rots[i] = lv == ActiveLaunchLever.ConningTowerInterior ? 180f : lv == ActiveLaunchLever.UZO ? 90f : 0f;
+                        continue;
+                    }
                     switch ((ActiveLaunchLever)levers[i])
                     {
                         case ActiveLaunchLever.UZO: rots[i] = 0f; break;

@@ -17,7 +17,19 @@ namespace ScopeTdcControls
         CanvasGroup turnGroup;
         readonly List<DialSpec> turnDials = new List<DialSpec>();
 
-        static bool TurnRateWanted() { return GyroConfig.ShowAngularSpeed && TurnRateAvailable(); }
+        /// <summary>
+        /// Shown with its check box, or (with "Auto display spread settings") while the launch mode
+        /// switch is on "salvo in a turn", where the TDC needs the turn rate; never on a TDC
+        /// without the knob.
+        /// </summary>
+        static bool TurnRateWanted()
+        {
+            if (!TurnRateAvailable()) return false;
+            if (GyroConfig.ShowAngularSpeed) return true;
+            if (!GyroConfig.AutoSpread) return false;
+            var b = Boxes();
+            return b != null && b.SelectedTorpedoTube == SelectedTorpedoTube.SalvoTurning;
+        }
 
         void BuildTurnRate(TMP_FontAsset font)
         {

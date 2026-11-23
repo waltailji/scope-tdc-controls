@@ -166,10 +166,14 @@ namespace ScopeTdcControls
             }, (spec, f) => DrawAobScale(spec, f), "");
 
             // AOB motor (Lagenwinkelmotor): on = the TDC keeps the AOB in step with own course and
-            // bearing changes (needed for AOB tracking); not hidden, so it can sit between the dials
-            y += 12f - 4f; // AddDial leaves 12 below the readout
-            aobMotorSwitch = AddFlipSwitch(dialsPanel, font, x0, ref y, inner, Strings.AobMotor, () => Strings.TipAobMotor,
-                t => t.IsAOBMotorOn, (t, v) => t.IsAOBMotorOn = v, typeof(TorpedoCalculatorAOBMotorSwitch));
+            // bearing changes (needed for AOB tracking). Only on a TDC that has the switch (the
+            // Type II's has no AOB motor); decided when the window is built, on entering the scope.
+            if (AobMotorAvailable())
+            {
+                y += 12f - 4f; // AddDial leaves 12 below the readout
+                aobMotorSwitch = AddFlipSwitch(dialsPanel, font, x0, ref y, inner, Strings.AobMotor, () => Strings.TipAobMotor,
+                    t => t.IsAOBMotorOn, (t, v) => t.IsAOBMotorOn = v, typeof(TorpedoCalculatorAOBMotorSwitch));
+            }
 
             // target speed: 0..55 kn, clockwise from just right of the top round to just left of it
             y = AddDial(font, x0, y, inner, Strings.DialSpeed, () => Strings.TipDialSpeed, new DialSpec
@@ -747,6 +751,36 @@ namespace ScopeTdcControls
         /// its 3D model, so this looks for a TorpedoCalculatorOwnAngularSpeedDial wired to this
         /// TDC. Searched once per TDC (the scene search is slow); the result is logged.
         /// </summary>
+        static TorpedoCalculator aobMotorCheckedFor;
+        static bool aobMotorAvailable;
+
+        /// <summary>Whether this boat's TDC has an AOB motor switch (looked up once per TDC; the result is logged).</summary>
+        static bool AobMotorAvailable()
+        {
+            var tdc = Tdc();
+            if (tdc == null) return true; // can't tell yet: show it
+            if (ReferenceEquals(tdc, aobMotorCheckedFor)) return aobMotorAvailable;
+            aobMotorCheckedFor = tdc;
+            aobMotorAvailable = false;
+            try
+            {
+                var calc = AccessTools.Field(typeof(TorpedoCalculatorAOBMotorSwitch), "calculator");
+                foreach (var s in Resources.FindObjectsOfTypeAll<TorpedoCalculatorAOBMotorSwitch>())
+                {
+                    if (s == null || !s.gameObject.scene.IsValid()) continue;
+                    var c = calc != null ? calc.GetValue(s) as TorpedoCalculator : null;
+                    if (c == null || ReferenceEquals(c, tdc)) { aobMotorAvailable = true; break; }
+                }
+                Debug.Log(ScopeTdcControlsMod.Tag + " TDC '" + tdc.name + "': AOB motor switch " + (aobMotorAvailable ? "found" : "not on this TDC, hidden"));
+            }
+            catch (Exception e)
+            {
+                aobMotorAvailable = true;
+                Debug.LogWarning(ScopeTdcControlsMod.Tag + " AOB motor switch check failed: " + e.Message);
+            }
+            return aobMotorAvailable;
+        }
+
         static bool TurnRateAvailable()
         {
             var tdc = Tdc();

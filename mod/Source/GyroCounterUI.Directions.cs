@@ -32,8 +32,8 @@ namespace ScopeTdcControls
             ResolveFields();
             directionsBoxes = boxes;
 
-            // Zielrichtung: off at the bottom, attack periscope (Zieloptik) at the top,
-            // UZO on the right, observation periscope on the left
+            // Zielrichtung: off at the bottom, UZO at the top, attack periscope (Zieloptik) on the left,
+            // observation periscope on the right
             var tv = new List<int>();
             var tr = new List<float>();
             var tl = new List<string>();
@@ -42,10 +42,20 @@ namespace ScopeTdcControls
             {
                 tv.Add((int)v); tr.Add(rot); tl.Add(label); tn.Add(name);
             };
-            addTx(BearingTransmitter.None, 180f, Strings.SwitchOff, Strings.SwitchOff);
-            if (HasScope(boxes, attackScopeField)) addTx(BearingTransmitter.AttackPeriscope, 0f, Strings.DirAttackShort, Strings.DirAttack);
-            if (HasScope(boxes, uzoField)) addTx(BearingTransmitter.UZO, 90f, "UZO", "UZO");
-            if (HasScope(boxes, obsScopeField)) addTx(BearingTransmitter.ObservationPeriscope, 270f, Strings.DirObsShort, Strings.DirObs);
+            // only the positions the boat's own knob has (the Type II's box has no UZO position,
+            // though the boat has a UZO); without the knob, the scopes the boat has
+            var txKnob = SceneKnob<TorpedoFireControlBoxesBearingTransmitterKnob>(boxes);
+            int[] txPresets = KnobValues(txKnob);
+            Func<BearingTransmitter, HarmonyLib.AccessTools.FieldRef<TorpedoFireControlBoxes, Periscope>, bool> offered = (v, scope) =>
+                txPresets != null ? Array.IndexOf(txPresets, (int)v) >= 0 : HasScope(boxes, scope);
+            // Type II box: off at the top, attack periscope on the left, observation periscope on the right
+            bool typeII = IsTypeII(boxes);
+            addTx(BearingTransmitter.None, typeII ? 0f : 180f, Strings.SwitchOff, Strings.SwitchOff);
+            if (offered(BearingTransmitter.AttackPeriscope, attackScopeField)) addTx(BearingTransmitter.AttackPeriscope, 270f, Strings.DirAttackShort, Strings.DirAttack);
+            if (offered(BearingTransmitter.UZO, uzoField)) addTx(BearingTransmitter.UZO, typeII ? 180f : 0f, "UZO", "UZO");
+            if (offered(BearingTransmitter.ObservationPeriscope, obsScopeField)) addTx(BearingTransmitter.ObservationPeriscope, 90f, Strings.DirObsShort, Strings.DirObs);
+            if (GyroConfig.DebugLog && txPresets != null)
+                Debug.Log(ScopeTdcControlsMod.Tag + " bearing transmitter knob positions: " + string.Join(", ", Array.ConvertAll(txPresets, p => ((BearingTransmitter)p).ToString())));
             var tx = new KnobSpec
             {
                 Values = tv.ToArray(), Rots = tr.ToArray(), Labels = tl.ToArray(), Names = tn.ToArray(),
@@ -54,8 +64,8 @@ namespace ScopeTdcControls
                 Set = (b, v) => SetTransmitter((BearingTransmitter)v)
             };
 
-            // Schußrichtung: off at the top and bottom (as on the box), bow tubes on the left,
-            // stern tubes on the right
+            // Schußrichtung: off at the top and bottom (as on the box), bow tubes on the right,
+            // stern tubes on the left
             bool hasBow = bowReceiverField == null || bowReceiverField(boxes) != null;
             bool hasStern = sternReceiverField == null || sternReceiverField(boxes) != null;
             var rv = new List<int>();
@@ -66,10 +76,20 @@ namespace ScopeTdcControls
             {
                 rv.Add((int)v); rr.Add(rot); rl.Add(label); rn.Add(name);
             };
-            addRx(GyroAngleReceiverSetting.Off, 0f, Strings.SwitchOff, Strings.SwitchOff);
-            if (hasStern) addRx(GyroAngleReceiverSetting.Stern, 90f, Strings.DirSternShort, Strings.DirStern);
-            addRx(GyroAngleReceiverSetting.Off2, 180f, Strings.SwitchOff, Strings.SwitchOff);
-            if (hasBow) addRx(GyroAngleReceiverSetting.Bow, 270f, Strings.DirBowShort, Strings.DirBow);
+            if (typeII)
+            {
+                // Type II box: off at the top, bow tubes at the bottom
+                addRx(GyroAngleReceiverSetting.Off, 0f, Strings.SwitchOff, Strings.SwitchOff);
+                if (hasBow) addRx(GyroAngleReceiverSetting.Bow, 180f, Strings.DirBowShort, Strings.DirBow);
+                if (hasStern) addRx(GyroAngleReceiverSetting.Stern, 90f, Strings.DirSternShort, Strings.DirStern);
+            }
+            else
+            {
+                addRx(GyroAngleReceiverSetting.Off, 0f, Strings.SwitchOff, Strings.SwitchOff);
+                if (hasStern) addRx(GyroAngleReceiverSetting.Stern, 270f, Strings.DirSternShort, Strings.DirStern);
+                addRx(GyroAngleReceiverSetting.Off2, 180f, Strings.SwitchOff, Strings.SwitchOff);
+                if (hasBow) addRx(GyroAngleReceiverSetting.Bow, 90f, Strings.DirBowShort, Strings.DirBow);
+            }
             var rx = new KnobSpec
             {
                 Values = rv.ToArray(), Rots = rr.ToArray(), Labels = rl.ToArray(), Names = rn.ToArray(),
