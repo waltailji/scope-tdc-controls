@@ -33,6 +33,19 @@ namespace ScopeTdcControls
         public static void Set(Periscope p, Vector3 v) { lastUserRotation(p) = v; }
 
         public static bool IsSet(Vector3 v) { return !float.IsNaN(v.x) && !float.IsNaN(v.y) && !float.IsNaN(v.z); }
+
+        /// <summary>
+        /// The bridge binoculars (the "Binocular" item, B key) are a Periscope too, but the game
+        /// aims them where the camera looks each time you raise them, and mouse look drives them
+        /// freely; keeping / restoring a bearing on them fights that. Leave them to the game.
+        /// (The UZO is also IsBinocular, but it is a sight you return to, so it keeps the feature.)
+        /// </summary>
+        public static bool Applies(Periscope p)
+        {
+            if (!GyroConfig.KeepScopeBearing || p == null) return false;
+            try { return !(p.IsBinocular && p.name != null && p.name.StartsWith("Binocular", StringComparison.Ordinal)); }
+            catch { return true; }
+        }
     }
 
     /// <summary>
@@ -47,7 +60,7 @@ namespace ScopeTdcControls
         {
             if (!GyroConfig.KeepScopeBearing || controller == null) return;
             var scope = controller.Periscope;
-            if (scope == null || controller.LockTarget != null) return; // locked: the lock decides where it points
+            if (!ScopeBearing.Applies(scope) || controller.LockTarget != null) return; // locked: the lock decides where it points
             var offset = scope.PeriscopeEulersOffset;
             if (GyroConfig.DebugLog)
                 Debug.Log(ScopeTdcControlsMod.Tag + " keep scope bearing: '" + scope.name + "' bearing " + scope.LocalBearing.ToString("0.0")
@@ -70,9 +83,17 @@ namespace ScopeTdcControls
         {
             if (!GyroConfig.KeepScopeBearing || controller == null) return;
             var scope = controller.Periscope;
-            if (scope == null) return;
+            if (!ScopeBearing.Applies(scope)) return;
             if (controller.LockTarget != null) { saved.Remove(scope); return; } // locked: the game re-locks on return
             saved[scope] = scope.LocalBearing;
+        }
+
+        /// <summary>You asked for the scope to go back on its target: don't put it back on the old bearing next time.</summary>
+        public static void Forget(Periscope scope)
+        {
+            if (scope == null) return;
+            saved.Remove(scope);
+            if (restoring == scope) restoring = null;
         }
 
         public static void BeginRestore(UBOAT.Game.Scene.Camera.ExternalControllers.PeriscopeController controller)
@@ -81,7 +102,7 @@ namespace ScopeTdcControls
             if (!GyroConfig.KeepScopeBearing || controller == null) return;
             var scope = controller.Periscope;
             float bearing;
-            if (scope == null || controller.LockTarget != null || !saved.TryGetValue(scope, out bearing)) return;
+            if (!ScopeBearing.Applies(scope) || controller.LockTarget != null || !saved.TryGetValue(scope, out bearing)) return;
             restoring = scope;
             restoreTo = bearing;
             lastError = float.PositiveInfinity;
@@ -184,7 +205,7 @@ namespace ScopeTdcControls
         static void Prefix(Periscope __instance, out Vector3 __state)
         {
             __state = new Vector3(float.NaN, float.NaN, float.NaN);
-            try { if (GyroConfig.KeepScopeBearing && ScopeBearing.Ready()) __state = ScopeBearing.Get(__instance); }
+            try { if (ScopeBearing.Applies(__instance) && ScopeBearing.Ready()) __state = ScopeBearing.Get(__instance); }
             catch { }
         }
 
@@ -193,7 +214,7 @@ namespace ScopeTdcControls
             try
             {
                 // the game set "no user aim" (NaN): put back the direction you had aimed it
-                if (GyroConfig.KeepScopeBearing && ScopeBearing.IsSet(__state) && ScopeBearing.Ready())
+                if (ScopeBearing.Applies(__instance) && ScopeBearing.IsSet(__state) && ScopeBearing.Ready())
                     ScopeBearing.Set(__instance, __state);
             }
             catch { }
@@ -205,9 +226,13 @@ namespace ScopeTdcControls
     {
         static bool loggedSkip;
 
-        static bool Prefix()
+        /// <summary>Set while the torpedo panel's "reset manual rotation" button runs (it can be pressed away from the scope).</summary>
+        internal static bool explicitReset;
+
+        static bool Prefix(Periscope __instance)
         {
-            if (!GyroConfig.KeepScopeBearing || GyroCounterUI.ScopeViewActive) return true; // at the scope: aim at the clicked ship
+            if (explicitReset) { ScopeAimSync.Forget(__instance); return true; } // asked for by you: always reset
+            if (!ScopeBearing.Applies(__instance) || GyroCounterUI.ScopeViewActive) return true; // at the scope: aim at the clicked ship
             if (GyroConfig.DebugLog && !loggedSkip)
             {
                 loggedSkip = true;
@@ -215,5 +240,18 @@ namespace ScopeTdcControls
             }
             return false;
         }
+    }
+
+    /// <summary>
+    /// The torpedo panel's "reset manual rotation" button (shown with the "scope turned by hand"
+    /// warning, also outside the scope view) is an explicit request: let its ResetManualRotation
+    /// through even away from the scope, and drop the saved bearing so entering the scope
+    /// doesn't swing it back off the target.
+    /// </summary>
+    [HarmonyPatch(typeof(UBOAT.Game.UI.Periscope.TorpedoLaunchersUI), "OnResetManualRotation")]
+    static class TorpedoLaunchersUI_OnResetManualRotation_Patch
+    {
+        static void Prefix() { Periscope_ResetManualRotation_Patch.explicitReset = true; }
+        static void Finalizer() { Periscope_ResetManualRotation_Patch.explicitReset = false; }
     }
 }

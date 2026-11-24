@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.4.2 (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.4.3 (UBOAT 2026.1 patch 21)
 =================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -191,6 +191,12 @@ button, to stop. Hidden in the UZO and while the game UI is hidden.
 (ElevatorButtons=false in the settings file removes them.)
 
 Version history
+  1.4.3 Keep my scope bearing no longer touches the bridge binoculars (B): they
+       open where you look and turn freely again (they were held on the
+       bearing saved last time). Periscopes and the UZO are unchanged.
+       The torpedo panel's "reset manual rotation" button works again away from
+       the scope (it was blocked like a ship click), and the scope is not put
+       back on the old bearing afterwards.
   1.4.2 Torpedo settings: even spacing between the depth dial and the knobs;
        pistol options named AZ / MZ. All window titles and the tube rows
        (FORE / AFT) in capitals. Tube indicator: the blue rises from the

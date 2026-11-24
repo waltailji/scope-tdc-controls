@@ -1,6 +1,9 @@
 [h1]Scope TDC Controls[/h1]
 Ever been in the middle of a convoy setting up shots from your bow and stern tubes, only to wait forever for the gyro receivers to synchronize, switch to the TDC view, and come back to a scope that has moved? This mod puts the important information and controls on your scope view, so you can set up both torpedo rooms for zero gyro angle shots ahead of time and fire in quick succession in either direction. It also includes some optional "cheats" and fixes to the stock torpedo fire control. Details below.
 
+[h2]Video Overview[/h2]
+If you'd like to see a demonstration of how I use my mod, you can view my [url=https://www.youtube.com/watch?v=tEUwLaamtOc]my YouTube video[/url]
+
 [h2]Gyro angle digital display[/h2]
 Rolling-drum counters (to place around the bearing tape):
 [list]
@@ -105,6 +108,7 @@ With the gyros pre-set and the receiver off while scanning, you avoid the stock 
 
 [h2]Version history[/h2]
 [list]
+[*][b]1.4.3[/b] – fix: the bridge binoculars no longer get stuck on one bearing (keep my scope bearing now leaves them alone); the torpedo panel's reset manual rotation button works away from the scope again
 [*][b]1.4.2[/b] – keep my scope bearing; Torpedo Room depth / speed stay per torpedo; tubes fill from the bottom while flooding; AZ / MZ, capitalised titles, even spacing
 [*][b]1.4.1[/b] – hotkey field; the sidebar button and hotkey hide the counters too; switch box layouts per boat (Type II, VII, IX); maintenance colour on the tubes; angular speed pops up for a salvo in a turn
 [*][b]1.4[/b] – salvo spread and angular speed windows, torpedo tube indicator, AOB and spread motor switches, firing circuit lamp, anchoring, stronger light tint, sidebar button fix
