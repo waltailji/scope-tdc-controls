@@ -7,50 +7,50 @@ To see how I use the mod, watch [url=https://www.youtube.com/watch?v=tEUwLaamtOc
 [h2]Gyro angle digital display[/h2]
 Rolling-drum counters (to place around the bearing tape):
 [list]
-[*][b]TRUE[/b] – where the scope is looking, as a compass bearing (optionally on the binoculars too)
-[*][b]TDC Gyro[/b] – the gyro angle the TDC computes; its blue lamp is lit while not following (click it to toggle follow-up)
-[*][b]Parallax[/b] – the correction the TDC adds (+/-)
-[*][b]Bow / Stern[/b] – the angle the tube gyros are actually set to; the selected receiver's lamp is green when set, red while synchronizing
+[*][b]TRUE[/b] - where the scope is looking, as a compass bearing (optionally on the binoculars too)
+[*][b]TDC Gyro[/b] - the gyro angle the TDC computes; its blue lamp is lit while not following (click it to toggle follow-up)
+[*][b]Parallax[/b] - the correction the TDC adds (+/-)
+[*][b]Bow / Stern[/b] - the angle the tube gyros are actually set to; the selected receiver's lamp is green when set, red while synchronizing
 [/list]
 Greyed out when nobody is at the TDC. [b]Double-click a Bow/Stern counter[/b] to switch to that receiver: the scope swings round until the TDC angle matches those tubes. Dial icons beside the counters open the target bearing and gyro setting windows.
 
 [h2]Mod control panel[/h2]
 Beside the periscope raise/lower control (roll it up with the caret):
 [list]
-[*][b]Target bearing[/b] – Follow / Not follow
-[*][b]Parallax mode[/b] – Forward / Backward
-[*][b]Windows[/b] – show or hide each window, reset their sizes
+[*][b]Target bearing[/b] - Follow / Not follow
+[*][b]Parallax mode[/b] - Forward / Backward
+[*][b]Windows[/b] - show or hide each window, reset their sizes
 [/list]
-A sidebar button on the scope screen shows or hides the panel, its windows and the counters.
+A sidebar button on the scope screen shows or hides it all.
 
 [h2]TDC dials[/h2]
 [b]AOB[/b], [b]target speed[/b] and [b]target distance[/b], styled after the real TDC.
 [list]
 [*]Turn a dial, click a value on its scale, or use the mouse wheel; Shift = fine
-[*][b]AOB[/b] – angle on bow, port or starboard, of target; switch to disable TDC's [b]AOB motor[/b]
-[*][b]Voice callouts[/b] – the crew member at the scope announces what you dial in (same as called out on stock TDC data entry)
+[*][b]AOB[/b] - angle on bow, port or starboard, of target; switch to disable TDC's [b]AOB motor[/b]
+[*][b]Voice callouts[/b] - the crew member at the scope announces what you dial in (same as called out on stock TDC data entry)
 [/list]
 
 [h2]TDC target bearing[/h2]
-The Zielrichtung fine (10° a turn) and coarse dials: brass needle = bearing source, red flag = the TDC's bearing. Turn or click to set it by hand; the TDC turns to it smoothly so AOB tracking keeps up. With follow-up on, the TDC pulls it back to the needle.
+The Zielrichtung fine (10 deg a turn) and coarse dials: brass needle = bearing source, red flag = the TDC's bearing. Turn or click to set it by hand; the TDC turns to it smoothly so AOB tracking keeps up. With follow-up on, the TDC pulls it back to the needle.
 
 [h2]Torpedo room gyro setting[/h2]
 Brass needle = angle received from the TDC, red flag = angle set on the tubes; the game's own auto / manual logic applies.
 [list]
-[*][b]Bow[/b] – spread angle, gyro coarse / fine, fast sync lever with red / green lamps, salvo size and setting mode switches, hand wheel
-[*][b]Stern[/b] – gyro coarse / fine and hand crank
+[*][b]Bow[/b] - spread angle, gyro coarse / fine, fast sync lever with red / green lamps, salvo size and setting mode switches, hand wheel
+[*][b]Stern[/b] - gyro coarse / fine and hand crank
 [/list]
 
 [h2]Salvo spread[/h2]
 Pops up for spreads (or always, with its check box), anchored beside the TDC dials:
 [list]
-[*][b]Target length[/b] – the turning ring dial to set the target length to calculate spread over
-[*][b]Spread angle[/b] – brass needle = computed angle, red flag = angle set (drag it by hand)
-[*][b]Spread motor[/b] switch – on: the spread angle is computed from target length; off: allows manually setting the spread angle directly
+[*][b]Target length[/b] - the turning ring dial to set the target length to calculate spread over
+[*][b]Spread angle[/b] - brass needle = computed angle, red flag = angle set (drag it by hand)
+[*][b]Spread motor[/b] switch - on: the spread angle is computed from target length; off: allows manually setting the spread angle directly
 [/list]
 
 [h2]Own angular speed[/h2]
-Optional window with the TDC's rate-of-turn knob (-3 to 3 °/s), allowed for when firing while turning; pops up for a salvo in a turn. Only on boats whose TDC has the knob.
+Optional TDC rate-of-turn knob (-3 to 3 deg/s) for firing while turning; pops up for a salvo in a turn, on boats whose TDC has it.
 
 [h2]Torpedo tubes[/h2]
 SH3-style tube statuses, fore and aft rows: black = empty, grey = loaded, yellow = maintenance, blue = flooded, green = selected.
@@ -59,22 +59,22 @@ Click to select, double-click to flood or drain, right-click for Flood / Drain, 
 [h2]Torpedo settings[/h2]
 SH3-style torpedo settings window when a tube is selected:
 [list]
-[*][b]Depth[/b] – dial from 1 to 14 m in 0.25 m steps
-[*][b]Speed[/b] – slow / medium / fast, only the speeds the selected torpedoes have, shown in knots
-[*][b]Pistol[/b] – AZ (impact) or MZ (magnetic)
+[*][b]Depth[/b] - dial from 1 to 14 m in 0.25 m steps
+[*][b]Speed[/b] - slow / medium / fast, only the speeds the selected torpedoes have, shown in knots
+[*][b]Pistol[/b] - AZ (impact) or MZ (magnetic)
 [/list]
 With the Torpedo Room mod installed, the settings are stored on each selected torpedo only ([url=https://steamcommunity.com/sharedfiles/filedetails/?id=3823181610]Torpedo Room[/url] mod recommended but not required).
 
 [h2]Firing & direction selectors[/h2]
 The boat's rotary switches, with its own knob clicks:
 [list]
-[*][b]Firing selector[/b] – Einzelschuß (launch mode), Fächerschuß (salvo mode) and T.Abf. Schalter, laid out as on your boat's box
-[*][b]Direction selector[/b] – Zielrichtung (bearing source) and Schußrichtung (gyro angle receiver)
+[*][b]Firing selector[/b] - Einzelschuss (launch mode), Fächerschuss (salvo mode) and T.Abf. Schalter, laid out as on your boat's box
+[*][b]Direction selector[/b] - Zielrichtung (bearing source) and Schussrichtung (gyro angle receiver)
 [/list]
 A red [b]firing circuit lamp[/b] locks the switches for 4 s after each fire command.
 
 [h2]Launch lever[/h2]
-Spring-loaded Aus / Schuß: fires the selected tubes while its lamp is green. Red (tube not ready, wrong receiver, out of range, past the ±135° stop) or dark (firing station off): hover for why.
+Spring-loaded Aus / Schuss: fires the selected tubes while its lamp is green. Red (tube not ready, wrong receiver, out of range, past the +/-135 deg stop) or dark (firing station off): hover for why.
 
 [h2]Periscope - Raise / lower fully[/h2]
 Buttons above and below the stock periscope control run the scope all the way up or down.
@@ -82,29 +82,29 @@ Buttons above and below the stock periscope control run the scope all the way up
 [h2]Settings (persist between sessions)[/h2]
 [list]
 [*][b]Show gyro receiver angles / active receivers only / parallax angle[/b]
-[*][b]Auto set gyro receiver[/b] – follows the checked, flooded tubes (both ends = the way the scope looks)
-[*][b]Auto set parallax mode[/b] – follows tube, receiver or scope direction
-[*][b]Auto select tube when flooding[/b] – off = flooding leaves your selection alone
+[*][b]Auto set gyro receiver[/b] - follows the checked, flooded tubes
+[*][b]Auto set parallax mode[/b] - follows tube, receiver or scope direction
+[*][b]Auto select tube when flooding[/b]
 [*][b]Auto display spread settings[/b], [b]Tint panels with sub lighting[/b]
-[*][b]Realistic TDC follower / receiver sync[/b] – off = 10× faster TDC and gyros
-[*][b]TDC operator required[/b] – off = use the TDC unmanned
-[*][b]Voice callouts[/b], [b]Ctrl+drag to move[/b], [b]Hotkey[/b] – click and press a key to show / hide the mod
+[*][b]Realistic TDC follower / receiver sync[/b] - off = 10x faster TDC and gyros
+[*][b]TDC operator required[/b] - off = use the TDC unmanned
+[*][b]Voice callouts[/b], [b]Ctrl+drag to move[/b], [b]Hotkey[/b] - click and press a key to show / hide the mod
 [/list]
 
 [h2]Fixes to the base game[/h2]
 [list]
-[*][b]Single torpedo launch fix[/b] – a tube checked after pressing fire no longer launches too
-[*][b]Stern shots from the scope[/b] – the torpedo panel no longer forces the receiver to Bow
+[*][b]Single torpedo launch fix[/b] - a tube checked after pressing fire no longer launches too
+[*][b]Stern shots from the scope[/b] - the torpedo panel no longer forces the receiver to Bow
 [*][b]Not following holds[/b] while a target is locked
 [*][b]Tube selection kept[/b] when hiding or showing the torpedo panel
-[*][b]Keep my scope bearing[/b] – a periscope comes back on the bearing you left it at (also after lock / unlock); works alongside Stop Moving My Scope
+[*][b]Keep my scope bearing[/b] - a periscope comes back on the bearing you left it at (also after lock / unlock); works alongside Stop Moving My Scope
 [/list]
 
 [h2]Recommended workflow[/h2]
 [olist]
 [*]Set the scope you attack with as the target bearing source
-[*]Turn it to 0° relative, select "Bow" on the receiver selector and let the gyros synchronize
-[*]Turn it to 180° relative, select "Stern" and let the stern gyro synchronize
+[*]Turn it to 0 deg relative, select "Bow" on the receiver selector and let the gyros synchronize
+[*]Turn it to 180 deg relative, select "Stern" and let the stern gyro synchronize
 [*]Leave the receiver selector on "None" until you attack
 [/olist]
 This avoids the stock system's constant gyro chasing and lets you fire quickly in both directions.
@@ -119,9 +119,9 @@ This avoids the stock system's constant gyro chasing and lets you fire quickly i
 
 [h2]Version history[/h2]
 [list]
-[*][b]1.5[/b] – TDC target bearing window, bow and stern gyro setting panels, TRUE bearing counter, tube right-click menu and Ctrl+click launch, hidden on the binoculars, "TDC Gyro" label
-[*][b]1.4–1.4.3[/b] – salvo spread, angular speed and tube windows, motor switches, firing circuit lamp, keep my scope bearing, per-boat switch layouts, hotkey
-[*][b]1.0–1.3[/b] – counters, TDC dials, selectors, launch lever, torpedo settings, light tint, voice callouts
+[*][b]1.5[/b] - TDC target bearing window, bow and stern gyro setting panels, TRUE bearing counter, tube right-click menu and Ctrl+click launch, hidden on the binoculars, "TDC Gyro" label
+[*][b]1.4-1.4.3[/b] - salvo spread, angular speed and tube windows, motor switches, firing circuit lamp, keep my scope bearing, per-boat switch layouts, hotkey
+[*][b]1.0-1.3[/b] - counters, TDC dials, selectors, launch lever, torpedo settings, light tint, voice callouts
 [/list]
 
 Built for UBOAT 2026.1 patch 21.
