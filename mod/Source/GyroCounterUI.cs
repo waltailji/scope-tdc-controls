@@ -147,8 +147,10 @@ namespace ScopeTdcControls
             }
             public float Displayed = float.NaN;
             public bool Signed;  // shows +/- and the magnitude (parallax) instead of 000-359
+            public bool Absolute; // always 000-359 (true bearing), even with the L/R display
             public bool Tenths;
             public TorpedoLauncherGroup ShownGroup; // receiver rows: the tube group on display
+            public GameObject Icon;       // receiver rows: dial icon for that end's gyro setting panel
         }
 
         /// <summary>Double-click on a receiver row.</summary>
@@ -233,6 +235,8 @@ namespace ScopeTdcControls
             canvas.sortingOrder = GyroConfig.SortingOrder;
 
             if (counterPanel != null) Destroy(counterPanel.gameObject);
+            if (trueRow != null && trueRow.Panel != null) Destroy(trueRow.Panel.gameObject);
+            trueRow = null;
             if (controlsPanel != null) Destroy(controlsPanel.gameObject);
             if (tipPanel != null) Destroy(tipPanel.gameObject);
             if (raiseBtn != null) Destroy(raiseBtn.gameObject);
@@ -251,6 +255,8 @@ namespace ScopeTdcControls
             anchorIcons.Clear();
             if (tubesPanel != null) Destroy(tubesPanel.gameObject);
             tubesPanel = null;
+            CloseTubeMenu();
+            tubeLevers.Clear();
             tubeDots.Clear();
             tubesFor = null;
             tubesRetryAt = 0f;
@@ -258,6 +264,25 @@ namespace ScopeTdcControls
             turnPanel = null;
             turnGroup = null;
             turnDials.Clear();
+            if (bearingPanel != null) Destroy(bearingPanel.gameObject);
+            bearingPanel = null;
+            bearingGroup = null;
+            bearingDials.Clear();
+            bearingIconBtn = null; // destroyed with the counter
+            iconToggles.Clear();
+            if (gyroSetPanel != null) Destroy(gyroSetPanel.gameObject);
+            gyroSetPanel = null;
+            gyroSetDials.Clear();
+            gyroSetKnobs.Clear();
+            if (gyroSetWheel != null) gyroSetWheelAngle = gyroSetWheel.FreeAngle; // the wheel stays where it was left
+            gyroSetWheel = null;
+            fastHandle = null;
+            fastLampMinus = fastLampPlus = null;
+            if (sternSetPanel != null) Destroy(sternSetPanel.gameObject);
+            sternSetPanel = null;
+            sternSetDials.Clear();
+            if (sternCrank != null) sternCrankAngle = sternCrank.FreeAngle; // the crank stays where it was left
+            sternCrank = null;
             torpedoPanel = null;
             torpedoSignature = null;
             torpKnobs.Clear();
@@ -293,6 +318,9 @@ namespace ScopeTdcControls
             BuildLever(font); // always built; ShowLever only hides it
             BuildSpread(font); // always built; shown by the Einzelschuß switch or its check box
             BuildTurnRate(font); // always built; shown with "Show angular speed setting"
+            BuildBearing(font); // always built; shown with its check box or the counter's dial icon
+            BuildGyroSet(font); // always built; shown with its check box or a dial icon (bow receiver row, tube window)
+            BuildSternGyroSet(font); // likewise for the stern (stern receiver row, Aft row of the tube window)
             if (GyroConfig.ShowDirections) BuildDirections(font);
             BuildTooltip(font);
             RaiseOverlays();
@@ -425,13 +453,13 @@ namespace ScopeTdcControls
         const float RowLabelFont = 9.5f;
         const float RowStackGap = 3f;
 
-        enum RowKind { Tdc, Parallax, Receiver }
+        enum RowKind { Tdc, Parallax, Receiver, True }
 
         void BuildCounter(TMP_FontAsset font)
         {
             // one label column wide enough for every label, so all rows line up
             float labelW = 0f;
-            foreach (var s in new[] { Strings.TdcLabel, Strings.ParallaxLabel, Strings.Bow, Strings.Stern })
+            foreach (var s in new[] { Strings.TdcLabel, Strings.ParallaxLabel, Strings.Bow, Strings.Stern, Strings.TrueLabel })
                 labelW = Mathf.Max(labelW, TextWidth(font, s, RowLabelFont));
             labelW = Mathf.Ceil(labelW) + 4f;
 
@@ -441,6 +469,7 @@ namespace ScopeTdcControls
             counterPanel.localScale = Vector3.one * GyroConfig.Scale;
             AddTooltip(counterPanel.gameObject, () => Strings.TipCounter);
             AddDrag(counterPanel.gameObject, false);
+            BuildBearingIcon(); // the dial icon left of the counter: target bearing window
 
             // "TDC not manned": grey veil over the TDC row (only its own rect, the
             // hanging rows are hidden then anyway) and a small note under it
@@ -474,6 +503,8 @@ namespace ScopeTdcControls
 
             rcvRowA = BuildReceiverRow(font, "ReceiverCounterA", labelW);
             rcvRowB = BuildReceiverRow(font, "ReceiverCounterB", labelW);
+
+            BuildTrueBearing(font, labelW); // its own window, above this one by default
         }
 
         CounterRow BuildReceiverRow(TMP_FontAsset font, string name, float labelW)
@@ -483,6 +514,13 @@ namespace ScopeTdcControls
             AddTooltip(row.Panel.gameObject, () => Strings.TipReceiverCounter);
             AddDrag(row.Panel.gameObject, false);
             row.Panel.gameObject.AddComponent<DoubleClickRelay>().OnDoubleClick = () => OnReceiverDoubleClick(row);
+            // dial icon on its left: the gyro setting panel of the end the row shows (bow or stern)
+            var icon = LeftOfRowIcon(row.Panel, "GyroSetIcon");
+            MakeIconToggle(icon,
+                () => RowIsStern(row) ? GyroConfig.ShowSternGyroSet : GyroConfig.ShowGyroSet,
+                () => { if (RowIsStern(row)) ToggleSternSetWindow(); else ToggleGyroSetWindow(); },
+                () => RowIsStern(row) ? Strings.TipSternSetIcon : Strings.TipGyroSetIcon);
+            row.Icon = icon.gameObject;
             row.Panel.gameObject.SetActive(false);
             return row;
         }
@@ -533,6 +571,8 @@ namespace ScopeTdcControls
             }
             catch (Exception e) { Debug.LogException(e); }
         }
+
+        static bool RowIsStern(CounterRow row) { return row.ShownGroup != null && IsSternGroup(row.ShownGroup); }
 
         static void HangUnder(RectTransform r)
         {
@@ -636,7 +676,7 @@ namespace ScopeTdcControls
 
             // width = widest label
             string[] labels = { Strings.BearingHeader, Strings.ParallaxHeader, Strings.WindowsHeader, Strings.ResetSizes, "+ " + Strings.SettingsHeader };
-            string[] windowLabels = { Strings.WinGyros, Strings.WinDials, Strings.WinSpread, Strings.WinTurnRate, Strings.WinSwitches, Strings.WinDirections, Strings.WinTubes, Strings.WinTorpedo, Strings.WinLever };
+            string[] windowLabels = { Strings.WinTrueBearing, Strings.WinGyros, Strings.WinDials, Strings.WinBearing, Strings.WinSpread, Strings.WinTurnRate, Strings.WinSwitches, Strings.WinDirections, Strings.WinTubes, Strings.WinGyroSet, Strings.WinSternSet, Strings.WinTorpedo, Strings.WinLever };
             float inner = 80f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 18f);
             foreach (var s in windowLabels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f); // check box rows
@@ -703,8 +743,10 @@ namespace ScopeTdcControls
             // --- extra windows on/off: independent, so check boxes ---
             y = Header(font, Strings.WindowsHeader, y, inner, false, () => Strings.TipWindowsHeader);
             windowChecks.Clear();
+            MakeCheck(font, Strings.WinTrueBearing, ref y, inner, () => GyroConfig.ShowTrueBearing, v => { GyroConfig.ShowTrueBearing = v; GyroConfig.Save("ShowTrueBearing", v); HideTip(); }, () => Strings.TipWinTrueBearing, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinGyros, ref y, inner, () => GyroConfig.ShowGyros, v => { GyroConfig.ShowGyros = v; GyroConfig.Save("ShowGyros", v); HideTip(); }, () => Strings.TipWinGyros, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinDials, ref y, inner, () => GyroConfig.ShowDials, v => { if (v != GyroConfig.ShowDials) ToggleDialsWindow(); }, () => Strings.TipWinDials, controlsPanel, windowChecks);
+            MakeCheck(font, Strings.WinBearing, ref y, inner, () => GyroConfig.ShowBearing, v => { if (v != GyroConfig.ShowBearing) SetBearingWindow(v); }, () => Strings.TipWinBearing, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinSpread, ref y, inner, () => GyroConfig.ShowSpread, v => { if (v != GyroConfig.ShowSpread) ToggleSpreadWindow(); }, () => Strings.TipWinSpread, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinTurnRate, ref y, inner, () => GyroConfig.ShowAngularSpeed,
                 v => { GyroConfig.ShowAngularSpeed = v; GyroConfig.Save("ShowAngularSpeed", v); HideTip(); },
@@ -713,6 +755,8 @@ namespace ScopeTdcControls
             MakeCheck(font, Strings.WinSwitches, ref y, inner, () => GyroConfig.ShowSwitches, v => { if (v != GyroConfig.ShowSwitches) ToggleSwitchesWindow(); }, () => Strings.TipWinSwitches, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinDirections, ref y, inner, () => GyroConfig.ShowDirections, v => { if (v != GyroConfig.ShowDirections) ToggleDirectionsWindow(); }, () => Strings.TipWinDirections, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinTubes, ref y, inner, () => GyroConfig.ShowTubes, v => { GyroConfig.ShowTubes = v; GyroConfig.Save("ShowTubes", v); HideTip(); }, () => Strings.TipWinTubes, controlsPanel, windowChecks);
+            MakeCheck(font, Strings.WinGyroSet, ref y, inner, () => GyroConfig.ShowGyroSet, v => { if (v != GyroConfig.ShowGyroSet) SetGyroSetWindow(v); }, () => Strings.TipWinGyroSet, controlsPanel, windowChecks, () => BowGroup() != null);
+            MakeCheck(font, Strings.WinSternSet, ref y, inner, () => GyroConfig.ShowSternGyroSet, v => { if (v != GyroConfig.ShowSternGyroSet) SetSternSetWindow(v); }, () => Strings.TipWinSternSet, controlsPanel, windowChecks, () => SternGroup() != null);
             MakeCheck(font, Strings.WinTorpedo, ref y, inner, () => GyroConfig.ShowTorpedo, v => { GyroConfig.ShowTorpedo = v; GyroConfig.Save("ShowTorpedo", v); HideTip(); }, () => Strings.TipWinTorpedo, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinLever, ref y, inner, () => GyroConfig.ShowLever, v => { if (v != GyroConfig.ShowLever) ToggleLeverWindow(); }, () => Strings.TipWinLever, controlsPanel, windowChecks);
             btnResetSizes = MakeButton(controlsPanel, font, Strings.ResetSizes, ref y, inner, ResetWindowSizes, () => Strings.TipResetSizes);
@@ -853,7 +897,7 @@ namespace ScopeTdcControls
             settingsPanel = NewRect("GyroSettings", controlsPanel);
             Frame(settingsPanel, true);
 
-            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptAutoSpread, Strings.OptKeepScopeBearing, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag, Strings.HotkeyPress, Strings.HotkeyPrefix + "RightControl" };
+            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptAutoSpread, Strings.OptKeepScopeBearing, Strings.OptTrueOnBinoculars, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag, Strings.HotkeyPress, Strings.HotkeyPrefix + "RightControl" };
             float inner = 0f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f);
 
@@ -895,6 +939,10 @@ namespace ScopeTdcControls
                 () => GyroConfig.KeepScopeBearing,
                 v => { GyroConfig.KeepScopeBearing = v; GyroConfig.Save("KeepScopeBearing", v); },
                 () => Strings.TipOptKeepScopeBearing);
+            MakeCheck(font, Strings.OptTrueOnBinoculars, ref y, inner,
+                () => GyroConfig.TrueBearingOnBinoculars,
+                v => { GyroConfig.TrueBearingOnBinoculars = v; GyroConfig.Save("TrueBearingOnBinoculars", v); },
+                () => Strings.TipOptTrueOnBinoculars);
             MakeCheck(font, Strings.OptTintPanels, ref y, inner,
                 () => GyroConfig.TintPanels,
                 v => { GyroConfig.TintPanels = v; GyroConfig.Save("TintPanels", v); }, // the windows recolour on the next frame
@@ -1360,6 +1408,10 @@ namespace ScopeTdcControls
             public bool Spread;   // the salvo spread window
             public bool TurnRate; // the own angular speed window
             public bool Tubes;    // the torpedo tube indicator
+            public bool Bearing;  // the TDC target bearing window
+            public bool TrueBearing; // the TRUE bearing counter
+            public bool GyroSet;  // the bow gyro setting panel
+            public bool SternGyroSet; // the stern gyro setting panel
             bool dragging;
 
             static bool CtrlHeld { get { return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl); } }
@@ -1377,6 +1429,11 @@ namespace ScopeTdcControls
                 float k = Owner.canvas != null && Owner.canvas.scaleFactor > 0f ? Owner.canvas.scaleFactor : 1f;
                 Vector2 d = e.delta / k;
                 if (Tubes) { GyroConfig.TubesOffsetX += d.x; GyroConfig.TubesOffsetY += d.y; }
+                else if (Bearing) { GyroConfig.BearingOffsetX += d.x; GyroConfig.BearingOffsetY += d.y; }
+                else if (TrueBearing && InBinoculars()) { GyroConfig.TrueBinoOffsetX += d.x; GyroConfig.TrueBinoOffsetY += d.y; }
+                else if (TrueBearing) { GyroConfig.TrueOffsetX += d.x; GyroConfig.TrueOffsetY += d.y; }
+                else if (GyroSet) { GyroConfig.GyroSetOffsetX += d.x; GyroConfig.GyroSetOffsetY += d.y; }
+                else if (SternGyroSet) { GyroConfig.SternSetOffsetX += d.x; GyroConfig.SternSetOffsetY += d.y; }
                 else if (TurnRate) DragAnchorable(AnchoredWindow.TurnRate, d);
                 else if (Spread) DragAnchorable(AnchoredWindow.Spread, d);
                 else if (Torpedo) { GyroConfig.TorpedoOffsetX += d.x; GyroConfig.TorpedoOffsetY += d.y; }
@@ -1393,6 +1450,11 @@ namespace ScopeTdcControls
                 if (!dragging) return;
                 dragging = false;
                 if (Tubes) { GyroConfig.Save("TubesOffsetX", GyroConfig.TubesOffsetX); GyroConfig.Save("TubesOffsetY", GyroConfig.TubesOffsetY); }
+                else if (Bearing) { GyroConfig.Save("BearingOffsetX", GyroConfig.BearingOffsetX); GyroConfig.Save("BearingOffsetY", GyroConfig.BearingOffsetY); }
+                else if (TrueBearing && InBinoculars()) { GyroConfig.Save("TrueBinoOffsetX", GyroConfig.TrueBinoOffsetX); GyroConfig.Save("TrueBinoOffsetY", GyroConfig.TrueBinoOffsetY); }
+                else if (TrueBearing) { GyroConfig.Save("TrueOffsetX", GyroConfig.TrueOffsetX); GyroConfig.Save("TrueOffsetY", GyroConfig.TrueOffsetY); }
+                else if (GyroSet) { GyroConfig.Save("GyroSetOffsetX", GyroConfig.GyroSetOffsetX); GyroConfig.Save("GyroSetOffsetY", GyroConfig.GyroSetOffsetY); }
+                else if (SternGyroSet) { GyroConfig.Save("SternSetOffsetX", GyroConfig.SternSetOffsetX); GyroConfig.Save("SternSetOffsetY", GyroConfig.SternSetOffsetY); }
                 else if (TurnRate) SaveAnchoring(AnchoredWindow.TurnRate);
                 else if (Spread) SaveAnchoring(AnchoredWindow.Spread);
                 else if (Torpedo)
@@ -1911,8 +1973,15 @@ namespace ScopeTdcControls
 
             bool uiHidden = GameUiHidden();
             var tdc = Tdc();
-            bool show = tdc != null && !(uiHidden && GyroConfig.HideWithGameUI);
+            bool binoculars = InBinoculars();
+            SidebarButton.SetHidden(binoculars); // our sidebar button too
+            bool show = tdc != null && !(uiHidden && GyroConfig.HideWithGameUI) && !binoculars; // nothing of ours on the bridge binoculars
             counterPanel.gameObject.SetActive(show && GyroConfig.ShowGyros && GyroConfig.ControlsVisible); // hidden with the sidebar button too
+            // the TRUE bearing counter: with the other windows, or alone on the binoculars if that setting is on
+            bool trueOn = trueRow != null && GyroConfig.ControlsVisible
+                          && (binoculars ? GyroConfig.TrueBearingOnBinoculars && !(uiHidden && GyroConfig.HideWithGameUI)
+                                         : show && GyroConfig.ShowTrueBearing);
+            if (trueRow != null && trueRow.Panel.gameObject.activeSelf != trueOn) trueRow.Panel.gameObject.SetActive(trueOn);
             if (controlsPanel != null)
             {
                 bool panel = show && GyroConfig.ControlsVisible;
@@ -1924,6 +1993,12 @@ namespace ScopeTdcControls
             if (spreadPanel != null && spreadPanel.gameObject.activeSelf != spreadOn) spreadPanel.gameObject.SetActive(spreadOn);
             bool turnOn = show && GyroConfig.ControlsVisible && turnPanel != null && TurnRateWanted();
             if (turnPanel != null && turnPanel.gameObject.activeSelf != turnOn) turnPanel.gameObject.SetActive(turnOn);
+            bool gyroSetOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowGyroSet && gyroSetPanel != null && BowGroup() != null;
+            if (gyroSetPanel != null && gyroSetPanel.gameObject.activeSelf != gyroSetOn) gyroSetPanel.gameObject.SetActive(gyroSetOn);
+            bool sternSetOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowSternGyroSet && sternSetPanel != null && SternGroup() != null;
+            if (sternSetPanel != null && sternSetPanel.gameObject.activeSelf != sternSetOn) sternSetPanel.gameObject.SetActive(sternSetOn);
+            bool bearingOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowBearing && bearingPanel != null;
+            if (bearingPanel != null && bearingPanel.gameObject.activeSelf != bearingOn) bearingPanel.gameObject.SetActive(bearingOn);
             if (show && GyroConfig.ControlsVisible && GyroConfig.ShowTubes) ValidateTubes();
             bool tubesOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowTubes && tubesPanel != null;
             if (tubesPanel != null && tubesPanel.gameObject.activeSelf != tubesOn) tubesPanel.gameObject.SetActive(tubesOn);
@@ -1936,13 +2011,29 @@ namespace ScopeTdcControls
             bool directionsOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowDirections && directionsPanel != null;
             if (directionsPanel != null && directionsPanel.gameObject.activeSelf != directionsOn) directionsPanel.gameObject.SetActive(directionsOn);
             ValidateTorpedo(show && GyroConfig.ControlsVisible); // shown only while a checked tube holds a torpedo
-            UpdateElevatorButtons(uiHidden);
-            if (!show) { HideTip(); return; }
+            UpdateElevatorButtons(uiHidden || binoculars);
+            if (!show)
+            {
+                HideTip();
+                if (trueOn) // binoculars: only the TRUE bearing counter, in the gyro angle counter's place
+                {
+                    PositionCounter(uiHidden);
+                    UpdateTrueBearing();
+                    PositionTrueBearing(true);
+                }
+                return;
+            }
 
+            SlewTdcBearing(tdc); // a bearing set on the target bearing dials, driven there smoothly (even with the window closed)
             UpdateCounter(tdc);
             UpdateControls(tdc);
             UpdateBoxTint(); // off-white windows follow the boat's interior light colour
             PositionCounter(uiHidden);
+            if (trueOn)
+            {
+                UpdateTrueBearing();
+                PositionTrueBearing(false); // after the counter: it sits above it
+            }
             PositionControls(uiHidden);
             if (dialsOn)
             {
@@ -1958,6 +2049,22 @@ namespace ScopeTdcControls
             {
                 UpdateTurnRate(tdc, IsTdcManned(tdc));
                 PositionTurnRate(); // after the dials: it sits beside them
+            }
+            PaintIconToggles();
+            if (gyroSetOn)
+            {
+                UpdateGyroSet();
+                PositionGyroSet();
+            }
+            if (sternSetOn)
+            {
+                UpdateSternGyroSet();
+                PositionSternGyroSet();
+            }
+            if (bearingOn)
+            {
+                UpdateBearing(tdc, IsTdcManned(tdc));
+                PositionBearing();
             }
             if (tubesOn)
             {
@@ -1979,6 +2086,26 @@ namespace ScopeTdcControls
                 UpdateDirections();
                 PositionDirections();
             }
+        }
+
+        /// <summary>
+        /// Looking through binoculars: they open the same scope view, but none of this mod's windows
+        /// belong there. Two kinds, which the game's own scope screen treats alike (PeriscopeUI):
+        ///   "Binocular"        - your own, from first person with the B key;
+        ///   "Observation Spot" - the watch officer's on the bridge (manning the observation post).
+        /// The UZO ("Targeting Sight") is also a binocular-type sight but keeps them.
+        /// </summary>
+        static bool InBinoculars()
+        {
+            try
+            {
+                var ctrl = ScopeAim.CurrentController();
+                var scope = ctrl != null ? ctrl.Periscope : null;
+                if (scope == null || !scope.IsBinocular || scope.name == null) return false;
+                return scope.name.StartsWith("Binocular", StringComparison.Ordinal)
+                    || scope.name.StartsWith("Observation Spot", StringComparison.Ordinal);
+            }
+            catch { return false; }
         }
 
         /// <summary>Same test the game uses for the TDC station: someone working at its Interactable.</summary>
@@ -2064,7 +2191,8 @@ namespace ScopeTdcControls
             y -= row.Panel.sizeDelta.y + RowStackGap;
             row.ShownGroup = shown;
 
-            string label = IsSternGroup(shown) ? Strings.Stern : Strings.Bow;
+            bool stern = IsSternGroup(shown);
+            string label = stern ? Strings.Stern : Strings.Bow;
             if (row.Label.text != label) row.Label.text = label;
             // with all receivers shown, the one receiving the TDC angle has the bright label
             bool isActive = ReferenceEquals(shown, active);
@@ -2160,7 +2288,7 @@ namespace ScopeTdcControls
                 if (row.Side != null)
                     row.Side.text = value < 0.05f ? "" : (angle < 0f ? "-" : "+");
             }
-            else if (GyroConfig.LeftRight)
+            else if (GyroConfig.LeftRight && !row.Absolute)
             {
                 float signed = angle > 180f ? angle - 360f : angle;
                 value = Mathf.Abs(signed);

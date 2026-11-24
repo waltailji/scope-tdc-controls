@@ -22,7 +22,7 @@ namespace ScopeTdcControls
     public class ScopeTdcControlsMod : IUserMod
     {
         public const string Tag = "[ScopeTDC]";
-        public const string Version = "1.4.3"; // keep in sync with Manifest.json
+        public const string Version = "1.5"; // keep in sync with Manifest.json
 
         public void OnLoaded()
         {

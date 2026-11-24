@@ -62,9 +62,20 @@ namespace ScopeTdcControls
                 }
                 if (button == null) continue;
                 if (!buttons.Contains(button)) buttons.Add(button);
-                button.gameObject.SetActive(GyroConfig.ShowControls);
+                button.gameObject.SetActive(GyroConfig.ShowControls && !hidden);
                 Show(button, GyroConfig.ControlsVisible);
             }
+        }
+
+        static bool hidden;
+
+        /// <summary>Take the button off the sidebar (bridge binoculars) or put it back.</summary>
+        public static void SetHidden(bool hide)
+        {
+            if (hide == hidden) return;
+            hidden = hide;
+            foreach (var b in buttons)
+                if (b != null) b.gameObject.SetActive(GyroConfig.ShowControls && !hide);
         }
 
         /// <summary>Show the panel state on every copy of the button (without firing their click handlers).</summary>

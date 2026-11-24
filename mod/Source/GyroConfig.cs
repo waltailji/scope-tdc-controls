@@ -75,6 +75,23 @@ namespace ScopeTdcControls
         public static float TubesScale = 1f;
         public static float TubesX = 0.5f, TubesY = 0.24f; // above the bottom windows, centred
         public static float TubesOffsetX = 0f, TubesOffsetY = 0f;
+        public static bool ShowTrueBearing = true;        // TRUE bearing counter (the scope's compass bearing), above the TDC counter
+        public static float TrueOffsetX = 0f, TrueOffsetY = 0f; // from its place above the TDC counter
+        public static bool TrueBearingOnBinoculars = false; // the TRUE bearing counter also on the bridge binoculars (where the rest is hidden)
+        public static float TrueBinoOffsetX = 0f, TrueBinoOffsetY = 0f; // binoculars: from the gyro angle counter's place
+        public static bool ShowGyroSet = false;           // bow torpedo room gyro setting panel
+        public const float GyroSetScaleDefault = 0.8f;    // a large window: smaller by default
+        public static float GyroSetScale = GyroSetScaleDefault;
+        public static float GyroSetX = 0.62f, GyroSetY = 0.55f;
+        public static float GyroSetOffsetX = 0f, GyroSetOffsetY = 0f;
+        public static bool ShowSternGyroSet = false;      // stern torpedo room gyro setting panel (coarse / fine dials, hand crank)
+        public static float SternSetScale = GyroSetScaleDefault;
+        public static float SternSetX = 0.42f, SternSetY = 0.40f;
+        public static float SternSetOffsetX = 0f, SternSetOffsetY = 0f;
+        public static bool ShowBearing = false;           // TDC target bearing window (Zielrichtung: fine and coarse dials)
+        public static float BearingScale = 1f;
+        public static float BearingX = 0.30f, BearingY = 0.62f; // right of the TDC dials and their side windows
+        public static float BearingOffsetX = 0f, BearingOffsetY = 0f;
         public static bool VoiceCallouts = true;          // dial window: the officer at the scope announces the values
 
         // controls panel
@@ -250,6 +267,35 @@ TubesX=0.5
 TubesY=0.24
 TubesOffsetX=0
 TubesOffsetY=0
+# ---- TRUE bearing counter (where the scope looks, as a compass bearing), above the TDC counter ----
+ShowTrueBearing=true
+TrueOffsetX=0
+TrueOffsetY=0
+# true = the TRUE bearing counter also shows on the bridge binoculars (every other window is hidden there)
+TrueBearingOnBinoculars=false
+TrueBinoOffsetX=0
+TrueBinoOffsetY=0
+# ---- Bow torpedo room gyro setting panel (gyro / spread flags, hand wheel, switches, fast sync lever) ----
+ShowGyroSet=false
+GyroSetScale=0.8
+GyroSetX=0.62
+GyroSetY=0.55
+GyroSetOffsetX=0
+GyroSetOffsetY=0
+# ---- Stern torpedo room gyro setting panel (coarse / fine gyro dials, hand crank) ----
+ShowSternGyroSet=false
+SternSetScale=0.8
+SternSetX=0.42
+SternSetY=0.4
+SternSetOffsetX=0
+SternSetOffsetY=0
+# ---- TDC target bearing window (Zielrichtung: fine dial 10 degrees a turn, coarse dial 360) ----
+ShowBearing=false
+BearingScale=1
+BearingX=0.3
+BearingY=0.62
+BearingOffsetX=0
+BearingOffsetY=0
 VoiceCallouts=true
 
 # ---- Follow-up / gyro receiver panel ----
@@ -529,6 +575,30 @@ DebugLog=false
                 case "tubesy": TubesY = Mathf.Clamp01(Num(v, TubesY)); break;
                 case "tubesoffsetx": TubesOffsetX = Num(v, TubesOffsetX); break;
                 case "tubesoffsety": TubesOffsetY = Num(v, TubesOffsetY); break;
+                case "showtruebearing": ShowTrueBearing = Bool(v, ShowTrueBearing); break;
+                case "trueoffsetx": TrueOffsetX = Num(v, TrueOffsetX); break;
+                case "trueoffsety": TrueOffsetY = Num(v, TrueOffsetY); break;
+                case "truebearingonbinoculars": TrueBearingOnBinoculars = Bool(v, TrueBearingOnBinoculars); break;
+                case "truebinooffsetx": TrueBinoOffsetX = Num(v, TrueBinoOffsetX); break;
+                case "truebinooffsety": TrueBinoOffsetY = Num(v, TrueBinoOffsetY); break;
+                case "showgyroset": ShowGyroSet = Bool(v, ShowGyroSet); break;
+                case "gyrosetscale": GyroSetScale = Mathf.Clamp(Num(v, GyroSetScale), WindowScaleMin, WindowScaleMax); break;
+                case "gyrosetx": GyroSetX = Mathf.Clamp01(Num(v, GyroSetX)); break;
+                case "gyrosety": GyroSetY = Mathf.Clamp01(Num(v, GyroSetY)); break;
+                case "gyrosetoffsetx": GyroSetOffsetX = Num(v, GyroSetOffsetX); break;
+                case "gyrosetoffsety": GyroSetOffsetY = Num(v, GyroSetOffsetY); break;
+                case "showsterngyroset": ShowSternGyroSet = Bool(v, ShowSternGyroSet); break;
+                case "sternsetscale": SternSetScale = Mathf.Clamp(Num(v, SternSetScale), WindowScaleMin, WindowScaleMax); break;
+                case "sternsetx": SternSetX = Mathf.Clamp01(Num(v, SternSetX)); break;
+                case "sternsety": SternSetY = Mathf.Clamp01(Num(v, SternSetY)); break;
+                case "sternsetoffsetx": SternSetOffsetX = Num(v, SternSetOffsetX); break;
+                case "sternsetoffsety": SternSetOffsetY = Num(v, SternSetOffsetY); break;
+                case "showbearing": ShowBearing = Bool(v, ShowBearing); break;
+                case "bearingscale": BearingScale = Mathf.Clamp(Num(v, BearingScale), WindowScaleMin, WindowScaleMax); break;
+                case "bearingx": BearingX = Mathf.Clamp01(Num(v, BearingX)); break;
+                case "bearingy": BearingY = Mathf.Clamp01(Num(v, BearingY)); break;
+                case "bearingoffsetx": BearingOffsetX = Num(v, BearingOffsetX); break;
+                case "bearingoffsety": BearingOffsetY = Num(v, BearingOffsetY); break;
                 case "voicecallouts": VoiceCallouts = Bool(v, VoiceCallouts); break;
                 case "showcontrols": ShowControls = Bool(v, ShowControls); break;
                 case "controlsanchor": ControlsAtElevator = !v.Equals("screen", StringComparison.OrdinalIgnoreCase); break;

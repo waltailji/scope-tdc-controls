@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.4.3 (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.5 (UBOAT 2026.1 patch 21)
 =================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -191,6 +191,24 @@ button, to stop. Hidden in the UZO and while the game UI is hidden.
 (ElevatorButtons=false in the settings file removes them.)
 
 Version history
+  1.5  TDC target bearing window (Zielrichtung): fine (10 degrees a turn) and
+       coarse dials, needle = bearing source, red flag = the TDC's bearing; set
+       it by hand by turning or clicking, and the TDC turns to it at 80 deg/s
+       so AOB tracking keeps up. Opened from WINDOWS or the dial icon left of
+       the TDC Gyro counter; x to close.
+       Bow torpedo room gyro setting panel: spread angle, gyro coarse / fine
+       (needle = received, flag = set), fast sync lever with red / green
+       lamps, salvo size and setting mode switches, and a free-spinning hand
+       wheel (manual gyro 180 deg a turn, Shift 18; else spread).
+       Stern torpedo room gyro setting panel: gyro coarse / fine and a hand
+       crank. Both panels open from WINDOWS, the dial icon left of the Bow /
+       Stern counter, or the icons at the end of each row of the tube window.
+       TRUE bearing counter above the gyro counter: where the scope looks, as a
+       compass bearing; setting "Show True Bearing on binoculars" (off).
+       Torpedo tubes: right-click for Flood / Drain, Select and Launch;
+       Ctrl+click launches with the tube's own lever in the torpedo room.
+       Mod UI hidden on the binoculars (B key and the bridge observation post).
+       The TDC counter is labelled "TDC Gyro".
   1.4.3 Keep my scope bearing no longer touches the bridge binoculars (B): they
        open where you look and turn freely again (they were held on the
        bearing saved last time). Periscopes and the UZO are unchanged.

@@ -55,7 +55,7 @@ namespace ScopeTdcControls
         public static string Bow { get { return T("BUG", "BOW"); } }
         public static string Stern { get { return T("HECK", "STERN"); } }
 
-        public static string TdcLabel { get { return "TDC"; } }
+        public static string TdcLabel { get { return "TDC Gyro"; } }
         public static string ParallaxLabel { get { return T("Parallaxe", "Parallax"); } }
         public static string ParallaxHeader { get { return T("PARALLAXENMODUS", "PARALLAX MODE"); } }
         public static string ParForward { get { return T("VORN", "FORWARD"); } }
@@ -432,14 +432,196 @@ namespace ScopeTdcControls
         // ---- torpedo settings window ----
         public static string WinTorpedo { get { return T("Torpedoeinstellung", "Torpedo settings"); } }
 
+        // ---- bow torpedo room gyro setting panel ----
+        public static string WinGyroSet { get { return T("Schusswinkel Bugraum", "Bow gyro setting"); } }
+        public static string TipWinGyroSet
+        {
+            get
+            {
+                return T("<b>Schusswinkeleinstellung Bugraum</b>\nDie Einstellanlage im Bugtorpedoraum: Schusswinkel (fein und grob) und Streuwinkel, Handrad, Fächerschalter, Einstellart und Schnellgang. Auch über das Skalen-Symbol neben dem Bug-Zählwerk oder in der Rohranzeige zu öffnen.\n<i>Ausgegraut, solange das Boot keine Bugrohre hat.</i>",
+                         "<b>Bow gyro setting</b>\nThe gyro setting panel in the bow torpedo room: gyro angle (fine and coarse) and spread angle, hand wheel, salvo size and setting mode switches, and the fast synchronization lever. Also opened with the dial icon beside the bow receiver counter or in the torpedo tube window.\n<i>Greyed out while the boat has no bow tubes.</i>");
+            }
+        }
+        public static string TipGyroSetIcon
+        {
+            get { return T("<b>Schusswinkel Bugraum</b>\nKlicken öffnet oder schließt die Einstellanlage des Bugtorpedoraums.", "<b>Bow gyro setting</b>\nClick to open or close the bow torpedo room's gyro setting panel."); }
+        }
+        public static string GyroSetTitle { get { return T("BUGRAUM – SCHUSSWINKEL", "BOW ROOM – GYRO SETTING"); } }
+        public static string TipGyroSetWindow
+        {
+            get
+            {
+                return T("<b>Schusswinkeleinstellung Bugraum</b>\nAuf jeder Scheibe zeigt der Messingzeiger den vom Rechner empfangenen Wert, die rote Fahne den an den Rohren eingestellten. Auf „Fächer von Hand, SW automatisch“ fährt die Anlage jede Fahne selbst auf ihren Zeiger.",
+                         "<b>Bow gyro setting</b>\nOn each dial the brass needle is the value received from the TDC, the red flag the value set on the tubes. On “manual salvo, auto gyro” the panel drives every flag onto its needle by itself.");
+            }
+        }
+        const string GyroFlagDe = "\nMessingzeiger: der vom Rechner empfangene Schusswinkel. Rote Fahne: der an den Rohren eingestellte. Auf „Fächer von Hand, SW automatisch“ fährt die Anlage die Fahne selbst auf den Zeiger.";
+        const string GyroFlagEn = "\nBrass needle: the gyro angle received from the TDC. Red flag: the angle set on the tubes. On “manual salvo, auto gyro” the panel drives the flag onto the needle by itself.";
+        public static string DialGyroFine { get { return T("SW FEIN", "GYRO FINE"); } }
+        public static string DialGyroCoarse { get { return T("SW GROB", "GYRO COARSE"); } }
+        public static string TipDialGyroFine
+        {
+            get { return T("<b>Schusswinkel fein</b>\nEine Umdrehung = 10°. Mausrad: 0,1°." + GyroFlagDe + DialUsageDe, "<b>Gyro angle, fine</b>\nOne turn = 10°. Mouse wheel: 0.1°." + GyroFlagEn + DialUsageEn); }
+        }
+        public static string TipDialGyroCoarse
+        {
+            get { return T("<b>Schusswinkel grob</b>\nEine Umdrehung = 360°. Mausrad: 1°." + GyroFlagDe + DialUsageDe, "<b>Gyro angle, coarse</b>\nOne turn = 360°. Mouse wheel: 1°." + GyroFlagEn + DialUsageEn); }
+        }
+        public static string DialGroupSpread { get { return T("STREUWINKEL", "SPREAD ANGLE"); } }
+        public static string TipDialGroupSpread
+        {
+            get
+            {
+                return T("<b>Streuwinkel</b>\nMessingzeiger: der vom Rechner empfangene Streuwinkel (0 bis 20 Grad). Rote Fahne: der an den Rohren eingestellte. Mausrad: 0,5 Grad." + DialUsageDe,
+                         "<b>Spread angle</b>\nBrass needle: the spread angle received from the TDC (0 to 20 degrees). Red flag: the angle set on the tubes. Mouse wheel: 0.5°." + DialUsageEn);
+            }
+        }
+        public static string DialHandWheel { get { return T("HANDRAD", "HAND WHEEL"); } }
+        public static string WheelGyro { get { return T("SW", "Gyro"); } }
+        public static string WheelSpread { get { return T("Streu", "Spread"); } }
+        public static string TipDialHandWheel
+        {
+            get
+            {
+                return T("<b>Handrad</b>\nAuf „Schusswinkel von Hand“ stellt es die Schusswinkel-Fahne (eine Umdrehung = 180°, mit Umschalt 18°; Mausrad 0,5°), sonst die Streuwinkel-Fahne (eine Umdrehung = 20°); die Anzeige darunter zeigt, welche. Drehen, Umschalt = 10x feiner, Mausrad = in Schritten.",
+                         "<b>Hand wheel</b>\nOn “manual gyro” it sets the gyro angle flag (one turn = 180°, 18° with Shift; mouse wheel 0.5°), otherwise the spread angle flag (one turn = 20°); the readout below shows which. Turn it; Shift = 10x finer, mouse wheel = steps.");
+            }
+        }
+        public static string SwitchSalvoSize { get { return T("FÄCHER", "SALVO SIZE"); } }
+        public static string TipSwitchSalvoSize
+        {
+            get { return T("<b>Fächergröße</b>\nWie viele Torpedos der Fächer hat (1 bis 4); die Anlage verteilt den Streuwinkel darauf.", "<b>Salvo size</b>\nHow many torpedoes the salvo has (1 to 4); the panel spreads the spread angle over them."); }
+        }
+        public static string SwitchAngleMode { get { return T("EINSTELLART", "SETTING MODE"); } }
+        public static string TipSwitchAngleMode
+        {
+            get
+            {
+                return T("<b>Einstellart</b>\n<b>Auto</b> – Fächer von Hand, Schusswinkel automatisch: die Anlage fährt alle Fahnen auf ihre Zeiger.\n<b>Fächer</b> – Fächer von Hand: das Handrad stellt den Streuwinkel.\n<b>SW</b> – Schusswinkel von Hand: das Handrad stellt den Schusswinkel.\nKlicken, ziehen oder Mausrad.",
+                         "<b>Setting mode</b>\n<b>Auto</b> – manual salvo, auto gyro: the panel drives every flag onto its needle.\n<b>Salvo</b> – manual salvo: the hand wheel sets the spread angle.\n<b>Gyro</b> – manual gyro: the hand wheel sets the gyro angle.\nClick, drag or use the mouse wheel.");
+            }
+        }
+        public static string[] AngleModeLabels { get { return german ? new[] { "AUTO", "FÄCHER", "SW" } : new[] { "AUTO", "SALVO", "GYRO" }; } }
+        public static string[] AngleModeNames
+        {
+            get
+            {
+                return german ? new[] { "Fächer Hand, SW auto", "Fächer von Hand", "SW von Hand" }
+                              : new[] { "Man. salvo, auto gyro", "Manual salvo", "Manual gyro" };
+            }
+        }
+        public static string FastSync { get { return T("SCHNELLGANG", "FAST SYNC"); } }
+        public static string TipFastSync
+        {
+            get
+            {
+                return T("<b>Schnellgang</b>\nGedrückt halten (links = -, rechts = +), um die automatische Schusswinkel-Einstellung in diese Richtung zu beschleunigen. Die Lampe über einer Seite leuchtet, wenn die Fahne mehr als 3,5° in diese Richtung nachläuft.",
+                         "<b>Fast synchronization</b>\nHold it down (left = -, right = +) to speed the automatic gyro setting that way. The lamp over a side lights when the flag lags more than 3.5° that way.");
+            }
+        }
+
+        // ---- stern torpedo room gyro setting panel ----
+        public static string WinSternSet { get { return T("Schusswinkel Heckraum", "Stern gyro setting"); } }
+        public static string TipWinSternSet
+        {
+            get
+            {
+                return T("<b>Schusswinkeleinstellung Heckraum</b>\nDer Schusswinkelempfänger im Hecktorpedoraum: Schusswinkel grob und fein und die Handkurbel. Auch über das Skalen-Symbol neben dem Heck-Zählwerk oder am Ende der Heck-Reihe in der Rohranzeige zu öffnen.\n<i>Ausgegraut, solange das Boot keine Heckrohre hat.</i>",
+                         "<b>Stern gyro setting</b>\nThe gyro angle receiver in the stern torpedo room: gyro angle coarse and fine and the hand crank. Also opened with the dial icon beside the stern receiver counter or at the end of the Aft row in the torpedo tube window.\n<i>Greyed out while the boat has no stern tubes.</i>");
+            }
+        }
+        public static string TipSternSetIcon
+        {
+            get { return T("<b>Schusswinkel Heckraum</b>\nKlicken öffnet oder schließt den Schusswinkelempfänger des Hecktorpedoraums.", "<b>Stern gyro setting</b>\nClick to open or close the stern torpedo room's gyro angle receiver."); }
+        }
+        public static string SternSetTitle { get { return T("HECKRAUM – SCHUSSWINKEL", "STERN ROOM – GYRO SETTING"); } }
+        public static string TipSternSetWindow
+        {
+            get
+            {
+                return T("<b>Schusswinkeleinstellung Heckraum</b>\nMessingzeiger: der vom Rechner empfangene Schusswinkel. Rote Fahne: der an den Heckrohren eingestellte. Die Handkurbel stellt die Fahne von Hand.",
+                         "<b>Stern gyro setting</b>\nBrass needle: the gyro angle received from the TDC. Red flag: the angle set on the stern tubes. The hand crank sets the flag by hand.");
+            }
+        }
+        public static string DialCrank { get { return T("KURBEL", "HAND CRANK"); } }
+        public static string TipDialCrank
+        {
+            get
+            {
+                return T("<b>Handkurbel</b>\nStellt die Schusswinkel-Fahne der Heckrohre: eine Umdrehung = 180°, mit Umschalt 18°; Mausrad 0,5°. Läuft frei und bleibt stehen, wo sie gedreht wurde.",
+                         "<b>Hand crank</b>\nSets the stern tubes' gyro angle flag: one turn = 180°, 18° with Shift; mouse wheel 0.5°. It turns freely and stays where it was turned to.");
+            }
+        }
+
+        // ---- TRUE bearing counter ----
+        public static string TrueLabel { get { return T("RW", "TRUE"); } }
+        public static string WinTrueBearing { get { return T("Rechtweisende Peilung", "True bearing"); } }
+        public static string TipWinTrueBearing
+        {
+            get
+            {
+                return T("<b>Rechtweisende Peilung</b>\nEin Zählwerk über dem Schusswinkel-Zählwerk: wohin das Sehrohr (oder die UZO) blickt, als Kompasspeilung 000–359°.",
+                         "<b>True bearing</b>\nA counter above the gyro angle counter: where the scope (or UZO) is looking, as a compass bearing 000–359°.");
+            }
+        }
+        public static string TipTrueBearing
+        {
+            get
+            {
+                return T("<b>Rechtweisende Peilung (RW)</b>\nWohin das Sehrohr blickt, bezogen auf Nord: Peilung vom Bug plus Kurs des Boots. Zum Eintragen von Kontakten in die Karte.",
+                         "<b>True bearing</b>\nWhere the scope is looking, from north: the bearing from the bow plus the boat's heading. For plotting contacts on the map.");
+            }
+        }
+
+        // ---- TDC target bearing window (Zielrichtung) ----
+        public static string WinBearing { get { return T("Zielrichtung", "TDC target bearing"); } }
+        public static string TipWinBearing
+        {
+            get
+            {
+                return T("<b>Zielrichtung</b>\nDie Zielrichtung-Anzeige des Vorhaltrechners zum Einstellen von Hand: oben die Feinscheibe (eine Umdrehung = 10°), unten die Grobscheibe (360°). Auch über das kleine Skalen-Symbol links vom Schusswinkel-Zählwerk zu öffnen.",
+                         "<b>TDC target bearing</b>\nThe TDC's target bearing (Zielrichtung) dials, to set the bearing by hand: the fine dial on top (one turn = 10°), the coarse dial below (360°). Also opened with the small dial icon left of the gyro angle counter.");
+            }
+        }
+        public static string BearingTitle { get { return T("ZIELRICHTUNG", "TDC TARGET BEARING"); } }
+        public static string DialBearingFine { get { return T("FEIN", "FINE"); } }
+        public static string DialBearingCoarse { get { return T("GROB", "COARSE"); } }
+        const string BearingNeedleDe = "\nMessingzeiger: die Zielrichtung von der Peilquelle (z. B. Angriffssehrohr). Rote Fahne: die im Rechner eingestellte Zielrichtung, aus der der Schusswinkel errechnet wird.\nBei eingeschalteter Nachführung (FOLGEN) fährt der Rechner die Fahne wieder auf den Zeiger; für eine Zielrichtung von Hand auf NICHT FOLGEN schalten.";
+        const string BearingNeedleEn = "\nBrass needle: the bearing coming from the bearing source (e.g. the attack periscope). Red flag: the bearing set in the TDC, which the gyro angle is worked out from.\nWith follow-up on (FOLLOW), the TDC drives the flag back onto the needle; switch it to NOT FOLLOW to keep a bearing set by hand.";
+        public static string TipBearingWindow
+        {
+            get { return T("<b>Zielrichtung</b>" + BearingNeedleDe, "<b>TDC target bearing</b>" + BearingNeedleEn); }
+        }
+        public static string TipDialBearingFine
+        {
+            get
+            {
+                return T("<b>Zielrichtung fein</b>\nEine Umdrehung = 10°, Teilung 0,1°. Mausrad: 0,1°." + BearingNeedleDe + DialUsageDe,
+                         "<b>Target bearing, fine</b>\nOne turn = 10°, marks every 0.1°. Mouse wheel: 0.1°." + BearingNeedleEn + DialUsageEn);
+            }
+        }
+        public static string TipDialBearingCoarse
+        {
+            get
+            {
+                return T("<b>Zielrichtung grob</b>\nEine Umdrehung = 360°, vom Bug rechts herum. Mausrad: 1°." + BearingNeedleDe + DialUsageDe,
+                         "<b>Target bearing, coarse</b>\nOne turn = 360°, clockwise from the bow. Mouse wheel: 1°." + BearingNeedleEn + DialUsageEn);
+            }
+        }
+        public static string TipBearingIcon
+        {
+            get { return T("<b>Zielrichtung</b>\nKlicken öffnet oder schließt das Fenster zum Einstellen der Zielrichtung am Rechner.", "<b>TDC target bearing</b>\nClick to open or close the window for setting the TDC's target bearing."); }
+        }
+        public static string TipClose { get { return T("Schließen", "Close"); } }
+
         // ---- torpedo tube indicator ----
         public static string WinTubes { get { return T("Rohranzeige", "Torpedo tubes"); } }
         public static string TipWinTubes
         {
             get
             {
-                return T("<b>Rohranzeige</b>\nEin kleines Fenster mit einem Kreis je Rohr (oben Bug, unten Heck): schwarz = leer, grau = geladen, blau = geflutet, grün = geflutet und gewählt. Klicken wählt ein geflutetes Rohr, Doppelklick flutet oder lenzt.",
-                         "<b>Torpedo tubes</b>\nA small window with one circle per tube (bow on top, stern below): black = empty, grey = loaded, blue = flooded, green = flooded and selected. Click selects a flooded tube, double-click floods or drains it.");
+                return T("<b>Rohranzeige</b>\nEin kleines Fenster mit einem Kreis je Rohr (oben Bug, unten Heck): schwarz = leer, grau = geladen, blau = geflutet, grün = geflutet und gewählt. Klicken wählt ein geflutetes Rohr, Doppelklick flutet oder lenzt, Strg+Klick stößt mit dem Abfeuerhebel des Rohrs aus, Rechtsklick öffnet die Aktionen.",
+                         "<b>Torpedo tubes</b>\nA small window with one circle per tube (bow on top, stern below): black = empty, grey = loaded, blue = flooded, green = flooded and selected. Click selects a flooded tube, double-click floods or drains it, Ctrl+click launches it with its own launch lever, right-click opens its actions.");
             }
         }
         public static string TubesBowShort { get { return T("Bug", "Fore"); } }
@@ -458,6 +640,32 @@ namespace ScopeTdcControls
         public static string TubeClickNeedsFlood { get { return T("Klicken: wählbar, sobald das Rohr geflutet ist", "Click: selectable once the tube is flooded"); } }
         public static string TubeDoubleFlood { get { return T("Doppelklick: Rohr fluten", "Double-click: flood the tube"); } }
         public static string TubeDoubleDrain { get { return T("Doppelklick: Rohr lenzen", "Double-click: drain the tube"); } }
+        public static string TubeCtrlLaunch { get { return T("Strg+Klick: mit dem Abfeuerhebel des Rohrs ausstoßen", "Ctrl+click: launch with the tube's own launch lever"); } }
+        public static string TubeRightMenu { get { return T("Rechtsklick: Aktionen", "Right-click: actions"); } }
+
+        // tube actions menu (right-click on a tube)
+        public static string MenuFlood { get { return T("Fluten", "Flood"); } }
+        public static string MenuDrain { get { return T("Lenzen", "Drain"); } }
+        public static string MenuSelect { get { return T("Wählen", "Select"); } }
+        public static string MenuLaunch { get { return T("Ausstoßen", "Launch"); } }
+        public static string TipMenuFlood { get { return T("Das Rohr fluten (wie ein Doppelklick).", "Flood the tube (as a double-click does)."); } }
+        public static string TipMenuDrain { get { return T("Das Rohr lenzen (wie ein Doppelklick).", "Drain the tube (as a double-click does)."); } }
+        public static string TipMenuSelect
+        {
+            get
+            {
+                return T("Das Rohr für einen Einzelschuss wählen oder abwählen (wie ein Klick). Nur geflutete Rohre, nicht während die Abfeueranlage unter Strom steht.",
+                         "Select or deselect the tube for a single shot (as a click does). Flooded tubes only, not while the firing circuit is live.");
+            }
+        }
+        public static string TipMenuLaunch
+        {
+            get
+            {
+                return T("Den Abfeuerhebel des Rohrs im Torpedoraum ziehen (auch Strg+Klick): der Torpedo läuft mit dem an der Rohrgruppe eingestellten Schusswinkel, ohne die Abfeueranlage. Nur bei geflutetem Rohr mit geschlossenem Rohrverschluss.",
+                         "Pull the tube's own launch lever in the torpedo room (also Ctrl+click): the torpedo runs on the gyro angle set on its tube group, without the bridge firing circuit. Only with the tube flooded and its breech door shut.");
+            }
+        }
         public static string TorpDepth { get { return T("TIEFE", "DEPTH"); } }
         public static string TorpSpeed { get { return T("FAHRSTUFE", "SPEED"); } }
         public static string TorpPistol { get { return T("PISTOLE", "PISTOL"); } }
@@ -646,6 +854,15 @@ namespace ScopeTdcControls
         }
 
         public static string OptKeepScopeBearing { get { return T("Sehrohrrichtung beibehalten", "Keep my scope bearing"); } }
+        public static string OptTrueOnBinoculars { get { return T("Rechtw. Peilung im Fernglas", "Show True Bearing on binoculars"); } }
+        public static string TipOptTrueOnBinoculars
+        {
+            get
+            {
+                return T("<b>Rechtweisende Peilung im Fernglas</b>\nIm Fernglas der Brücke sind alle Fenster dieser Mod ausgeblendet; eingeschaltet zeigt es dort trotzdem das Zählwerk der rechtweisenden Peilung (wohin das Glas blickt, 000–359°), an der Stelle des Schusswinkel-Zählwerks.",
+                         "<b>Show True Bearing on binoculars</b>\nOn the bridge binoculars every window of this mod is hidden; with this on, the TRUE bearing counter still shows there (where the binoculars are looking, 000–359°), in the gyro angle counter's place.");
+            }
+        }
 
         public static string TipOptKeepScopeBearing
         {

@@ -17,11 +17,13 @@ namespace ScopeTdcControls
     /// Click a flooded tube: select it for a single shot (the Einzelschuß switch turns there,
     /// the salvo switch to Aus). Double-click a loaded tube: flood it, or drain it if flooded
     /// or flooding, exactly as the game's torpedo panel does on a click on the tube.
+    /// Right-click: actions menu; Ctrl+click: launch with the tube's own lever (GyroCounterUI.TubeMenu.cs).
     /// </summary>
     public partial class GyroCounterUI
     {
         const float TubeSize = 32f, TubeGap = 6f, TubePad = 8f; // first version 20 / 4 / 6, then 40 / 8 / 10
         float tubeLabelW;            // row label column: fits the longer of the two labels
+        const float TubeIconSize = 24f; // the gyro setting panel's dial icon, right of the bow tubes
         const float TubeFont = 16f;
 
         static readonly Color TubeEmpty = new Color(0.05f, 0.05f, 0.05f, 1f);
@@ -57,7 +59,9 @@ namespace ScopeTdcControls
             if (tubesPanel == null && Time.unscaledTime < tubesRetryAt) return;
             tubesRetryAt = Time.unscaledTime + 2f;
             if (tubesPanel != null) { Destroy(tubesPanel.gameObject); tubesPanel = null; }
+            CloseTubeMenu();
             tubeDots.Clear();
+            tubeLevers.Clear();
             tubesFor = null;
             if (tubes == null || tubes.Length == 0) return;
             BuildTubes(ResolveFont(), ship, tubes);
@@ -90,9 +94,24 @@ namespace ScopeTdcControls
             if (bow.Count > 0) { AddTubeRow(font, bow, Strings.TubesBowShort, y); y -= TubeSize + TubeGap; }
             if (stern.Count > 0) { AddTubeRow(font, stern, Strings.TubesSternShort, y); y -= TubeSize + TubeGap; }
 
-            float w = TubePad + tubeLabelW + cols * TubeSize + (cols - 1) * TubeGap + TubePad + GripSize * 0.6f;
+            // a column on the right for the gyro setting panel's dial icon, level with the bow tubes
+            float iconX = TubePad + tubeLabelW + cols * TubeSize + (cols - 1) * TubeGap + TubeGap * 2f;
+            float w = iconX + TubeIconSize + TubePad + GripSize * 0.6f;
             float h = TubePad * 2f + rows * TubeSize + (rows - 1) * TubeGap;
             tubesPanel.sizeDelta = new Vector2(w, h);
+            if (bow.Count > 0)
+            {
+                var icon = NewRect("GyroSetIcon", tubesPanel);
+                PlaceV(icon, iconX, -TubePad - (TubeSize - TubeIconSize) * 0.5f, TubeIconSize, TubeIconSize);
+                MakeIconToggle(icon, () => GyroConfig.ShowGyroSet, ToggleGyroSetWindow, () => Strings.TipGyroSetIcon);
+            }
+            if (stern.Count > 0)
+            {
+                float sternTop = -TubePad - (bow.Count > 0 ? TubeSize + TubeGap : 0f);
+                var icon = NewRect("SternGyroSetIcon", tubesPanel);
+                PlaceV(icon, iconX, sternTop - (TubeSize - TubeIconSize) * 0.5f, TubeIconSize, TubeIconSize);
+                MakeIconToggle(icon, () => GyroConfig.ShowSternGyroSet, ToggleSternSetWindow, () => Strings.TipSternSetIcon);
+            }
             AddResizeGrip(tubesPanel, ResizableWindow.Tubes);
             RaiseOverlays();
             UpdateTubes();
@@ -269,6 +288,8 @@ namespace ScopeTdcControls
             sb.Append("\n\n").Append(!l.IsFlooded ? Strings.TubeClickNeedsFlood : l.IsMarkedForLaunch ? Strings.TubeClickDeselect : Strings.TubeClickSelect);
             if (TubeHasTorpedo(l) && !TubeBusy(s))
                 sb.Append('\n').Append(l.IsFlooded || s == TorpedoLauncher.State.Flooding ? Strings.TubeDoubleDrain : Strings.TubeDoubleFlood);
+            if (CanLaunch(l)) sb.Append('\n').Append(Strings.TubeCtrlLaunch);
+            sb.Append('\n').Append(Strings.TubeRightMenu);
             return sb.ToString();
         }
 
@@ -288,8 +309,10 @@ namespace ScopeTdcControls
 
             public void OnPointerClick(PointerEventData e)
             {
+                if (e.button == PointerEventData.InputButton.Right) { Owner.OpenTubeMenu(Dot, e.position); return; } // actions menu
                 if (e.button != PointerEventData.InputButton.Left) return;
                 Owner.HideTip();
+                if (CtrlKey) { Owner.pendingTubeClick = null; Owner.LaunchTube(Dot); return; } // Ctrl+click: the tube's own launch lever
                 if (e.clickCount >= 2) { Owner.pendingTubeClick = null; Owner.ToggleTubeFlood(Dot); } // a double-click only
                 else { Owner.pendingTubeClick = Dot; Owner.pendingTubeClickAt = Time.unscaledTime + TubeDoubleClickTime; } // single: once no second click follows
             }

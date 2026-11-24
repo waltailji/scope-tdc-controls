@@ -59,7 +59,9 @@ namespace ScopeTdcControls
             Arrow,    // needle with an arrow tip (AOB)
             Knob,     // turning knob grip with a painted arrow (distance)
             Ring,     // the scale ring turns under a fixed index at the top (target length)
-            Flag      // a red flag set by hand (or by a motor), and a brass needle for a second value (spread angle)
+            Flag,     // a red flag set by hand (or by a motor), and a brass needle for a second value (spread angle)
+            Wheel,    // a hand wheel with spokes and a grip, turning with the value (tube group angle setting wheel)
+            Crank     // a hand crank: an arm with a knob at its end (stern gyro setting)
         }
 
         /// <summary>One TDC dial: how it reads/writes the TDC and how it is drawn.</summary>
@@ -73,6 +75,11 @@ namespace ScopeTdcControls
             public Func<TorpedoCalculator, bool> Locked;
             public float[] Values, Rots;                      // value -> pointer angle (clockwise from the top), increasing
             public bool Wrap;                                 // AOB: ±180 is the same place
+            public float Period = 360f;                       // Wrap: the value change for one full turn (target bearing fine dial: 10°)
+            public bool NoClick;                              // no scale to click on (hand wheel): only turning sets it
+            public Func<TorpedoCalculator, float> Base;       // the value to turn / step from, when that isn't Get (TDC bearing: where it is being driven to)
+            public bool FreeSpin;                             // hand wheel: shown where the hand turned it, not at the value (it works through clutches)
+            public float FreeAngle;                           // FreeSpin: the wheel's own angle, clockwise
             public float WheelStep;
             public Func<float, string> Format;
             public Action<DialSpec, float> Extra;             // per-frame extras (AOB: the rolling ones digits)
@@ -96,13 +103,13 @@ namespace ScopeTdcControls
 
             public float ToRot(float v)
             {
-                if (Wrap) return Mathf.DeltaAngle(0f, v);
+                if (Wrap) return Mathf.DeltaAngle(0f, v * 360f / Period);
                 return Map(v, Values, Rots);
             }
 
             public float ToValue(float rot)
             {
-                if (Wrap) return Mathf.DeltaAngle(0f, rot);
+                if (Wrap) return Mathf.DeltaAngle(0f, rot) * Period / 360f;
                 return Map(rot, Rots, Values);
             }
 
@@ -125,6 +132,7 @@ namespace ScopeTdcControls
             public float Turn(float v, float degrees)
             {
                 // a turning scale under a fixed index reads the other way round
+                if (Wrap) return Mathf.DeltaAngle(0f, v + (Style == PointerStyle.Ring ? -degrees : degrees) * Period / 360f); // a fine dial turns the value on by a fraction of a turn
                 float r = ToRot(v) + (Style == PointerStyle.Ring ? -degrees : degrees);
                 if (!Wrap) r = Mathf.Clamp(r, Mathf.Min(Rots[0], Rots[Rots.Length - 1]), Mathf.Max(Rots[0], Rots[Rots.Length - 1]));
                 return Wrap ? ToValue(r) : Mathf.Clamp(ToValue(r), LimitMin, LimitMax);
@@ -362,6 +370,14 @@ namespace ScopeTdcControls
 
                 case PointerStyle.Knob:
                     spec.Needle = MakeKnobPointer(face.rectTransform);
+                    break;
+
+                case PointerStyle.Wheel:
+                    spec.Needle = MakeHandWheel(face.rectTransform);
+                    break;
+
+                case PointerStyle.Crank:
+                    spec.Needle = MakeHandCrank(face.rectTransform);
                     break;
 
                 case PointerStyle.Flag:
@@ -1028,14 +1044,14 @@ namespace ScopeTdcControls
                 // a pointer turns to the value; a ring turns the value to the top
                 // while dragging, show the dial's own value so it stays under the pointer (the TDC may lag or round it)
                 float shown = d.Dragging && !float.IsNaN(d.DragValue) ? d.DragValue : v;
-                d.Needle.localEulerAngles = new Vector3(0f, 0f, d.Style == PointerStyle.Ring ? d.ToRot(shown) : -d.ToRot(shown));
+                d.Needle.localEulerAngles = new Vector3(0f, 0f, d.FreeSpin ? -d.FreeAngle : d.Style == PointerStyle.Ring ? d.ToRot(shown) : -d.ToRot(shown));
 
                 d.Readout.text = d.Format(shown);
                 if (d.Extra != null) d.Extra(d, shown);
                 if (d.Needle2 != null && d.Get2 != null)
                 {
                     float v2 = d.Get2(tdc);
-                    if (!float.IsNaN(v2) && !float.IsInfinity(v2)) d.Needle2.localEulerAngles = new Vector3(0f, 0f, -d.ToRot(Mathf.Clamp(v2, d.Min, d.Max)));
+                    if (!float.IsNaN(v2) && !float.IsInfinity(v2)) d.Needle2.localEulerAngles = new Vector3(0f, 0f, -d.ToRot(d.Wrap ? v2 : Mathf.Clamp(v2, d.Min, d.Max)));
                 }
             }
         }
@@ -1053,7 +1069,7 @@ namespace ScopeTdcControls
         /// <summary>Starting value for a turn: the TDC's value, brought into the dial's range.</summary>
         float DialBase(DialSpec spec, TorpedoCalculator tdc)
         {
-            float v = spec.Get(tdc);
+            float v = spec.Base != null ? spec.Base(tdc) : spec.Get(tdc);
             if (spec.Wrap) return v;
             if (float.IsNaN(v) || float.IsInfinity(v)) return (spec.Min + spec.Max) * 0.5f; // nothing set yet
             return Mathf.Clamp(v, spec.Min, spec.Max);                                  // out of range: start from the end
@@ -1088,7 +1104,7 @@ namespace ScopeTdcControls
         void ClickDial(DialSpec spec, Vector2 screenPos, Transform faceTransform)
         {
             var tdc = Tdc();
-            if (tdc == null || (spec.Locked != null && spec.Locked(tdc))) return;
+            if (spec.NoClick || tdc == null || (spec.Locked != null && spec.Locked(tdc))) return;
             Vector2 centre = RectTransformUtility.WorldToScreenPoint(null, faceTransform.position);
             Vector2 d = screenPos - centre;
             float scale = faceTransform.lossyScale.x > 0f ? faceTransform.lossyScale.x : 1f;
@@ -1096,7 +1112,13 @@ namespace ScopeTdcControls
             float a = Mathf.Repeat(Mathf.Atan2(d.x, d.y) * Mathf.Rad2Deg, 360f);
 
             float v;
-            if (spec.Wrap) v = Mathf.DeltaAngle(0f, a);
+            if (spec.Wrap)
+            {
+                // the nearest value that sits under the click (a fine dial keeps the tens it is on)
+                float b = DialBase(spec, tdc), p = spec.Period;
+                float delta = Mathf.Repeat(a * p / 360f - Mathf.Repeat(b, p) + p * 0.5f, p) - p * 0.5f;
+                v = Mathf.DeltaAngle(0f, b + delta);
+            }
             else
             {
                 float rot = a;
@@ -1205,6 +1227,7 @@ namespace ScopeTdcControls
                 if (float.IsNaN(lastAngle)) { lastAngle = a; return; }
                 float turned = Mathf.DeltaAngle(lastAngle, a);
                 lastAngle = a;
+                if (Spec.FreeSpin) Spec.FreeAngle = Mathf.Repeat(Spec.FreeAngle + turned, 360f); // the wheel goes round with the hand (Shift only gears the value down)
                 Owner.TurnDial(Spec, turned * (ShiftHeld ? 0.1f : 1f));
             }
 
@@ -1235,7 +1258,9 @@ namespace ScopeTdcControls
             {
                 float steps = e.scrollDelta.y;
                 if (Mathf.Abs(steps) < 0.01f) return;
-                Owner.StepDial(Spec, Mathf.Sign(steps) * Mathf.Ceil(Mathf.Abs(steps)) * Spec.WheelStep * (ShiftHeld ? 0.1f : 1f));
+                float delta = Mathf.Sign(steps) * Mathf.Ceil(Mathf.Abs(steps)) * Spec.WheelStep * (ShiftHeld ? 0.1f : 1f);
+                if (Spec.FreeSpin) Spec.FreeAngle = Mathf.Repeat(Spec.FreeAngle + Mathf.Sign(delta) * 15f * Mathf.Ceil(Mathf.Abs(steps)), 360f); // a bit of a turn per notch, the way the value goes
+                Owner.StepDial(Spec, delta);
             }
         }
     }
