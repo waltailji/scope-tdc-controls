@@ -99,6 +99,7 @@ namespace ScopeTdcControls
         public static bool ControlsVisible = true;    // shown/hidden with the sidebar button
         public static bool PanelCollapsed = false;    // the panel rolled up to its title bar (caret)
         public static bool ElevatorButtons = true;    // raise fully / lower fully buttons
+        public static bool HideStockElevator = false; // hide the game's periscope raise/lower control (and the buttons above)
         public static bool ControlsAtElevator = true; // ControlsAnchor=Elevator | Screen
         public static float ControlsOffsetX = 0f;
         public static float ControlsOffsetY = 0f;
@@ -306,6 +307,8 @@ ControlsVisible=true
 PanelCollapsed=false
 # Raise fully / lower fully buttons above and below the periscope raise/lower control
 ElevatorButtons=true
+# true = hide the game's periscope raise/lower control and the buttons above (the keys still raise and lower it)
+HideStockElevator=false
 # Elevator = beside the periscope raise/lower control ; Screen = ControlsX/ControlsY
 ControlsAnchor=Elevator
 # Extra offset in 1080p pixels. Ctrl+drag updates these.
@@ -605,6 +608,7 @@ DebugLog=false
                 case "controlsvisible": ControlsVisible = Bool(v, ControlsVisible); break;
                 case "panelcollapsed": PanelCollapsed = Bool(v, PanelCollapsed); break;
                 case "elevatorbuttons": ElevatorButtons = Bool(v, ElevatorButtons); break;
+                case "hidestockelevator": HideStockElevator = Bool(v, HideStockElevator); break;
                 case "controlsoffsetx": ControlsOffsetX = Num(v, ControlsOffsetX); break;
                 case "controlsoffsety": ControlsOffsetY = Num(v, ControlsOffsetY); break;
                 case "controlsgap": ControlsGap = Num(v, ControlsGap); break;

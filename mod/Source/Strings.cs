@@ -864,6 +864,16 @@ namespace ScopeTdcControls
             }
         }
 
+        public static string OptHideStockElevator { get { return T("Sehrohr-Höhenanzeige ausblenden", "Hide periscope raise/lower control"); } }
+        public static string TipOptHideStockElevator
+        {
+            get
+            {
+                return T("<b>Sehrohr-Höhenanzeige ausblenden</b>\nBlendet die Aus-/Einfahr-Anzeige des Spiels und die Knöpfe für ganz aus- und ganz einfahren aus. Mit den Tasten lässt sich das Sehrohr weiter aus- und einfahren.",
+                         "<b>Hide periscope raise/lower control</b>\nHides the game's raise/lower control and the raise fully / lower fully buttons. The keys still raise and lower the periscope.");
+            }
+        }
+
         public static string TipOptKeepScopeBearing
         {
             get

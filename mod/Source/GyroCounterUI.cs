@@ -897,7 +897,7 @@ namespace ScopeTdcControls
             settingsPanel = NewRect("GyroSettings", controlsPanel);
             Frame(settingsPanel, true);
 
-            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptAutoSpread, Strings.OptKeepScopeBearing, Strings.OptTrueOnBinoculars, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag, Strings.HotkeyPress, Strings.HotkeyPrefix + "RightControl" };
+            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptAutoSpread, Strings.OptKeepScopeBearing, Strings.OptTrueOnBinoculars, Strings.OptHideStockElevator, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag, Strings.HotkeyPress, Strings.HotkeyPrefix + "RightControl" };
             float inner = 0f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f);
 
@@ -943,6 +943,10 @@ namespace ScopeTdcControls
                 () => GyroConfig.TrueBearingOnBinoculars,
                 v => { GyroConfig.TrueBearingOnBinoculars = v; GyroConfig.Save("TrueBearingOnBinoculars", v); },
                 () => Strings.TipOptTrueOnBinoculars);
+            MakeCheck(font, Strings.OptHideStockElevator, ref y, inner,
+                () => GyroConfig.HideStockElevator,
+                v => { GyroConfig.HideStockElevator = v; GyroConfig.Save("HideStockElevator", v); },
+                () => Strings.TipOptHideStockElevator);
             MakeCheck(font, Strings.OptTintPanels, ref y, inner,
                 () => GyroConfig.TintPanels,
                 v => { GyroConfig.TintPanels = v; GyroConfig.Save("TintPanels", v); }, // the windows recolour on the next frame
@@ -2011,7 +2015,8 @@ namespace ScopeTdcControls
             bool directionsOn = show && GyroConfig.ControlsVisible && GyroConfig.ShowDirections && directionsPanel != null;
             if (directionsPanel != null && directionsPanel.gameObject.activeSelf != directionsOn) directionsPanel.gameObject.SetActive(directionsOn);
             ValidateTorpedo(show && GyroConfig.ControlsVisible); // shown only while a checked tube holds a torpedo
-            UpdateElevatorButtons(uiHidden || binoculars);
+            SetStockElevatorHidden(GyroConfig.HideStockElevator);
+            UpdateElevatorButtons(uiHidden || binoculars || GyroConfig.HideStockElevator);
             if (!show)
             {
                 HideTip();

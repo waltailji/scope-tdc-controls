@@ -1,5 +1,5 @@
-Scope TDC Controls  v1.5 (UBOAT 2026.1 patch 21)
-=================================================
+Scope TDC Controls  v1.5.1 (UBOAT 2026.1 patch 21)
+===================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
 
@@ -189,8 +189,16 @@ periscope raise/lower control. Click one to run the periscope all the way up
 or down at its normal speed; click it again, or use a stock raise/lower
 button, to stop. Hidden in the UZO and while the game UI is hidden.
 (ElevatorButtons=false in the settings file removes them.)
+The setting "Hide periscope raise/lower control" (off by default) hides the
+game's raise/lower control and these buttons; the keys still raise and lower
+the periscope.
 
 Version history
+  1.5.1 Type II T.Abf. Schalter as on its box: IID = Brücke (UZO) at the
+       top, Turm at the bottom (no off position); IIA (no UZO) = Aus at the
+       top, Turm at the bottom. Bow gyro setting mode switch laid out as on
+       the panel: auto at the top, salvo to the right, gyro at the bottom.
+       Setting "Hide periscope raise/lower control" (off by default).
   1.5  TDC target bearing window (Zielrichtung): fine (10 degrees a turn) and
        coarse dials, needle = bearing source, red flag = the TDC's bearing; set
        it by hand by turning or clicking, and the TDC turns to it at 80 deg/s

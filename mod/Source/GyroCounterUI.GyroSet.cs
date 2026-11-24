@@ -174,7 +174,7 @@ namespace ScopeTdcControls
                 Values = new[] { 0, 1, 2 },
                 Labels = Strings.AngleModeLabels,
                 Names = Strings.AngleModeNames,
-                Rots = new[] { -60f, 0f, 60f },
+                Rots = new[] { 0f, 90f, 180f },  // as on the panel: auto at the top, salvo to the right, gyro at the bottom
                 LabelSize = 8.5f,
                 InnerTicks = true,
                 Sound = KnobSound(modeKnob),

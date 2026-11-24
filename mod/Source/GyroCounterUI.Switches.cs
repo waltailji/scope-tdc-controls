@@ -201,6 +201,33 @@ namespace ScopeTdcControls
             catch { return false; }
         }
 
+        /// <summary>
+        /// Whether a Type II fires from the bridge: the IID does, the IIA (no UZO on the bridge)
+        /// doesn't. Told by the boat's name ("Type IIA ..." / "Type IID ..."): the IID's 3D box is
+        /// painted Aus / Turm, and neither its switch box's UZO reference nor its knob's positions
+        /// tell the two apart.
+        /// </summary>
+        bool HasUzo(TorpedoFireControlBoxes boxes, int[] levers)
+        {
+            // the interior the switch box is in ("Type IIA (Interior)"), then the boat ("Type IIA (Player)")
+            var names = new List<string>();
+            try { if (boxes != null) names.Add(boxes.transform.root.name); } catch { }
+            try { var ship = Ship(); if (ship != null) names.Add(ship.name); } catch { }
+            foreach (var name in names)
+            {
+                if (string.IsNullOrEmpty(name)) continue;
+                var m = System.Text.RegularExpressions.Regex.Match(name, @"II\s*([A-D])\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (!m.Success) continue;
+                bool iia = m.Groups[1].Value.ToUpperInvariant() == "A";
+                if (GyroConfig.DebugLog)
+                    Debug.Log(ScopeTdcControlsMod.Tag + " Type II firing station: '" + name + "' -> " + (iia ? "IIA (Off / Tower)" : "bridge / Tower"));
+                return !iia;
+            }
+            if (GyroConfig.DebugLog)
+                Debug.Log(ScopeTdcControlsMod.Tag + " Type II firing station: boat not named (" + string.Join(", ", names.ToArray()) + "), going by the knob");
+            return Array.IndexOf(levers, (int)ActiveLaunchLever.UZO) >= 0;
+        }
+
         /// <summary>Off (the first value) at the bottom, the rest evenly round the dial, clockwise.</summary>
         static float[] EvenRots(int n)
         {
@@ -264,9 +291,13 @@ namespace ScopeTdcControls
             }
 
             int[] levers = KnobValues(SceneKnob<TorpedoFireControlBoxesActiveLaunchLeverKnob>(boxes));
-            // Type II box: off at the top, tower at the bottom (one off position)
-            if (levers != null && IsTypeII(boxes) && Array.IndexOf(levers, (int)ActiveLaunchLever.Off) >= 0)
-                levers = Array.FindAll(levers, v => v != (int)ActiveLaunchLever.Off2);
+            // Type II box, two positions with the tower at the bottom: the IID (it has a UZO)
+            // has the bridge (UZO) at the top, the IIA (no UZO on the bridge) has Off at the top
+            if (levers != null && IsTypeII(boxes))
+            {
+                int top = HasUzo(boxes, levers) ? (int)ActiveLaunchLever.UZO : (int)ActiveLaunchLever.Off;
+                levers = new[] { top, (int)ActiveLaunchLever.ConningTowerInterior };
+            }
             if (levers != null)
             {
                 var labels = new string[levers.Length];
@@ -278,7 +309,7 @@ namespace ScopeTdcControls
                     if (IsTypeII(boxes))
                     {
                         var lv = (ActiveLaunchLever)levers[i];
-                        rots[i] = lv == ActiveLaunchLever.ConningTowerInterior ? 180f : lv == ActiveLaunchLever.UZO ? 90f : 0f;
+                        rots[i] = lv == ActiveLaunchLever.ConningTowerInterior ? 180f : 0f;
                         continue;
                     }
                     switch ((ActiveLaunchLever)levers[i])
