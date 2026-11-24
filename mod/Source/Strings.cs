@@ -464,10 +464,10 @@ namespace ScopeTdcControls
         public static string SpeedSlow { get { return T("L", "S"); } }
         public static string SpeedMedium { get { return "M"; } }
         public static string SpeedFast { get { return T("S", "F"); } }
-        public static string PistolImpactShort { get { return T("AZ", "Impact"); } }
-        public static string PistolMagneticShort { get { return T("MZ", "Magnetic"); } }
-        public static string PistolImpact { get { return T("Aufschlag (AZ)", "Impact"); } }
-        public static string PistolMagnetic { get { return T("Magnet (MZ)", "Magnetic"); } }
+        public static string PistolImpactShort { get { return T("AZ", "AZ"); } }
+        public static string PistolMagneticShort { get { return T("MZ", "MZ"); } }
+        public static string PistolImpact { get { return T("Aufschlag (AZ)", "AZ"); } }
+        public static string PistolMagnetic { get { return T("Magnet (MZ)", "MZ"); } }
 
         public static string TipWinTorpedo
         {
@@ -501,7 +501,7 @@ namespace ScopeTdcControls
             get
             {
                 return T("<b>Pistole</b>\nAufschlagzündung (AZ) oder Magnetzündung (MZ) für die Torpedos in den angehakten Rohren." + TorpRoomDe,
-                         "<b>Pistol</b>\nImpact or magnetic pistol for the torpedoes in the checked tubes." + TorpRoomEn);
+                         "<b>Pistol</b>\nAZ (impact) or MZ (magnetic) pistol for the torpedoes in the checked tubes." + TorpRoomEn);
             }
         }
 
@@ -642,6 +642,17 @@ namespace ScopeTdcControls
             {
                 return T("<b>Tastenkürzel</b>\nBlendet die Mod-Anzeige ein und aus, wie der Knopf in der Seitenleiste.\nKlicken, dann die gewünschte Taste drücken. Rücktaste / Entf = kein Tastenkürzel, Esc = abbrechen.",
                          "<b>Hotkey</b>\nShows and hides the mod's display, like the sidebar button.\nClick, then press the key you want. Backspace / Delete = no hotkey, Esc = cancel.");
+            }
+        }
+
+        public static string OptKeepScopeBearing { get { return T("Sehrohrrichtung beibehalten", "Keep my scope bearing"); } }
+
+        public static string TipOptKeepScopeBearing
+        {
+            get
+            {
+                return T("<b>Sehrohrrichtung beibehalten</b>\nAn: Ein Sehrohr bleibt in der Richtung, in der du es verlassen hast, auch wenn sich sein Ziel ändert (anderer Kontakt gewählt, von der Besatzung erfasst). Ein Klick auf ein Schiff oder einen Kontakt in einer anderen Ansicht dreht es nicht herum; am Sehrohr selbst schon.\nAus: wie im Spiel.",
+                         "<b>Keep my scope bearing</b>\nOn: a periscope stays pointed where you left it when its target changes (another contact selected, or picked by the crew), and clicking a ship or contact in another view doesn't swing it round; at the scope itself it still does.\nOff: as in the base game.");
             }
         }
 

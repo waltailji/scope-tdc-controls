@@ -66,6 +66,8 @@ namespace ScopeTdcControls
 
         static GyroCounterUI instance;
         static PeriscopeUI periscopeUI;
+        /// <summary>The periscope / UZO view is open (its UI is up).</summary>
+        public static bool ScopeViewActive { get { return periscopeUI != null && periscopeUI.isActiveAndEnabled; } }
         static RawImage lastCompass;
         static int lastCompassFrame = -100;
         static bool userHidden;
@@ -851,7 +853,7 @@ namespace ScopeTdcControls
             settingsPanel = NewRect("GyroSettings", controlsPanel);
             Frame(settingsPanel, true);
 
-            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptAutoSpread, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag, Strings.HotkeyPress, Strings.HotkeyPrefix + "RightControl" };
+            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptAutoSpread, Strings.OptKeepScopeBearing, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag, Strings.HotkeyPress, Strings.HotkeyPrefix + "RightControl" };
             float inner = 0f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f);
 
@@ -889,6 +891,10 @@ namespace ScopeTdcControls
                 () => GyroConfig.AutoSpread,
                 v => { GyroConfig.AutoSpread = v; GyroConfig.Save("AutoSpread", v); HideTip(); },
                 () => Strings.TipOptAutoSpread);
+            MakeCheck(font, Strings.OptKeepScopeBearing, ref y, inner,
+                () => GyroConfig.KeepScopeBearing,
+                v => { GyroConfig.KeepScopeBearing = v; GyroConfig.Save("KeepScopeBearing", v); },
+                () => Strings.TipOptKeepScopeBearing);
             MakeCheck(font, Strings.OptTintPanels, ref y, inner,
                 () => GyroConfig.TintPanels,
                 v => { GyroConfig.TintPanels = v; GyroConfig.Save("TintPanels", v); }, // the windows recolour on the next frame

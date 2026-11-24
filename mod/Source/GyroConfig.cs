@@ -61,6 +61,7 @@ namespace ScopeTdcControls
         public static bool AutoSpread = true;             // show the spread window only while Einzelschuß is on a spread position
         public static bool ShowAngularSpeed = false;      // own angular speed knob in its own window beside the TDC dials
         public static bool TintPanels = true;             // the off-white windows take on the boat's interior light colour
+        public static bool KeepScopeBearing = true;       // a target change or a ship click away from the scope doesn't turn the scope
         public static float SpreadScale = 1f;
         public static float SpreadOffsetX = 0f, SpreadOffsetY = 0f; // from its place right of the TDC dials
         public static float TurnRateScale = 1f;
@@ -219,6 +220,9 @@ AutoSpread=true
 ShowAngularSpeed=false
 # true = the off-white windows take on the colour of the boat's interior lights (red / blue)
 TintPanels=true
+# true = a periscope keeps the direction you left it in when its target changes, and clicking
+#        a ship or contact away from the scope doesn't snap it round (at the scope it still does)
+KeepScopeBearing=true
 ShowSpread=false
 SpreadScale=1
 SpreadOffsetX=0
@@ -503,6 +507,7 @@ DebugLog=false
                 case "autospread": AutoSpread = Bool(v, AutoSpread); break;
                 case "showangularspeed": ShowAngularSpeed = Bool(v, ShowAngularSpeed); break;
                 case "tintpanels": TintPanels = Bool(v, TintPanels); break;
+                case "keepscopebearing": KeepScopeBearing = Bool(v, KeepScopeBearing); break;
                 case "spreadscale": SpreadScale = Mathf.Clamp(Num(v, SpreadScale), WindowScaleMin, WindowScaleMax); break;
                 case "spreadoffsetx": SpreadOffsetX = Num(v, SpreadOffsetX); break;
                 case "spreadoffsety": SpreadOffsetY = Num(v, SpreadOffsetY); break;

@@ -110,14 +110,22 @@ namespace ScopeTdcControls
         {
             var ship = Ship();
             if (ship == null) return;
-            ship.TorpedoAttackSettings.TorpedoSpeed = ms;
-            foreach (var st in torpStored) TorpedoRoomLink.SetSpeed(st, ms);
             var tdc = Tdc();
-            if (tdc != null && tdc.enabled)
+            // with Torpedo Room the shared speed stays as it is: torpedoes without their own speed follow
+            // it, so changing it made every not-yet-set tube take this one's speed. The TDC's speed is
+            // still set (the firing solution needs it), with Torpedo Room's dial hooks standing aside.
+            bool torpedoRoom = TorpedoRoomLink.Present;
+            TorpedoRoomLink.SharedChange(() =>
             {
-                tdc.TorpedoSpeed = ms * MsToKnots;
-                tdc.TorpedoSpeedTarget = ms * MsToKnots;
-            }
+                if (!torpedoRoom) ship.TorpedoAttackSettings.TorpedoSpeed = ms;
+                if (tdc != null && tdc.enabled)
+                {
+                    tdc.TorpedoSpeed = ms * MsToKnots;
+                    tdc.TorpedoSpeedTarget = ms * MsToKnots;
+                }
+            });
+            // each checked torpedo's own speed, through Torpedo Room's edit path
+            if (torpedoRoom) TorpedoRoomLink.SetSpeedAll(ship, torpStored, ms);
         }
 
         int CurrentSpeedIndex()
@@ -169,8 +177,11 @@ namespace ScopeTdcControls
         {
             float d = SnapDepth(v);
             var s = Ship();
-            if (s != null) s.TorpedoAttackSettings.TorpedoDepth = d;
-            foreach (var st in torpStored) TorpedoRoomLink.SetDepth(st, d);
+            if (s == null) return;
+            // with Torpedo Room: only the checked torpedoes' own depth (the shared depth is what the
+            // not-yet-set ones follow, so changing it made them all take this depth); without: the shared one
+            if (TorpedoRoomLink.Present) TorpedoRoomLink.SetDepthAll(s, torpStored, d);
+            else s.TorpedoAttackSettings.TorpedoDepth = d;
         }
 
         // ------------------------------------------------------------------ build
@@ -189,7 +200,9 @@ namespace ScopeTdcControls
 
             float x = DialPad;
             BuildDepthDial(font, x);
-            x += DialSize + 16f + KnobGap;
+            // the next knob's face as close to the dial's rim as the knobs are to each other (KnobGap - 2 x KnobRim);
+            // the dial's rim (DialSize + 6) is centred in its DialSize + 16 column
+            x += (DialSize + 16f) - 5f + (KnobGap - 2f * KnobRim);
 
             // speed: only the speeds every checked torpedo supports
             if (torpSpeeds.Length > 0)

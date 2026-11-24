@@ -36,6 +36,7 @@ namespace ScopeTdcControls
             public int Number;           // 1-based, as on the Einzelschuß switch
             public bool Stern;
             public Image Fill;
+            public Image Level;          // the water rising (flooding) or falling (draining), from the bottom
             public TextMeshProUGUI Label;
         }
 
@@ -82,7 +83,7 @@ namespace ScopeTdcControls
             tubesPanel.gameObject.AddComponent<WheelGuard>();
             AddDrag(tubesPanel.gameObject, false).Tubes = true;
 
-            tubeLabelW = Mathf.Ceil(Mathf.Max(TextWidth(font, Strings.TubesBowShort, TubeFont), TextWidth(font, Strings.TubesSternShort, TubeFont))) + 12f;
+            tubeLabelW = Mathf.Ceil(Mathf.Max(TextWidth(font, Strings.TubesBowShort.ToUpperInvariant(), TubeFont), TextWidth(font, Strings.TubesSternShort.ToUpperInvariant(), TubeFont))) + 12f;
             int cols = Mathf.Max(bow.Count, stern.Count);
             int rows = stern.Count > 0 && bow.Count > 0 ? 2 : 1;
             float y = -TubePad;
@@ -99,7 +100,7 @@ namespace ScopeTdcControls
 
         void AddTubeRow(TMP_FontAsset font, List<TubeDot> row, string label, float top)
         {
-            var l = NewText("RowLabel", tubesPanel, font, label, TubeFont, BoxInk);
+            var l = NewText("RowLabel", tubesPanel, font, label.ToUpperInvariant(), TubeFont, BoxInk); // FORE / AFT, like the titles
             l.fontStyle = FontStyles.Bold;
             l.alignment = TextAlignmentOptions.Center;
             PlaceV(l.rectTransform, TubePad, top - (TubeSize - 22f) * 0.5f, tubeLabelW - 6f, 22f);
@@ -113,6 +114,11 @@ namespace ScopeTdcControls
                 rim.raycastTarget = true;
                 rim.alphaHitTestMinimumThreshold = 0.5f;
                 dot.Fill = Disc("Fill", holder, SharpCircleSprite(), TubeSize - 5f, TubeEmpty);
+                dot.Level = Disc("Level", holder, SharpCircleSprite(), TubeSize - 5f, TubeFlooded);
+                dot.Level.type = Image.Type.Filled;
+                dot.Level.fillMethod = Image.FillMethod.Vertical;
+                dot.Level.fillOrigin = (int)Image.OriginVertical.Bottom;
+                dot.Level.fillAmount = 0f;
                 dot.Label = NewText("Number", holder, font, dot.Number.ToString(), TubeFont, DigitLight);
                 dot.Label.fontStyle = FontStyles.Bold;
                 dot.Label.alignment = TextAlignmentOptions.Center;
@@ -156,6 +162,7 @@ namespace ScopeTdcControls
                 var l = dot.Launcher;
                 if (l == null || dot.Fill == null) continue;
                 Color fill;
+                float level = 0f; // blue water level, 0 = none .. 1 = full
                 bool light;   // light number on a dark fill
                 if (!TubeHasTorpedo(l)) { fill = TubeEmpty; light = true; }
                 else if (l.CurrentState == TorpedoLauncher.State.Preheating) { fill = TubeMaintenance; light = false; } // in maintenance
@@ -163,12 +170,18 @@ namespace ScopeTdcControls
                 else if (l.IsFlooded) { fill = TubeFlooded; light = true; }
                 else
                 {
-                    // grey, turning blue as it floods (and back as it drains)
+                    // grey; while flooding (or draining) the blue water level rises (or falls) from the bottom
                     float p = l.CurrentState == TorpedoLauncher.State.Flooding || l.CurrentState == TorpedoLauncher.State.Draining ? Mathf.Clamp01(l.FloodingProgress) : 0f;
-                    fill = Color.Lerp(TubeLoaded, TubeFlooded, p);
+                    fill = TubeLoaded;
+                    level = p;
                     light = p > 0.5f;
                 }
                 dot.Fill.color = fill;   // status colours: not tinted by the interior light
+                if (dot.Level != null)
+                {
+                    dot.Level.fillAmount = level;
+                    dot.Level.enabled = level > 0.001f;
+                }
                 dot.Label.color = light ? DigitLight : DigitDark;
             }
         }

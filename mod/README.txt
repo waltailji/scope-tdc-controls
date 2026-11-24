@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.4.1 (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.4.2 (UBOAT 2026.1 patch 21)
 =================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -191,6 +191,17 @@ button, to stop. Hidden in the UZO and while the game UI is hidden.
 (ElevatorButtons=false in the settings file removes them.)
 
 Version history
+  1.4.2 Torpedo settings: even spacing between the depth dial and the knobs;
+       pistol options named AZ / MZ. All window titles and the tube rows
+       (FORE / AFT) in capitals. Tube indicator: the blue rises from the
+       bottom while a tube floods (and falls while it drains).
+       Torpedo Room: depth and speed set in the torpedo settings window now go
+       through Torpedo Room's own edit path, only onto the checked torpedoes (the
+       shared setting the others follow is left alone).
+       New setting "Keep my scope bearing" (on): coming back to a periscope puts
+       it back on the bearing you left it at (also after a lock / unlock), a
+       target change keeps your aim, and ship / contact clicks away from the
+       scope don't swing it round (covers what Stop Moving My Scope can't).
   1.4.1 The sidebar button now hides the gyro angle counters too; the
        ToggleKey hotkey works like it (the raise / lower fully buttons stay).
        Switch box knobs follow each boat: only the bearing sources its knob has
@@ -502,7 +513,7 @@ added in later versions are appended automatically; your values are kept.
   RollSpeed=90                        drum follow speed in deg/s (0 = instant)
   ShowSyncLamp / ShowControls / Tooltips
   ShowReceiverAngle / ActiveReceiverOnly / ShowParallax / AutoReceiver / AutoParallax /
-  AutoSelectFloodedTube / AutoSpread / ShowAngularSpeed / TintPanels /
+  AutoSelectFloodedTube / AutoSpread / ShowAngularSpeed / TintPanels / KeepScopeBearing /
   RealisticTdc / RealisticReceiverSync / SingleTorpedoLaunchFix /
   TdcOperatorRequired / VoiceCallouts / CtrlDragToMove   (also in the drop-down)
   DialsScale / SwitchesScale / DirectionsScale / LeverScale   window sizes

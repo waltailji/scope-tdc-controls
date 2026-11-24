@@ -272,7 +272,7 @@ namespace ScopeTdcControls
         TextMeshProUGUI ControlTitle(RectTransform parent, TMP_FontAsset font, string text, float left, float top, float width)
         {
             var t = NewText("Title", parent, font, text, TitleFont, BoxInk);
-            t.fontStyle = FontStyles.Bold;
+            t.fontStyle = FontStyles.Bold | FontStyles.UpperCase; // every window's control names in capitals
             t.characterSpacing = 1.5f;
             t.alignment = TextAlignmentOptions.Center;
             PlaceV(t.rectTransform, left, top, width, TitleH);
