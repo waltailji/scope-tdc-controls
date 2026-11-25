@@ -119,7 +119,7 @@ This avoids the stock system's constant gyro chasing and lets you fire quickly i
 
 [h2]Version history[/h2]
 [list]
-[*][b]1.5.1-1.5.2[/b] - Type II and gyro mode switches as on the boat, hide raise/lower option, log-scale distance dial, slimmer needles
+[*][b]1.5.1-1.5.3[/b] - Type II and gyro mode switch layouts, hide raise/lower option, log-scale distance dial, slimmer needles, raise/lower buttons below windows
 [*][b]1.5[/b] - TDC target bearing window, bow and stern gyro setting panels, TRUE bearing counter, tube right-click menu and Ctrl+click launch, hidden on the binoculars, "TDC Gyro" label
 [*][b]1.4-1.4.3[/b] - spread, turn rate and tube windows, motor switches, firing circuit lamp, keep my scope bearing, per-boat switch layouts, hotkey
 [*][b]1.0-1.3[/b] - counters, TDC dials, selectors, launch lever, torpedo settings, light tint, voice callouts

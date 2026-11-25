@@ -119,6 +119,7 @@ namespace ScopeTdcControls
         Image unmannedVeil;
         TextMeshProUGUI unmannedNote;
         RectTransform raiseBtn, lowerBtn;   // raise fully / lower fully, beside the stock raise/lower control
+        Canvas elevatorLayer;               // their own low canvas: other UI (ours and other mods') draws over them
         Image raiseBg, lowerBg, raiseIcon, lowerIcon;
         bool raiseHover, lowerHover;
         static Sprite raiseSprite, lowerSprite;
@@ -239,8 +240,8 @@ namespace ScopeTdcControls
             trueRow = null;
             if (controlsPanel != null) Destroy(controlsPanel.gameObject);
             if (tipPanel != null) Destroy(tipPanel.gameObject);
-            if (raiseBtn != null) Destroy(raiseBtn.gameObject);
-            if (lowerBtn != null) Destroy(lowerBtn.gameObject);
+            if (elevatorLayer != null) Destroy(elevatorLayer.gameObject); // with the raise / lower fully buttons
+            elevatorLayer = null;
             if (dialsPanel != null) Destroy(dialsPanel.gameObject);
             if (switchesPanel != null) Destroy(switchesPanel.gameObject);
             if (leverPanel != null) Destroy(leverPanel.gameObject);
@@ -327,13 +328,15 @@ namespace ScopeTdcControls
         }
 
         /// <summary>
-        /// Draw order: the control panel (with its settings drop-down) above every other
-        /// window of this mod, and the pop-up tooltip above everything. Called whenever a
+        /// Draw order: the raise / lower fully buttons beneath every window of this mod (on a
+        /// canvas of their own, just above the stock control), the control panel (with its settings drop-down)
+        /// above every other window, and the pop-up tooltip above everything. Called whenever a
         /// window is (re)built later, since a new window would otherwise land on top.
         /// </summary>
         void RaiseOverlays()
         {
             contentScanAt = 0f; // every build ends here: tint its new parts this frame, before they are drawn white
+            if (elevatorLayer != null) elevatorLayer.transform.SetAsFirstSibling();
             if (controlsPanel != null) controlsPanel.SetAsLastSibling();
             if (tipPanel != null) tipPanel.SetAsLastSibling();
         }
@@ -344,10 +347,39 @@ namespace ScopeTdcControls
         {
             if (raiseSprite == null) raiseSprite = ArrowToBarSprite(true);
             if (lowerSprite == null) lowerSprite = ArrowToBarSprite(false);
+            // a nested canvas sorted just above the stock raise / lower control (see SyncElevatorLayer),
+            // not at our canvas's high order, so any other window, also another mod's, can go over them
+            var layer = NewRect("ElevatorButtons", transform);
+            layer.anchorMin = Vector2.zero; layer.anchorMax = Vector2.one;
+            layer.offsetMin = layer.offsetMax = Vector2.zero; // same rect as our canvas: ToLocal positions still fit
+            elevatorLayer = layer.gameObject.AddComponent<Canvas>();
+            elevatorLayer.overrideSorting = true;
+            elevatorLayer.sortingOrder = 0;
+            layer.gameObject.AddComponent<GraphicRaycaster>();
             raiseBtn = MakeIconButton("RaiseFully", raiseSprite, () => PeriscopeTravel.Toggle(periscopeUI, +1),
                                       () => Strings.TipRaiseFully, h => raiseHover = h, out raiseBg, out raiseIcon);
             lowerBtn = MakeIconButton("LowerFully", lowerSprite, () => PeriscopeTravel.Toggle(periscopeUI, -1),
                                       () => Strings.TipLowerFully, h => lowerHover = h, out lowerBg, out lowerIcon);
+            raiseBtn.SetParent(layer, false);
+            lowerBtn.SetParent(layer, false);
+            SyncElevatorLayer();
+        }
+
+        /// <summary>
+        /// The buttons' canvas: shown and hidden with ours, sorted one above the stock raise / lower
+        /// control's canvas (never above ours), so they cover the scene and the stock control only.
+        /// </summary>
+        void SyncElevatorLayer()
+        {
+            if (elevatorLayer == null) return;
+            bool on = canvas != null && canvas.enabled;
+            if (elevatorLayer.enabled != on) elevatorLayer.enabled = on;
+            int order = canvas != null ? canvas.sortingOrder - 1 : 0;
+            ResolveFields();
+            var stock = elevatorUpField != null && periscopeUI != null ? elevatorUpField.GetValue(periscopeUI) as Component : null;
+            var stockCanvas = stock != null ? stock.GetComponentInParent<Canvas>() : null;
+            if (stockCanvas != null) order = Mathf.Min(stockCanvas.rootCanvas.sortingOrder + 1, order);
+            if (elevatorLayer.sortingOrder != order) elevatorLayer.sortingOrder = order;
         }
 
         RectTransform MakeIconButton(string name, Sprite icon, Action onClick, Func<string> tip, Action<bool> hover,
@@ -1750,6 +1782,7 @@ namespace ScopeTdcControls
         {
             visibleWanted = v;
             if (canvas != null) canvas.enabled = v && !suppressed;
+            SyncElevatorLayer();
         }
 
         /// <summary>The player confirmed quitting the game: hide at once (the game fades out before it really quits).</summary>
@@ -1761,6 +1794,7 @@ namespace ScopeTdcControls
             {
                 instance.HideTip();
                 if (instance.canvas != null) instance.canvas.enabled = false;
+                instance.SyncElevatorLayer();
             }
         }
 
@@ -1936,6 +1970,7 @@ namespace ScopeTdcControls
                 {
                     quitting = true;
                     if (instance != null && instance.canvas != null) instance.canvas.enabled = false;
+                    if (instance != null) instance.SyncElevatorLayer();
                 };
             }
             bool s = quitting || GameLoading() || GameMenuOpen();
@@ -1943,6 +1978,7 @@ namespace ScopeTdcControls
             suppressed = s;
             if (s) HideTip();
             if (canvas != null) canvas.enabled = visibleWanted && !suppressed;
+            SyncElevatorLayer();
         }
 
         void Update()
@@ -1972,6 +2008,7 @@ namespace ScopeTdcControls
 
         void LateUpdate()
         {
+            SyncElevatorLayer(); // follows our canvas on and off, wherever that was switched
             if (canvas == null || !canvas.enabled || counterPanel == null) return;
             if (periscopeUI == null || !periscopeUI.isActiveAndEnabled) { SetVisible(false); return; }
 

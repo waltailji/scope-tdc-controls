@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.5.2 (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.5.3 (UBOAT 2026.1 patch 21)
 ===================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -195,6 +195,9 @@ game's raise/lower control and these buttons; the keys still raise and lower
 the periscope.
 
 Version history
+  1.5.3 The raise fully / lower fully buttons sit just above the stock
+       raise/lower control, beneath every other window (this mod's and other
+       mods'), so a window moved over them stays on top.
   1.5.2 Target distance dial: dragging and clicking set the distance to the
        nearest 10 m; the mouse wheel steps 50 m from 3 to 10 hm (Shift 10 m);
        its scale now follows the TDC's face exactly (logarithmic; 9 and 10 were
