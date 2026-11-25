@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.5.1 (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.5.2 (UBOAT 2026.1 patch 21)
 ===================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -60,8 +60,9 @@ exact value.
              marks inside them (dots on the half-way marks) and a four-lobed
              knob with a white triangle pointer, like the TDC
   Click a value on a dial's scale to set it directly. Hold Shift for 10x
-  finer turning. The mouse wheel steps 1° / 0.5 kn /
-  100 m (with Shift a tenth of that). Ctrl+drag moves the window. Greyed out
+  finer turning. The mouse wheel steps 1° / 0.5 kn / 50 m up to 10 hm and
+  100 m above (with Shift 0.1° / 0.05 kn / 10 m). Dragging or clicking the
+  distance dial sets it to the nearest 10 m. Ctrl+drag moves the window. Greyed out
   and locked while the TDC is not manned. Shown or hidden with the
   Rechnerscheiben (TDC dials) check box on the control panel.
 
@@ -194,7 +195,16 @@ game's raise/lower control and these buttons; the keys still raise and lower
 the periscope.
 
 Version history
-  1.5.1 Type II T.Abf. Schalter as on its box: IID = Brücke (UZO) at the
+  1.5.2 Target distance dial: dragging and clicking set the distance to the
+       nearest 10 m; the mouse wheel steps 50 m from 3 to 10 hm (Shift 10 m);
+       its scale now follows the TDC's face exactly (logarithmic; 9 and 10 were
+       bunched together), with the 85 / 90 / 95 marks; numbers and marks moved
+       out toward the rim, a bigger knob with its pointer reaching the ring
+       round it, smaller dots on the half-way marks. The wheel lands on round
+       values. AOB and target speed: marks and numbers out to the rim; the
+       speed dial gets a slimmer needle with an arrowhead; longer, slimmer
+       arrowheads on every needle; no index triangle by the AOB ones window.
+  1.5.1Type II T.Abf. Schalter as on its box: IID = Brücke (UZO) at the
        top, Turm at the bottom (no off position); IIA (no UZO) = Aus at the
        top, Turm at the bottom. Bow gyro setting mode switch laid out as on
        the panel: auto at the top, salvo to the right, gyro at the bottom.

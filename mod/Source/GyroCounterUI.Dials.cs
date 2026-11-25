@@ -43,9 +43,14 @@ namespace ScopeTdcControls
         static readonly Color DialStarboard = new Color(0.40f, 0.90f, 0.45f, 1f);
         static readonly Color DialNeedle = new Color(0.86f, 0.62f, 0.32f, 1f);   // brass, like the TDC's pointers
 
-        // the real distance dial: hm -> degrees clockwise from the top (read off the TDC face)
-        static readonly float[] DistanceHm = { 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 20f, 30f, 40f, 50f, 60f, 70f, 80f, 100f };
-        static readonly float[] DistanceRot = { 12f, 38f, 60f, 78f, 93f, 106f, 117f, 127f, 182f, 218f, 245f, 268f, 289f, 306f, 321f, 345f };
+        // the real distance dial is logarithmic: measured off the TDC's 3D face, every mark sits at
+        // 12 deg + 331 deg * ln(hm / 3) / ln(100 / 3) clockwise from the top (3 hm at 12, 10 at 125, 100 at 343)
+        const float DistRot3 = 12f, DistRot100 = 343f;
+
+        static float DistanceRotOf(float hm)
+        {
+            return DistRot3 + (DistRot100 - DistRot3) * Mathf.Log(hm / 3f) / Mathf.Log(100f / 3f);
+        }
 
         RectTransform dialsPanel;
         CanvasGroup dialsGroup;
@@ -81,12 +86,15 @@ namespace ScopeTdcControls
             public bool FreeSpin;                             // hand wheel: shown where the hand turned it, not at the value (it works through clutches)
             public float FreeAngle;                           // FreeSpin: the wheel's own angle, clockwise
             public float WheelStep;
+            public Func<float, float, bool, float> WheelStepAt; // (value, direction +-1, Shift) -> wheel step size, where it depends on the value
+            public float RoundTo;                            // drag and click set values rounded to this (target distance: 10 m)
             public Func<float, string> Format;
             public Action<DialSpec, float> Extra;             // per-frame extras (AOB: the rolling ones digits)
             public Func<bool> Visible;                        // null = always shown
             public RectTransform Group;                       // title, dial and readout
             public float Height;                              // its share of the window height
             public PointerStyle Style;                        // how the value is shown
+            public float NeedleWidth = 4f;                    // Needle / Arrow: the hand's width
             public RectTransform Needle;                      // Ring style: the turning scale ring
             public RectTransform Needle2;                     // Flag style: the brass needle
             public Func<TorpedoCalculator, float> Get2;        // Flag style: the value the brass needle shows
@@ -136,6 +144,13 @@ namespace ScopeTdcControls
                 float r = ToRot(v) + (Style == PointerStyle.Ring ? -degrees : degrees);
                 if (!Wrap) r = Mathf.Clamp(r, Mathf.Min(Rots[0], Rots[Rots.Length - 1]), Mathf.Max(Rots[0], Rots[Rots.Length - 1]));
                 return Wrap ? ToValue(r) : Mathf.Clamp(ToValue(r), LimitMin, LimitMax);
+            }
+
+            /// <summary>A dragged or clicked value rounded to RoundTo (0 = as it is), kept in the limits.</summary>
+            public float Round(float v)
+            {
+                if (RoundTo <= 0f || Wrap || float.IsNaN(v)) return v;
+                return Mathf.Clamp(Mathf.Round(v / RoundTo) * RoundTo, LimitMin, LimitMax);
             }
 
             public float Step(float v, float delta)
@@ -189,6 +204,7 @@ namespace ScopeTdcControls
                 Get = t => t.TargetSpeed,
                 Set = (t, v) => t.TargetSpeed = v,
                 Announce = VoiceCallouts.AnnounceSpeed,
+                Style = PointerStyle.Arrow, NeedleWidth = 3f, // a slimmer needle with an arrowhead, like the AOB's
                 Values = new[] { 0f, 55f }, Rots = new[] { 10f, 350f },
                 WheelStep = -0.5f,   // wheel toward you = more, like turning the dial clockwise
                 Format = v => v.ToString("0.0", CultureInfo.InvariantCulture) + " " + Strings.UnitKnots
@@ -207,6 +223,16 @@ namespace ScopeTdcControls
                 Style = PointerStyle.Knob,
                 Values = meters, Rots = rot,
                 WheelStep = -100f,   // wheel toward you = more
+                // 50 m a notch from 3 to 10 hm, where the scale is open, 100 m above; Shift: 10 m.
+                // Each notch lands on the next round value that way (910 up -> 950, down -> 900).
+                WheelStepAt = (v, dir, fine) =>
+                {
+                    float s = fine ? 10f : (dir > 0f ? v < 1000f - 0.5f : v <= 1000f + 0.5f) ? 50f : 100f;
+                    float target = dir > 0f ? (Mathf.Floor(v / s + 0.001f) + 1f) * s
+                                            : (Mathf.Ceil(v / s - 0.001f) - 1f) * s;
+                    return Mathf.Abs(target - v);
+                },
+                RoundTo = 10f,      // drag and click: to the nearest 10 m
                 Format = v => Mathf.RoundToInt(v).ToString(CultureInfo.InvariantCulture) + " m"
             }, (spec, f) => DrawDistanceScale(spec, f), ""); // "hm" is printed on the rim
             // target length: in the salvo spread window (GyroCounterUI.Spread.cs)
@@ -219,49 +245,18 @@ namespace ScopeTdcControls
         }
 
         /// <summary>
-        /// The distance scale: the boat's own TDC distance dial when it can be
-        /// found (its value/angle table, stretched over the same arc), else the
-        /// table read off the real dial's face.
+        /// The distance scale as value / angle points for the dial: the log curve sampled closely
+        /// (every 0.1 hm up to 10, then every 1 hm), so the straight pieces between them follow it.
+        /// (The game's own dial table bunches 9 and 10 together, so it isn't used.)
         /// </summary>
         static void DistanceScale(out float[] hm, out float[] rot)
         {
-            hm = DistanceHm;
-            rot = DistanceRot;
-            try
-            {
-                var dial = UnityEngine.Object.FindObjectOfType<TorpedoCalculatorDistanceToTargetDial>();
-                if (dial == null) return;
-                var table = AccessTools.Field(typeof(TorpedoCalculatorDistanceToTargetDial), "values").GetValue(dial) as Array;
-                if (table == null || table.Length < 2) return;
-                var type = table.GetValue(0).GetType();
-                var fv = AccessTools.Field(type, "Value");
-                var fa = AccessTools.Field(type, "Angle");
-                int n = table.Length;
-                var v = new float[n];
-                var a = new float[n];
-                for (int i = 0; i < n; i++)
-                {
-                    object e = table.GetValue(i);
-                    v[i] = (float)fv.GetValue(e);
-                    a[i] = (float)fa.GetValue(e);
-                }
-                float span = a[n - 1] - a[0];
-                if (Mathf.Abs(span) < 1f) return;
-                var r = new float[n];
-                for (int i = 0; i < n; i++)
-                {
-                    if (i > 0 && (v[i] <= v[i - 1] || (a[i] - a[i - 1]) * span <= 0f)) return; // not monotonic: keep ours
-                    r[i] = Mathf.Lerp(DistanceRot[0], DistanceRot[DistanceRot.Length - 1], (a[i] - a[0]) / span);
-                }
-                if (Mathf.Abs(v[0] - 3f) > 0.5f || Mathf.Abs(v[n - 1] - 100f) > 5f) return; // not hm 3..100
-                hm = v;
-                rot = r;
-                if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " distance dial scale taken from the TDC (" + n + " points)");
-            }
-            catch (Exception e)
-            {
-                if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " distance dial scale: using built-in table (" + e.Message + ")");
-            }
+            var h = new List<float>();
+            for (int i = 30; i < 100; i++) h.Add(i / 10f);
+            for (int i = 10; i <= 100; i++) h.Add(i);
+            hm = h.ToArray();
+            rot = new float[hm.Length];
+            for (int i = 0; i < hm.Length; i++) rot[i] = DistanceRotOf(hm[i]);
         }
 
         // ------------------------------------------------------------------ shared control layout
@@ -390,7 +385,7 @@ namespace ScopeTdcControls
 
                 default:
                     bool arrow = spec.Style == PointerStyle.Arrow;
-                    spec.Needle = MakePointer(face.rectTransform, "Needle", DialNeedle, 4f, arrow);
+                    spec.Needle = MakePointer(face.rectTransform, "Needle", DialNeedle, spec.NeedleWidth, arrow);
                     if (arrow) { Disc("Hub", face.rectTransform, SharpCircleSprite(), 22f, Color.black); Disc("HubCap", face.rectTransform, SharpCircleSprite(), 10f, new Color(0.18f, 0.18f, 0.18f, 1f)); }
                     else Disc("Hub", face.rectTransform, CircleSprite(), 14f, FrameEdge);
                     break;
@@ -417,7 +412,7 @@ namespace ScopeTdcControls
         /// <summary>A pointer turning about the face centre; returns the rotating holder.</summary>
         static RectTransform MakePointer(RectTransform face, string name, Color color, float width, bool arrowTip)
         {
-            const float headLen = 13f;
+            const float headLen = 17f;
             var holder = NewRect(name, face);
             holder.anchorMin = holder.anchorMax = holder.pivot = new Vector2(0.5f, 0.5f);
             holder.sizeDelta = Vector2.zero;
@@ -436,7 +431,7 @@ namespace ScopeTdcControls
                 var head = NewRect("Tip", hand);
                 head.anchorMin = head.anchorMax = new Vector2(0.5f, 1f);
                 head.pivot = new Vector2(0.5f, 0f);
-                head.sizeDelta = new Vector2(width * 3.2f, headLen);
+                head.sizeDelta = new Vector2(Mathf.Max(width * 2.5f, 8f), headLen); // long and slender
                 head.anchoredPosition = new Vector2(0f, -1f);
                 var hi = head.gameObject.AddComponent<Image>();
                 hi.sprite = TriangleSprite();
@@ -461,8 +456,10 @@ namespace ScopeTdcControls
             // pointer: white triangle in the top hollow, pointing out at the scale
             var tri = NewRect("Pointer", holder);
             tri.anchorMin = tri.anchorMax = tri.pivot = new Vector2(0.5f, 0.5f);
-            tri.sizeDelta = new Vector2(11f, 10f);
-            tri.anchoredPosition = new Vector2(0f, DistKnob * 0.46f - 1f);
+            const float triH = 10f;
+            tri.sizeDelta = new Vector2(11f, triH);
+            // tip on the knob's outer circle (the faint ring round its base)
+            tri.anchoredPosition = new Vector2(0f, DistKnobRingR - triH * 0.5f);
             var ti = tri.gameObject.AddComponent<Image>();
             ti.sprite = TriangleSprite();
             ti.color = DialScale;
@@ -576,8 +573,8 @@ namespace ScopeTdcControls
             var face = spec.Face;
             for (int deg = -170; deg <= 180; deg += 10)
             {
-                DrawTick(face, deg, 9f, 2.4f, DialScale);
-                if (deg % 20 == 0) ScaleLabel(face, font, deg, Mathf.Abs(deg).ToString(), DialScale, 9f, false, DialSize * 0.5f - 19f);
+                DrawTick(face, deg, 9f, 2.4f, DialScale, RimTickR);
+                if (deg % 20 == 0) ScaleLabel(face, font, deg, Mathf.Abs(deg).ToString(), DialScale, 9f, false, DialSize * 0.5f - 17f);
             }
 
             // inner disc: thin white ring, red / green halves, black window at the bottom
@@ -589,7 +586,7 @@ namespace ScopeTdcControls
             Disc("WindowEdge", face, SectorSprite(), inner + 2f, DialScale);
             Disc("Window", face, SectorSprite(), inner - 1f, Color.black);
 
-            AobLabel(face, font, Strings.AobDegrees, 0f, inner * 0.42f, 0f);
+            AobLabel(face, font, Strings.AobDegrees, 0f, inner * 0.36f, 0f);
             AobLabel(face, font, Strings.AobBowLeft, -68f, inner * 0.30f, 58f);
             AobLabel(face, font, Strings.AobBowRight, 68f, inner * 0.30f, -58f);
 
@@ -617,22 +614,6 @@ namespace ScopeTdcControls
                 ti.color = DialScale;
                 ti.raycastTarget = false;
             }
-            // fixed index at the bottom of the window, pointing in
-            var index = NewRect("FineIndexHolder", face);
-            index.anchorMin = index.anchorMax = index.pivot = new Vector2(0.5f, 0.5f);
-            index.sizeDelta = Vector2.zero;
-            index.localEulerAngles = new Vector3(0f, 0f, 180f);
-            var idx = NewRect("FineIndex", index);
-            idx.anchorMin = idx.anchorMax = new Vector2(0.5f, 0.5f);
-            idx.pivot = new Vector2(0.5f, 1f);
-            idx.sizeDelta = new Vector2(7f, 6f);
-            idx.anchoredPosition = new Vector2(0f, inner * 0.5f - 1f);
-            idx.localEulerAngles = new Vector3(0f, 0f, 180f);
-            var idxImg = idx.gameObject.AddComponent<Image>();
-            idxImg.sprite = TriangleSprite();
-            idxImg.color = DialScale;
-            idxImg.raycastTarget = false;
-
             spec.Extra = (d, v) =>
             {
                 // position of the ring: continuous through 0, since green g pairs with red (10 - g)
@@ -719,41 +700,48 @@ namespace ScopeTdcControls
             return sectorSprite;
         }
 
+        const float RimTickR = DialSize * 0.5f - 1f; // AOB and speed marks: out to just inside the dial's edge
+
         void DrawSpeedScale(DialSpec spec, TMP_FontAsset font)
         {
             for (int kn = 0; kn <= 55; kn++)
             {
                 bool major = kn % 5 == 0;
-                DrawTick(spec.Face, spec.ToRot(kn), major ? 11f : 7f, major ? 2.2f : 1.4f, DialScale);
-                if (major) ScaleLabel(spec.Face, font, spec.ToRot(kn), kn.ToString(), DialScale);
+                DrawTick(spec.Face, spec.ToRot(kn), major ? 11f : 7f, major ? 2.2f : 1.4f, DialScale, RimTickR);
+                if (major) ScaleLabel(spec.Face, font, spec.ToRot(kn), kn.ToString(), DialScale, 10f, false, DialSize * 0.5f - 20f);
             }
         }
 
         // distance dial layout (as on the TDC): numbers round the rim, marks inside them pointing in
-        const float DistLabelR = DialSize * 0.5f - 9f;
-        const float DistTickR = DialSize * 0.5f - 17f;
-        const float DistMinorInset = 3f;               // minor marks start this far inside the numbered ones
-        const float DistKnob = DialSize * 0.5f;      // knob sprite size, corner to corner about 2 * DistTickR - marks
+        // (shared with the own angular speed knob)
+        const float DistLabelR = DialSize * 0.5f - 4f;   // numbers near the rim
+        const float DistTickR = DialSize * 0.5f - 11f;   // numbered marks just inside the numbers
+        const float DistKnob = DialSize * 0.5f + 12f;  // knob sprite size: its corners on the faint ring (DistKnobRingR)
+        const float DistMajorLen = 7f;                 // numbered marks
+        const float DistKnobRingR = DistTickR - DistMajorLen - 1f; // the faint ring round the knob's base, just inside the marks
 
         void DrawDistanceScale(DialSpec spec, TMP_FontAsset font)
         {
+            // as on the TDC's face, every mark at its place on the log scale (DistanceRotOf)
             float[] labels = { 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 20f, 30f, 40f, 50f, 60f, 70f, 80f, 100f };
-            // numbered marks
             foreach (float hm in labels)
             {
-                float r = spec.ToRot(hm * 100f);
-                DrawTick(spec.Face, r, 7f, 2f, DialScale, DistTickR);
+                float r = DistanceRotOf(hm);
+                DrawTick(spec.Face, r, DistMajorLen, 2f, DialScale, DistTickR);
                 ScaleLabel(spec.Face, font, r, ((int)hm).ToString(), DialScale, hm < 10f ? 9f : 10f, false, DistLabelR);
             }
-            // half-way marks with a dot on their tip: x.5 up to 10, then 15, 25 ... 75 and 90
-            for (int i = 0; i + 1 < labels.Length; i++)
-                DrawDotTick(spec.Face, spec.ToRot((labels[i] + labels[i + 1]) * 50f));
-            // very thin marks every 1 hm from 10 to 30, where the scale is widest: four each side of the dotted half-way marks
+            DrawTick(spec.Face, DistanceRotOf(90f), DistMajorLen, 2f, DialScale, DistTickR); // 90: a plain mark, no number
+            // half-way marks with a dot: x.5 up to 10, then 15, 25 ... 75, 85 and 95
+            for (int i = 7; i < 20; i++) DrawDotTick(spec.Face, DistanceRotOf(i * 0.5f));
+            for (int hm = 15; hm < 100; hm += 10) DrawDotTick(spec.Face, DistanceRotOf(hm));
+            // very thin marks every 1 hm from 10 to 30, where the scale is widest; their inner ends in line with the numbered marks'
+            const float thinLen = 3f;
             for (int hm = 11; hm < 30; hm++)
-                if (hm % 5 != 0) DrawTick(spec.Face, spec.ToRot(hm * 100f), 3f, 0.7f, DialScale, DistTickR - DistMinorInset);
+                if (hm % 5 != 0) DrawTick(spec.Face, DistanceRotOf(hm), thinLen, 0.7f, DialScale, DistTickR - DistMajorLen + thinLen);
             // faint circle just inside the marks: the base of the knob
-            FaintRing(spec.Face, DistTickR - 9f);
-            ScaleLabel(spec.Face, font, 0f, "hm", DialScale, 9f, false, DistLabelR);
+            FaintRing(spec.Face, DistKnobRingR);
+            // "hm" at the top, down among the marks in the gap between 100 and 3
+            ScaleLabel(spec.Face, font, 0f, "hm", DialScale, 9f, false, DistTickR - 3.5f);
         }
 
         const float TurnRateMax = 3f; // °/s either way, as on the TDC's knob
@@ -843,18 +831,19 @@ namespace ScopeTdcControls
                 DrawTick(spec.Face, r, 7f, 2f, DialScale, DistTickR);
                 ScaleLabel(spec.Face, font, r, Mathf.Abs(h / 2).ToString(CultureInfo.InvariantCulture), DialScale, 10f, false, DistLabelR);
             }
-            FaintRing(spec.Face, DistTickR - 9f);
-            ScaleLabel(spec.Face, font, -97f, Strings.PortLong, DialScale, 10f, false, DistLabelR - 2f);
-            ScaleLabel(spec.Face, font, 97f, Strings.StarboardLong, DialScale, 10f, false, DistLabelR - 2f);
+            FaintRing(spec.Face, DistKnobRingR);
+            ScaleLabel(spec.Face, font, -97f, Strings.PortLong, DialScale, 10f, false, DistLabelR - 5f);
+            ScaleLabel(spec.Face, font, 97f, Strings.StarboardLong, DialScale, 10f, false, DistLabelR - 5f);
         }
 
         /// <summary>A mark pointing in from the scale with a small dot on its inner tip.</summary>
         void DrawDotTick(RectTransform face, float rot)
         {
             const float len = 5f;
-            DrawTick(face, rot, len, 1.2f, DialScale, DistTickR - DistMinorInset); // minor marks start a little inside the numbered ones
-            float a = rot * Mathf.Deg2Rad, r = DistTickR - DistMinorInset - len * 0.5f + 1.5f; // a little out from half way along the mark
-            var dot = Disc("Dot", face, CircleSprite(), 3.6f, DialScale);
+            float outer = DistTickR - DistMajorLen + len; // inner end in line with the numbered marks'
+            DrawTick(face, rot, len, 0.9f, DialScale, outer);
+            float a = rot * Mathf.Deg2Rad, r = outer - len * 0.5f + 1.5f; // a little out from half way along the mark
+            var dot = Disc("Dot", face, CircleSprite(), 1.8f, DialScale);
             dot.rectTransform.anchoredPosition = new Vector2(Mathf.Sin(a) * r, Mathf.Cos(a) * r);
         }
 
@@ -1082,8 +1071,8 @@ namespace ScopeTdcControls
             float v = spec.Dragging && !float.IsNaN(spec.DragValue) ? spec.DragValue : DialBase(spec, tdc);
             if (float.IsNaN(v)) return;
             float next = spec.Turn(v, degrees);
-            if (spec.Dragging) spec.DragValue = next;
-            spec.Set(tdc, next);
+            if (spec.Dragging) spec.DragValue = next; // the drag keeps the exact value, so small moves add up
+            spec.Set(tdc, spec.Round(next));
         }
 
         void StepDial(DialSpec spec, float delta)
@@ -1127,7 +1116,7 @@ namespace ScopeTdcControls
                 float hi = Mathf.Max(spec.Rots[0], spec.Rots[spec.Rots.Length - 1]);
                 if (rot > hi + 2f && rot - 360f >= lo - 2f) rot -= 360f;    // scales given in -180..180 (torpedo depth)
                 if (rot < lo - 2f || rot > hi + 2f) return;                 // off the printed scale
-                v = Mathf.Clamp(spec.ToValue(Mathf.Clamp(rot, lo, hi)), spec.LimitMin, spec.LimitMax);
+                v = spec.Round(Mathf.Clamp(spec.ToValue(Mathf.Clamp(rot, lo, hi)), spec.LimitMin, spec.LimitMax));
             }
 
             HideTip();
@@ -1259,6 +1248,18 @@ namespace ScopeTdcControls
                 float steps = e.scrollDelta.y;
                 if (Mathf.Abs(steps) < 0.01f) return;
                 float delta = Mathf.Sign(steps) * Mathf.Ceil(Mathf.Abs(steps)) * Spec.WheelStep * (ShiftHeld ? 0.1f : 1f);
+                if (Spec.WheelStepAt != null)
+                {
+                    // the step depends on where the dial is (target distance: 50 m below 10 hm): one notch at a time
+                    float dir = Mathf.Sign(delta);
+                    for (int i = 0; i < Mathf.CeilToInt(Mathf.Abs(steps)); i++)
+                    {
+                        var tdc = Tdc();
+                        if (tdc == null) return;
+                        Owner.StepDial(Spec, dir * Spec.WheelStepAt(Owner.DialBase(Spec, tdc), dir, ShiftHeld));
+                    }
+                    return;
+                }
                 if (Spec.FreeSpin) Spec.FreeAngle = Mathf.Repeat(Spec.FreeAngle + Mathf.Sign(delta) * 15f * Mathf.Ceil(Mathf.Abs(steps)), 360f); // a bit of a turn per notch, the way the value goes
                 Owner.StepDial(Spec, delta);
             }

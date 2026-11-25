@@ -77,7 +77,7 @@ A red [b]firing circuit lamp[/b] locks the switches for 4 s after each fire comm
 Spring-loaded Aus / Schuss: fires the selected tubes while its lamp is green. Red (tube not ready, wrong receiver, out of range, past the +/-135 deg stop) or dark (firing station off): hover for why.
 
 [h2]Periscope - Raise / lower fully[/h2]
-Buttons above and below the stock periscope control run the scope all the way up or down. A setting hides them and the stock control.
+Buttons above and below the stock periscope control run the scope all the way up or down (a setting hides them with the stock control).
 
 [h2]Settings (persist between sessions)[/h2]
 [list]
@@ -113,15 +113,15 @@ This avoids the stock system's constant gyro chasing and lets you fire quickly i
 [list]
 [*]English and German, following the game's language; pop-up help on every element
 [*]Windows move by dragging and resize with the corner grip; anchor icons keep related windows together
-[*]Windows take on the boat's red or blue interior lighting
+[*]Windows take on the boat's red / blue lighting
 [*]Hidden while the game's menus are open and on the binoculars; stores nothing in your save
 [/list]
 
 [h2]Version history[/h2]
 [list]
-[*][b]1.5.1[/b] - Type II firing switch and bow gyro mode switch as on the boat; option to hide the raise/lower control
+[*][b]1.5.1-1.5.2[/b] - Type II and gyro mode switches as on the boat, hide raise/lower option, log-scale distance dial, slimmer needles
 [*][b]1.5[/b] - TDC target bearing window, bow and stern gyro setting panels, TRUE bearing counter, tube right-click menu and Ctrl+click launch, hidden on the binoculars, "TDC Gyro" label
-[*][b]1.4-1.4.3[/b] - salvo spread, angular speed and tube windows, motor switches, firing circuit lamp, keep my scope bearing, per-boat switch layouts, hotkey
+[*][b]1.4-1.4.3[/b] - spread, turn rate and tube windows, motor switches, firing circuit lamp, keep my scope bearing, per-boat switch layouts, hotkey
 [*][b]1.0-1.3[/b] - counters, TDC dials, selectors, launch lever, torpedo settings, light tint, voice callouts
 [/list]
 
