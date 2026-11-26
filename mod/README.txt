@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.5.3 (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.5.4 (UBOAT 2026.1 patch 21)
 ===================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -195,6 +195,11 @@ game's raise/lower control and these buttons; the keys still raise and lower
 the periscope.
 
 Version history
+  1.5.4 The gyro angle counters keep their spot: placed under the bearing
+       tape once, on first start, they no longer follow it (or another
+       compass on screen) around. Ctrl+drag still moves them. With the
+       True Bearing on Periscope mod installed, its TRUE counter replaces
+       this mod's while it shows (this one can still show on the binoculars).
   1.5.3 The raise fully / lower fully buttons sit just above the stock
        raise/lower control, beneath every other window (this mod's and other
        mods'), so a window moved over them stays on top.
@@ -385,9 +390,11 @@ Counters
   to its right pass 9 -> 0, including 359 -> 000, where the 3 and 5 roll over
   to 0 together.
 
-  The counters sit under the bearing tape. Their position is taken while the
-  game UI is visible and then held, so hiding the game UI with Alt doesn't
-  move them.
+  The counters sit under the bearing tape: their spot is taken from the tape
+  the first time it is seen (once it holds still) and kept from then on, so
+  they don't wander if the tape, another compass on screen or another mod
+  moves things. Ctrl+drag moves them. To place them under the tape again,
+  clear TapeAnchorX and TapeAnchorY in the config file.
 
   TDC not manned: while nobody is working the TDC station, the TDC counter
   is greyed out with "TDC not manned" (Rechner nicht besetzt) under it, and

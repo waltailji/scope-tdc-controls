@@ -73,8 +73,13 @@ namespace ScopeTdcControls
         static bool userHidden;
 
         // positions remembered while the game UI is visible (canvas-local, before offsets)
-        static bool hasCounterLatch, hasControlsLatch;
-        static Vector2 counterLatch, controlsLatch;
+        static bool hasControlsLatch;
+        static Vector2 controlsLatch;
+        // the counter's spot is taken from the bearing tape once (when it has held still a moment),
+        // saved as TapeAnchorX/Y, and kept from then on: it no longer follows the tape
+        static Vector2 tapeCandidate;
+        static float tapeStableSince = -1f;
+        const float TapeSettleTime = 0.5f;
         static Vector2 controlsLatchPivot = new Vector2(0f, 0.5f);
 
         static AccessTools.FieldRef<PeriscopeUI, TorpedoCalculator> tdcField;
@@ -126,7 +131,7 @@ namespace ScopeTdcControls
         TorpedoCalculator stationTdc;
         Interactable tdcStation;
         readonly Vector3[] corners = new Vector3[4];
-        bool loggedCounterAnchor, loggedControlsAnchor;
+        bool loggedControlsAnchor;
 
         /// <summary>One labelled drum readout: [ LABEL | 3 5 7 ° ]</summary>
         sealed class CounterRow
@@ -2021,7 +2026,8 @@ namespace ScopeTdcControls
             // the TRUE bearing counter: with the other windows, or alone on the binoculars if that setting is on
             bool trueOn = trueRow != null && GyroConfig.ControlsVisible
                           && (binoculars ? GyroConfig.TrueBearingOnBinoculars && !(uiHidden && GyroConfig.HideWithGameUI)
-                                         : show && GyroConfig.ShowTrueBearing);
+                                         : show && GyroConfig.ShowTrueBearing)
+                          && !StandaloneTrueBearingShown(); // the stand-alone mod's counter takes over
             if (trueRow != null && trueRow.Panel.gameObject.activeSelf != trueOn) trueRow.Panel.gameObject.SetActive(trueOn);
             if (controlsPanel != null)
             {
@@ -2414,7 +2420,7 @@ namespace ScopeTdcControls
             return local;
         }
 
-        /// <summary>Store where the bearing tape is (screen fraction), only when it actually moved.</summary>
+        /// <summary>Store where the bearing tape is (screen fraction): the counter's fixed spot from then on.</summary>
         static void RememberTapeAnchor(Vector2 screenPoint)
         {
             if (Screen.width <= 0 || Screen.height <= 0) return;
@@ -2430,36 +2436,43 @@ namespace ScopeTdcControls
         void PositionCounter(bool uiHidden)
         {
             Vector2 pivot = new Vector2(0.5f, GyroConfig.Above ? 0f : 1f);
+            Vector2 gap = new Vector2(0f, GyroConfig.Above ? GyroConfig.Gap : -GyroConfig.Gap);
+            bool anchorKnown = !float.IsNaN(GyroConfig.TapeAnchorX) && !float.IsNaN(GyroConfig.TapeAnchorY);
 
-            // only learn the spot from the bearing tape while the game UI is in its
-            // normal state; with the UI hidden (Alt) keep the remembered spot
-            bool compassFresh = lastCompass != null && lastCompass.isActiveAndEnabled && Time.frameCount - lastCompassFrame <= 5;
-            if (GyroConfig.AnchorToCompass && compassFresh && !uiHidden)
+            // first start (no spot saved yet): take it from the bearing tape, only while the game UI
+            // is in its normal state, and only once the tape has held still for a moment (it may
+            // still be laid out or sliding in). After that the counter stays put: the tape, another
+            // compass on screen or another mod moving things no longer shifts it; only a drag does.
+            bool provisional = false;
+            if (GyroConfig.AnchorToCompass && !anchorKnown)
             {
+                bool compassFresh = lastCompass != null && lastCompass.isActiveAndEnabled && Time.frameCount - lastCompassFrame <= 5;
                 Vector2 mn, mx;
-                if (ScreenRect(lastCompass.rectTransform, out mn, out mx))
+                if (compassFresh && !uiHidden && ScreenRect(lastCompass.rectTransform, out mn, out mx))
                 {
                     float cx = (mn.x + mx.x) * 0.5f;
                     Vector2 edge = GyroConfig.Above ? new Vector2(cx, mx.y) : new Vector2(cx, mn.y);
-                    counterLatch = ToLocal(edge) + new Vector2(0f, GyroConfig.Above ? GyroConfig.Gap : -GyroConfig.Gap);
-                    if (!hasCounterLatch || !loggedCounterAnchor)
+                    if (tapeStableSince < 0f || (edge - tapeCandidate).sqrMagnitude > 1f)
                     {
-                        loggedCounterAnchor = true;
-                        Debug.Log(ScopeTdcControlsMod.Tag + " counter anchored under bearing tape '" + lastCompass.name + "'");
+                        tapeCandidate = edge;
+                        tapeStableSince = Time.unscaledTime;
                     }
-                    hasCounterLatch = true;
-                    RememberTapeAnchor(edge);
+                    else if (Time.unscaledTime - tapeStableSince >= TapeSettleTime)
+                    {
+                        RememberTapeAnchor(edge);
+                        anchorKnown = true;
+                        Debug.Log(ScopeTdcControlsMod.Tag + " counter placed under bearing tape '" + lastCompass.name
+                                  + "'; it keeps this spot from now on (TapeAnchorX/Y in the config)");
+                    }
                 }
+                provisional = !anchorKnown && tapeStableSince >= 0f;
             }
 
             Vector2 basePos;
-            if (GyroConfig.AnchorToCompass && hasCounterLatch)
-                basePos = counterLatch;
-            else if (GyroConfig.AnchorToCompass && !float.IsNaN(GyroConfig.TapeAnchorX) && !float.IsNaN(GyroConfig.TapeAnchorY))
-                // after loading a game the tape may not report until the UI is refreshed:
-                // start where it was last seen instead of the fallback spot
-                basePos = ToLocal(new Vector2(Screen.width * GyroConfig.TapeAnchorX, Screen.height * GyroConfig.TapeAnchorY))
-                          + new Vector2(0f, GyroConfig.Above ? GyroConfig.Gap : -GyroConfig.Gap);
+            if (GyroConfig.AnchorToCompass && anchorKnown)
+                basePos = ToLocal(new Vector2(Screen.width * GyroConfig.TapeAnchorX, Screen.height * GyroConfig.TapeAnchorY)) + gap;
+            else if (provisional)
+                basePos = ToLocal(tapeCandidate) + gap; // under the tape until its spot is settled
             else
                 basePos = ToLocal(new Vector2(Screen.width * GyroConfig.FallbackX, Screen.height * GyroConfig.FallbackY));
 

@@ -44,6 +44,33 @@ namespace ScopeTdcControls
             catch { return float.NaN; }
         }
 
+        // the stand-alone "True Bearing on Periscope" mod: while its own counter is on screen, ours stays hidden
+        const string StandaloneTrueObject = "TrueBearingOnPeriscope";
+        static Canvas standaloneTrue;
+        static float standaloneLookupAt;
+        static bool loggedStandalone;
+
+        /// <summary>
+        /// The True Bearing on Periscope mod is running and its counter showing (its canvas on). Its
+        /// object is found by name (it lives in DontDestroyOnLoad), looked for every few seconds until
+        /// found. Where it hides (binoculars), ours may still show, with "TRUE bearing on binoculars".
+        /// </summary>
+        static bool StandaloneTrueBearingShown()
+        {
+            if (standaloneTrue == null && Time.unscaledTime >= standaloneLookupAt)
+            {
+                standaloneLookupAt = Time.unscaledTime + 3f;
+                var go = GameObject.Find(StandaloneTrueObject);
+                standaloneTrue = go != null ? go.GetComponent<Canvas>() : null;
+                if (standaloneTrue != null && !loggedStandalone)
+                {
+                    loggedStandalone = true;
+                    Debug.Log(ScopeTdcControlsMod.Tag + " True Bearing on Periscope found: its counter replaces our TRUE counter while it shows");
+                }
+            }
+            return standaloneTrue != null && standaloneTrue.enabled && standaloneTrue.gameObject.activeInHierarchy;
+        }
+
         void UpdateTrueBearing()
         {
             if (trueRow == null) return;

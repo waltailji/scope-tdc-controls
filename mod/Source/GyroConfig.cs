@@ -157,8 +157,8 @@ namespace ScopeTdcControls
 Enabled=true
 
 # ---- Gyro counter ----
-# Compass = follow the bearing tape (position is remembered while the game UI
-# is hidden with Alt) ; Screen = fixed spot at FallbackX/FallbackY
+# Compass = placed under the bearing tape the first time it is seen, then kept
+# there (Ctrl+drag to move) ; Screen = fixed spot at FallbackX/FallbackY
 Anchor=Compass
 # Below or Above the bearing tape
 Position=Below
@@ -170,8 +170,9 @@ Gap=4
 # bearing tape has been seen)
 FallbackX=0.5
 FallbackY=0.80
-# Where the bearing tape was last seen (set automatically; lets the counters
-# start in the right place before the tape appears after loading a game)
+# Where the bearing tape was first seen (set automatically): the counters'
+# fixed spot. Clear both to place them under the tape again (e.g. after
+# changing Position)
 TapeAnchorX=
 TapeAnchorY=
 # Size multiplier for the counter and the control panel
