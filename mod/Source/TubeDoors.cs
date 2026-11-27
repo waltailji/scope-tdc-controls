@@ -365,7 +365,7 @@ namespace ScopeTdcControls
         typeof(int), typeof(bool), typeof(bool), typeof(float), typeof(float) })]
     static class TorpedoLauncher_LaunchGyro_DoorPatch
     {
-        static bool Prefix(TorpedoLauncher __instance, out bool __state) { __state = __instance.IsFlooded; return DoorLaunchHook.Allow(__instance); }
+        static bool Prefix(TorpedoLauncher __instance, out bool __state) { __state = __instance.IsFlooded; DoorLaunchHook.Note(__instance); return DoorLaunchHook.Allow(__instance); }
         static void Postfix(TorpedoLauncher __instance, bool __state) { DoorLaunchHook.After(__instance, __state); }
     }
 
@@ -375,13 +375,19 @@ namespace ScopeTdcControls
         typeof(int), typeof(bool), typeof(bool), typeof(float), typeof(float) })]
     static class TorpedoLauncher_LaunchCapture_DoorPatch
     {
-        static bool Prefix(TorpedoLauncher __instance, out bool __state) { __state = __instance.IsFlooded; return DoorLaunchHook.Allow(__instance); }
+        static bool Prefix(TorpedoLauncher __instance, out bool __state) { __state = __instance.IsFlooded; DoorLaunchHook.Note(__instance); return DoorLaunchHook.Allow(__instance); }
         static void Postfix(TorpedoLauncher __instance, bool __state) { DoorLaunchHook.After(__instance, __state); }
     }
 
     static class DoorLaunchHook
     {
         static bool loggedHeld;
+        static StoredTorpedo inTube;   // the tube's torpedo just before the launch (it becomes the running torpedo)
+
+        public static void Note(TorpedoLauncher l)
+        {
+            try { inTube = l != null ? l.Torpedo : null; } catch { inTube = null; }
+        }
 
         /// <summary>
         /// The game's fire sequence (fire key, or the launch lever) skips a tube whose outer
@@ -407,7 +413,13 @@ namespace ScopeTdcControls
             try
             {
                 // the launch went ahead: the game cleared the flooded flag
-                if (wasFlooded && l != null && !l.IsFlooded && TubeDoors.IsPlayerTube(l)) TubeDoors.OnLaunched(l);
+                if (wasFlooded && l != null && !l.IsFlooded && TubeDoors.IsPlayerTube(l))
+                {
+                    TubeDoors.OnLaunched(l);
+                    UBOAT.Game.Scene.Entities.Torpedo running = null;
+                    try { running = inTube != null ? inTube.GetComponent<UBOAT.Game.Scene.Entities.Torpedo>() : null; } catch { }
+                    GyroCounterUI.OnTorpedoLaunched(l, running); // the run timer near the top of the screen
+                }
             }
             catch (Exception e) { Debug.LogException(e); }
         }

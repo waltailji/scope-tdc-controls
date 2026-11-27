@@ -951,7 +951,7 @@ namespace ScopeTdcControls
             settingsContent.anchoredPosition = Vector2.zero;
             checkRowH = SetRowH; checkRowGap = SetRowGap;
 
-            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptEnhancedTubes, Strings.OptAutoSpread, Strings.OptKeepScopeBearing, Strings.OptTrueOnBinoculars, Strings.OptHideStockElevator, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag, Strings.HotkeyPress, Strings.HotkeyPrefix + "RightControl" };
+            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptEnhancedTubes, Strings.OptTorpedoTimers, Strings.OptAutoSpread, Strings.OptKeepScopeBearing, Strings.OptTrueOnBinoculars, Strings.OptHideStockElevator, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag, Strings.HotkeyPress, Strings.HotkeyPrefix + "RightControl" };
             float inner = 0f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f);
 
@@ -989,6 +989,10 @@ namespace ScopeTdcControls
                 () => GyroConfig.EnhancedTubeHandling,
                 v => { GyroConfig.EnhancedTubeHandling = v; GyroConfig.Save("EnhancedTubeHandling", v); },
                 () => Strings.TipOptEnhancedTubes);
+            MakeCheck(font, Strings.OptTorpedoTimers, ref y, inner,
+                () => GyroConfig.TorpedoTimers,
+                v => { GyroConfig.TorpedoTimers = v; GyroConfig.Save("TorpedoTimers", v); },
+                () => Strings.TipOptTorpedoTimers);
             MakeCheck(font, Strings.OptAutoSpread, ref y, inner,
                 () => GyroConfig.AutoSpread,
                 v => { GyroConfig.AutoSpread = v; GyroConfig.Save("AutoSpread", v); HideTip(); },
@@ -1228,6 +1232,38 @@ namespace ScopeTdcControls
             roundedBoxSprite = Sprite.Create(shape.texture, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f, 0,
                                              SpriteMeshType.FullRect, new Vector4(b, b, b, b));
             return roundedBoxSprite;
+        }
+
+        const float ValueBoxCornerRadius = 3f;
+        static Sprite valueBoxSprite;
+
+        /// <summary>
+        /// A white rectangle with small rounded corners (3 px), nine-sliced: the black value boxes
+        /// under the controls, their typing field and the time-to-impact housing.
+        /// </summary>
+        static Sprite ValueBoxSprite()
+        {
+            if (valueBoxSprite != null) return valueBoxSprite;
+            const int n = 16;
+            float rad = ValueBoxCornerRadius, lo = rad, hi = n - rad;
+            var shape = MakeShapeSprite(n, n, (x, y) =>
+            {
+                float cx = x < lo ? lo : x > hi ? hi : x;
+                float cy = y < lo ? lo : y > hi ? hi : y;
+                float dx = x - cx, dy = y - cy;
+                return dx * dx + dy * dy <= rad * rad;
+            });
+            float b = rad + 1f;
+            valueBoxSprite = Sprite.Create(shape.texture, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f, 0,
+                                           SpriteMeshType.FullRect, new Vector4(b, b, b, b));
+            return valueBoxSprite;
+        }
+
+        /// <summary>Gives an image the small rounded value-box shape.</summary>
+        static void RoundValueBox(Image img)
+        {
+            img.sprite = ValueBoxSprite();
+            img.type = Image.Type.Sliced;
         }
 
         void MakeDrum(CounterRow row, Transform parent, TMP_FontAsset font, float x, bool inverse)

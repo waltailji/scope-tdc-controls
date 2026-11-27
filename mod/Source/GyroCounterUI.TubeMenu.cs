@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TMPro;
+using UBOAT.Game.Scene.Characters;
 using UBOAT.Game.Scene.Items;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -101,10 +102,26 @@ namespace ScopeTdcControls
             if (!CanLaunch(l)) return;
             try
             {
+                SayLaunchOrder();
                 LeverOf(l).Launch();
                 if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " tube " + dot.Number + " launched with its own lever");
             }
             catch (Exception e) { Debug.LogException(e); }
+        }
+
+        /// <summary>
+        /// The commander's "Los!" ("LOS" line, English "Launch!"), as the game's own fire sequence
+        /// calls it (PlayerShip.LaunchAllTorpedoesInternal); the tube's lever launches silently.
+        /// </summary>
+        static void SayLaunchOrder()
+        {
+            try
+            {
+                var crew = Get<PlayerCrew>();
+                var co = crew != null ? crew.CommandingOfficer : null;
+                if (co != null) co.Say("LOS");
+            }
+            catch (Exception e) { if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " launch callout: " + e.Message); }
         }
 
         /// <summary>The door is open or on its way: the menu offers to shut it.</summary>

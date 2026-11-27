@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.6.1 (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.6.2 (UBOAT 2026.1 patch 21)
 ===================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -75,6 +75,17 @@ exact value.
   and the dial stays as it was: after Enter the box stays open showing the
   range in red; clicking away flashes the readout red. The game's keys and
   the mod's hotkey hold off while you type.
+
+Time to impact (LAUFZEIT): three drums at the bottom of the TDC dials window,
+  the torpedo's run in seconds from launch to the point the TDC aims it at.
+  Worked out in the TDC's own model from its entries: bearing, distance, AOB,
+  target speed, the torpedo speed it is set for and its gyro angle, including
+  the torpedo's 9.5 m straight run and its 95 m radius turn onto course. Timed
+  at the selected torpedoes' speed (the slowest, for a salvo; the Torpedo Room
+  mod's speed per torpedo when present). With no tube selected the drums keep
+  the last time (000 until one has been worked out). Settings file:
+  ImpactTimeFont (one of the game's fonts, default ROBOTO-BLACK) and
+  ImpactTimeWeight (-1 thinner .. 1 bolder, default -0.3).
 
 Salvo spread (Fächer): a window just right of the TDC dials, stacked:
   Target length  STREUBREITE, 100-200 m, like the TDC's dial: the numbers are
@@ -166,6 +177,8 @@ Torpedo tubes (Rohranzeige): a compact window, by default above the bottom
   firing circuit lamp is lit). Double-click a loaded tube to flood it, or to
   drain it when flooded or flooding, as the game's torpedo panel does. Clicking
   the selected tube again, or draining it, deselects it (Einzelschuss to Aus).
+  Launch from the tube's menu (or Ctrl+click) and the commander calls "Los!"
+  ("Launch!"), as with the game's fire key.
   Hover a tube for its state and what a click / double-click does. Drag to
   move, resize with the corner grip. Shown or hidden with the Rohranzeige (Torpedo
   tubes) check box.
@@ -214,6 +227,17 @@ Launch lever (T-Abf.-Schalter): a narrow window at the bottom right with a
            tower for the attack periscope; for now either one powers it.)
   Shown or hidden with the Abfeuerhebel (Launch lever) check box.
 
+Torpedo run timers (setting "Torpedo run timers", on by default): each
+  torpedo launched gets a row near the top of the screen with a torpedo and a
+  clock counting down (m:ss) from the time to impact at launch. Several stack,
+  newest at the bottom; at 0:00 a row fades out over a minute. Shown in every
+  view, counted in game time (time compression speeds them up). Drag to move
+  (TimersX / TimersY in the settings file).
+  Double-click a row: the game's orbit camera on that torpedo, as with the
+  camera button for a torpedo selected on the map (the row turns blue). On a
+  hit the game moves the view to the ship hit; after a miss it goes back to
+  where you were. Double-click again to go back sooner.
+
 Raise fully / lower fully: two slim buttons just above and below the stock
 periscope raise/lower control. Click one to run the periscope all the way up
 or down at its normal speed; click it again, or use a stock raise/lower
@@ -224,6 +248,14 @@ game's raise/lower control and these buttons; the keys still raise and lower
 the periscope.
 
 Version history
+  1.6.2 Time to impact (LAUFZEIT) drums at the bottom of the TDC dials: the
+       torpedo's run time to the TDC's aim point, from the TDC's entries.
+       Torpedo run timers near the top of the screen, one per torpedo, counting
+       down from the time to impact at launch; double-click one for the orbit
+       camera on that torpedo.
+       "Los!" callout when launching from the tube indicator.
+       The value boxes under the controls and the launch lever's plates have
+       small rounded corners.
   1.6.1 Launch lever range check: uses the selected torpedoes' own run at
        their set speed (the shortest one), as the game's salvo preview does,
        instead of the TDC's range knob (5000 m unless turned), which could

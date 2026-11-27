@@ -242,6 +242,9 @@ namespace ScopeTdcControls
 
             // own angular speed: its own window beside the TDC dials (GyroCounterUI.TurnRate.cs)
 
+            // time to impact: three drums at the bottom (GyroCounterUI.ImpactTime.cs)
+            y = BuildImpactTime(font, x0, y, inner);
+
             dialsPanel.sizeDelta = new Vector2(x0 + inner + DialPad, -y + DialPad - 6f);
             dialsFullH = dialsPanel.sizeDelta.y;
             AddResizeGrip(dialsPanel, ResizableWindow.Dials);
@@ -292,6 +295,7 @@ namespace ScopeTdcControls
             PlaceV(box, centreX - ReadoutW * 0.5f, top, ReadoutW, ReadoutH);
             var boxImg = box.gameObject.AddComponent<Image>();
             boxImg.color = DrumBlack;
+            RoundValueBox(boxImg);
             boxImg.raycastTarget = false;
             var text = NewText("Text", box, font, "", CtlFont + 2f, DigitLight);
             text.alignment = TextAlignmentOptions.Center;
@@ -1011,6 +1015,7 @@ namespace ScopeTdcControls
             }
             foreach (var d in dials) UpdateDialValue(tdc, d);
             UpdateFlipSwitch(aobMotorSwitch, tdc);
+            UpdateImpactTime(tdc);
         }
 
         /// <summary>One dial's needle (or ring) and readout from the TDC.</summary>

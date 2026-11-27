@@ -36,6 +36,8 @@ namespace ScopeTdcControls
         public static bool LeftRight = false;        // Format=360 | LR
         public static bool ShowTenths = false;
         public static float RollSpeed = 90f;         // deg/sec, 0 = instant
+        public static float ImpactTimeWeight = -0.3f; // the time-to-impact digits' stroke weight: -1 (thin) .. 1 (bold), 0 = as the font is
+        public static string ImpactTimeFont = "ROBOTO-BLACK"; // the time-to-impact drums' font (part of a loaded game font's name; empty = the panel font)
         public static bool ShowSyncLamp = true;
         public static bool ShowReceiverAngle = true;
         public static bool ActiveReceiverOnly = true;
@@ -48,6 +50,8 @@ namespace ScopeTdcControls
         public static bool RealisticReceiverSync = true;  // false = tube gyro motors run 10x faster
         public static bool SingleTorpedoLaunchFix = true; // fire only the tubes selected when fire was pressed
         public static bool AutoSelectFloodedTube = false; // true = the game checks a tube when it floods (base game)
+        public static bool TorpedoTimers = true;          // a countdown per torpedo launched, near the top of the screen
+        public static float TimersX = 0.5f, TimersY = 0.9f; // top centre of the timer stack, 0..1 of the screen from bottom-left
         public static bool EnhancedTubeHandling = true;   // tube outer doors by hand, fire only when open, tube stays flooded after a shot
         public static bool TdcOperatorRequired = true;    // false = TDC works without a crew member at it
         public static bool CtrlDragToMove = false;        // false = plain drag on a window background moves it (default for new installs)
@@ -183,6 +187,11 @@ Format=360
 ShowTenths=false
 # Drum follow speed in degrees per second (0 = instant)
 RollSpeed=90
+# Font of the time-to-impact drums: part of the name of one of the game's fonts
+# (ROBOTO-BLACK, berylium bd, berylium rg, FrankRuhlLibre-Bold, Vollkorn-Regular, LiberationSans; empty = the panel font)
+ImpactTimeFont=ROBOTO-BLACK
+# Stroke weight of the time-to-impact digits: 0 = as the font is, up to 1 bolder, down to -1 thinner (default -0.3, a little lighter than the font)
+ImpactTimeWeight=-0.3
 # Lamp next to the counter: green = tube gyros set, red = synchronizing, dark = receiver off
 ShowSyncLamp=true
 # Rows under the TDC counter with the tube groups' gyro angles
@@ -218,6 +227,12 @@ AutoSelectFloodedTube=false
 #        and is drained (door shut) before the crew reloads it
 # false = no outer doors (base game)
 EnhancedTubeHandling=true
+# true = each torpedo launched gets a run timer near the top of the screen, counting down
+#        from the time-to-impact counter (drag the timers to move them)
+TorpedoTimers=true
+# Top centre of the torpedo timers, 0..1 of screen width/height from bottom-left
+TimersX=0.5
+TimersY=0.9
 # true = the TDC only works with a crew member at it (base game)
 # false = the TDC calculates and can be opened from the station bar unmanned
 TdcOperatorRequired=true
@@ -537,6 +552,8 @@ DebugLog=false
                 case "format": LeftRight = v.Equals("lr", StringComparison.OrdinalIgnoreCase); break;
                 case "showtenths": ShowTenths = Bool(v, ShowTenths); break;
                 case "rollspeed": RollSpeed = Mathf.Max(0f, Num(v, RollSpeed)); break;
+                case "impacttimefont": ImpactTimeFont = v.Trim(); break;
+                case "impacttimeweight": ImpactTimeWeight = Mathf.Clamp(Num(v, ImpactTimeWeight), -1f, 1f); break;
                 case "showsynclamp": ShowSyncLamp = Bool(v, ShowSyncLamp); break;
                 case "showreceiverangle": ShowReceiverAngle = Bool(v, ShowReceiverAngle); break;
                 case "activereceiveronly": ActiveReceiverOnly = Bool(v, ActiveReceiverOnly); break;
@@ -548,6 +565,9 @@ DebugLog=false
                 case "singletorpedolaunchfix": SingleTorpedoLaunchFix = Bool(v, SingleTorpedoLaunchFix); break;
                 case "autoselectfloodedtube": AutoSelectFloodedTube = Bool(v, AutoSelectFloodedTube); break;
                 case "enhancedtubehandling": EnhancedTubeHandling = Bool(v, EnhancedTubeHandling); break;
+                case "torpedotimers": TorpedoTimers = Bool(v, TorpedoTimers); break;
+                case "timersx": TimersX = Mathf.Clamp01(Num(v, TimersX)); break;
+                case "timersy": TimersY = Mathf.Clamp01(Num(v, TimersY)); break;
                 case "tdcoperatorrequired": TdcOperatorRequired = Bool(v, TdcOperatorRequired); break;
                 case "ctrldragtomove": CtrlDragToMove = Bool(v, CtrlDragToMove); break;
                 case "dialsscale": DialsScale = Mathf.Clamp(Num(v, DialsScale), WindowScaleMin, WindowScaleMax); break;

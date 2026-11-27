@@ -30,17 +30,22 @@ A panel titled "Scope TDC Controls" beside the periscope raise/lower control (pa
 ### TDC dials
 A window on the left of the scope with the TDC's **AOB**, **target speed**, **target distance** and **target length** dials (target length only while a spread is selected). Grab a dial and turn it, just like on the TDC; Shift for fine adjustment, mouse wheel for steps, exact readout under each dial. Shown and hidden with the sidebar button together with the panel. With **Voice callouts** on, the crew member at the scope announces what you dial in using the game's own voice lines, as when sending a locked target to the TDC.
 
+At the bottom, **time to impact** (Laufzeit): three drums with the torpedo's run in seconds from launch to the point the TDC aims it at, worked out from the TDC's entries (bearing, distance, AOB, target speed, torpedo speed and gyro angle, including the torpedo's 9.5 m straight run and 95 m radius turn onto its course), timed at the selected torpedoes' speed (the slowest, for a salvo). With no tube selected it keeps the last time. The drums use the game's Roboto Black font; `ImpactTimeFont` in the settings file picks another of the game's fonts, and `ImpactTimeWeight` (-1 to 1) makes the digits thinner or bolder (default -0.3).
+
 ### Firing selector
 The three rotary switches of the boat's Schaltkasten T-Abf.-Anl. in a window near the bottom of the scope: **Einzelschuß** (single tube / spread), **Fächerschuß** (salvo tubes) and **T.Abf. Schalter** (firing station). Each offers exactly your sub's positions and works like the knob in the boat.
 
 ### Launch lever
 A spring-loaded Aus / Schuß lever: pull it to Schuß to fire the selected tubes through the boat's own launch lever. A ready lamp shows whether the selected tubes are flooded and the gyro angle receiver is on their end.
 
+### Torpedo run timers
+Silent Hunter style: each torpedo launched gets a row near the top of the screen with a torpedo and a clock counting down from the time-to-impact value at launch. Several torpedoes stack, newest at the bottom; at 0:00 a row fades out over a minute. They show in every view, count in game time (time compression speeds them up), and can be dragged anywhere. **Double-click a timer** to watch that torpedo in the game's orbit camera, as with the camera button for a torpedo selected on the map; on a hit the view moves to the ship it hit, after a miss it goes back to where you were. Double-click again to go back sooner. Setting: **Torpedo run timers**.
+
 ### Raise fully / lower fully
 Two buttons above and below the stock periscope raise/lower control run the periscope all the way up or down at its normal speed.
 
 ### Settings (saved between sessions)
-Show gyro receiver angles · Show active receivers only · Show parallax angle · Auto set gyro receiver · Auto set parallax mode · Realistic TDC follower · Realistic receiver sync · Single torpedo launch fix · TDC operator required · Voice callouts
+Show gyro receiver angles · Show active receivers only · Show parallax angle · Auto set gyro receiver · Auto set parallax mode · Realistic TDC follower · Realistic receiver sync · Single torpedo launch fix · TDC operator required · Voice callouts · Enhanced torpedo tube handling · Torpedo run timers
 
 ### Fixes to the base game
 - **Single torpedo launch fix**: a tube checked a few seconds after pressing fire is no longer launched too

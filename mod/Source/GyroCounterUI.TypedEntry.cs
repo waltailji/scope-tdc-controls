@@ -97,6 +97,7 @@ namespace ScopeTdcControls
                 Stretch(r);
                 var back = entry.AddComponent<Image>();
                 back.color = EntryBack;
+                RoundValueBox(back); // the same small rounded corners as the value box it covers
                 var area = NewRect("Area", r);
                 area.anchorMin = Vector2.zero; area.anchorMax = Vector2.one;
                 area.offsetMin = new Vector2(4f, 1f); area.offsetMax = new Vector2(-4f, -1f);

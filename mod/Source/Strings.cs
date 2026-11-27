@@ -173,6 +173,16 @@ namespace ScopeTdcControls
         }
 
         public static string OptEnhancedTubes { get { return T("Erweiterte Torpedorohr-Bedienung", "Enhanced torpedo tube handling"); } }
+        public static string OptTorpedoTimers { get { return T("Torpedo-Laufzeituhren", "Torpedo run timers"); } }
+
+        public static string TipOptTorpedoTimers
+        {
+            get
+            {
+                return T("<b>Torpedo-Laufzeituhren</b>\nAn: Für jeden abgefeuerten Torpedo erscheint oben am Bildschirm ein Torpedo mit einer Uhr, die von der Laufzeit herunterzählt, die beim Schuss angezeigt wurde (in Spielzeit, auch in allen anderen Ansichten). Mehrere Torpedos stehen untereinander. Bei 0:00 verblasst der Eintrag über eine Minute. Zum Verschieben ziehen. Doppelklick auf einen Eintrag: die Orbit-Kamera auf diesem Torpedo, wie die Kamera-Taste auf der Karte (nochmal Doppelklick: zurück).",
+                         "<b>Torpedo run timers</b>\nOn: each torpedo launched gets a torpedo and a clock near the top of the screen, counting down from the time to impact shown at launch (in game time, and in every view). Several torpedoes stack. At 0:00 the entry fades out over a minute. Drag to move them. Double-click an entry: the orbit camera on that torpedo, as with the map's camera button (double-click again to go back).");
+            }
+        }
 
         public static string TipOptEnhancedTubes
         {
@@ -823,6 +833,7 @@ namespace ScopeTdcControls
         public static string AobBowRight { get { return T("Bug Rechts", "Stbd Bow"); } }
         public static string DialSpeed { get { return T("GEGNERFAHRT", "TARGET SPEED"); } }
         public static string DialDistance { get { return T("ENTFERNUNG", "TARGET DISTANCE"); } }
+        public static string DialImpactTime { get { return T("LAUFZEIT", "TIME TO IMPACT"); } }
         public static string DialLength { get { return T("STREUBREITE", "TARGET LENGTH"); } }
 
         // ---- typing a value into a dial's readout ----
@@ -1024,6 +1035,15 @@ namespace ScopeTdcControls
             {
                 return T("<b>Gegnerfahrt</b>\nFahrt des Ziels in Knoten (0 bis 55), wie die Gegnerfahrt-Scheibe am Vorhaltrechner. Mausrad: 0,5 kn." + DialUsageDe + TypeUsageDe,
                          "<b>Target speed</b>\nThe target's speed in knots (0 to 55), as on the TDC's speed dial. Mouse wheel: 0.5 kn." + DialUsageEn + TypeUsageEn);
+            }
+        }
+
+        public static string TipDialImpactTime
+        {
+            get
+            {
+                return T("<b>Laufzeit</b>\nSekunden vom Schuss bis zum Treffpunkt, aus den Werten des Vorhaltrechners: Entfernung, Lage, Zielfahrt, Peilung, eingestellte Torpedofahrt und Schusswinkel (der Torpedo läuft erst 9,5 m geradeaus und dreht dann mit 95 m Radius auf seinen Kurs). Gerechnet mit der Fahrt der gewählten Torpedos (bei einem Fächer mit der langsamsten).\nOhne gewähltes Rohr bleibt die letzte Laufzeit stehen.",
+                         "<b>Time to impact</b>\nSeconds from launch to the aim point, worked out from the TDC's entries: distance, AOB, target speed, bearing, the torpedo speed it is set for and the gyro angle (the torpedo runs 9.5 m straight, then turns onto its course on a 95 m radius). Timed at the selected torpedoes' speed (the slowest, for a salvo).\nWith no tube selected the last time stays shown.");
             }
         }
 

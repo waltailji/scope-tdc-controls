@@ -30,6 +30,7 @@ A sidebar button on the scope screen shows or hides it all.
 [*][b]Type a value[/b] - click the value box under a dial (here and on the spread, gyro setting, bearing and depth dials); out-of-range values are refused
 [*][b]AOB[/b] - angle on bow, port or starboard, of target; switch to disable TDC's [b]AOB motor[/b]
 [*][b]Voice callouts[/b] - the crew member at the scope announces what you dial in (as on stock TDC data entry)
+[*][b]Time to impact[/b] - drums with the torpedo's run time in seconds
 [/list]
 
 [h2]TDC target bearing[/h2]
@@ -66,6 +67,9 @@ SH3-style torpedo settings window when a tube is selected:
 [*][b]Pistol[/b] - AZ (impact) or MZ (magnetic)
 [/list]
 With the Torpedo Room mod installed, the settings are stored on each selected torpedo only ([url=https://steamcommunity.com/sharedfiles/filedetails/?id=3823181610]Torpedo Room[/url] recommended, not required).
+
+[h2]Torpedo run timers[/h2]
+A countdown per torpedo launched, near the top of the screen. Double-click one to watch that torpedo in the orbit camera.
 
 [h2]Firing & direction selectors[/h2]
 The boat's rotary switches, with its own knob clicks:

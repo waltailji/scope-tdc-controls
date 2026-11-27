@@ -86,6 +86,7 @@ namespace ScopeTdcControls
                 PlaceV(plate, DialPad, top, 42f, 18f);
                 var img = plate.gameObject.AddComponent<Image>();
                 img.color = DrumBlack;
+                RoundValueBox(img); // the same small rounded corners as the value boxes
                 var t = NewText("Text", plate, font, names[i], CtlFont, i == 1 ? LeverRed : DialScale);
                 t.alignment = TextAlignmentOptions.Center;
                 var tr = t.rectTransform;
