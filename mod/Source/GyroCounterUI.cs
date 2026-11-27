@@ -1996,12 +1996,13 @@ namespace ScopeTdcControls
             }
             PeriscopeTravel.Tick();
             VoiceCallouts.Tick();
+            TickTypedEntries();
 
             if (capturingKey) { CaptureHotkey(); return; } // the next key pressed becomes the hotkey
 
             // the hotkey does what the sidebar button does: panel, windows and counters hide, the
             // raise / lower fully buttons stay
-            if (GyroConfig.ToggleKey != KeyCode.None && periscopeUI != null && Input.GetKeyDown(GyroConfig.ToggleKey))
+            if (GyroConfig.ToggleKey != KeyCode.None && periscopeUI != null && !Typing && Input.GetKeyDown(GyroConfig.ToggleKey))
                 OnSidebarButton(!GyroConfig.ControlsVisible);
 
             if (pendingTip != null)

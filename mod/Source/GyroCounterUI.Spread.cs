@@ -58,6 +58,7 @@ namespace ScopeTdcControls
                 WheelStep = -1f,     // wheel toward you = more
                 Format = v => Mathf.RoundToInt(v).ToString(CultureInfo.InvariantCulture) + " m"
             }, (spec, f) => DrawLengthScale(spec, f), "", spreadPanel, spreadDials);
+            AddTypedEntry(spreadDials[spreadDials.Count - 1], font, TypedNumber(100f, 200f, 1f, "m"), () => Strings.RangeLength, () => Strings.TypeLength);
 
             // spread angle (Streuwinkel), 0° at the top clockwise to 20° at the bottom: the brass
             // needle is the angle the TDC computes, the red flag the angle set (SalvoSpreadAngleOuter,
@@ -73,6 +74,7 @@ namespace ScopeTdcControls
                 WheelStep = -0.5f,   // wheel toward you = wider
                 Format = v => v.ToString("0.0", CultureInfo.InvariantCulture) + "°"
             }, (spec, f) => DrawSpreadAngleScale(spec, f), "", spreadPanel, spreadDials);
+            AddTypedEntry(spreadDials[spreadDials.Count - 1], font, TypedNumber(0f, SpreadAngleMax, 0.1f), () => Strings.RangeSpread, () => Strings.TypeSpread);
 
             // spread motor (Streuwinkelmotor): on = the TDC drives the red flag to the computed angle
             y += 12f - 4f; // AddDial leaves 12 below the readout

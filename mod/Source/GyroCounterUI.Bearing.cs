@@ -88,6 +88,7 @@ namespace ScopeTdcControls
                 WheelStep = -1f,
                 Format = FormatBearing
             }, (spec, f) => DrawBearingCoarseScale(spec, f), "", bearingPanel, bearingDials);
+            AddTypedEntry(bearingDials[bearingDials.Count - 1], font, ParseTypedAngle, () => Strings.RangeAngle360, () => Strings.TypeBearing);
 
             bearingPanel.sizeDelta = new Vector2(x0 + inner + DialPad, -y + DialPad - 6f);
             AddCloseButton(bearingPanel, () => SetBearingWindow(false));

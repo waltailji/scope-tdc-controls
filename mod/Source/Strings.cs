@@ -465,15 +465,15 @@ namespace ScopeTdcControls
         }
         public static string TipDialGyroCoarse
         {
-            get { return T("<b>Schusswinkel grob</b>\nEine Umdrehung = 360°. Mausrad: 1°." + GyroFlagDe + DialUsageDe, "<b>Gyro angle, coarse</b>\nOne turn = 360°. Mouse wheel: 1°." + GyroFlagEn + DialUsageEn); }
+            get { return T("<b>Schusswinkel grob</b>\nEine Umdrehung = 360°. Mausrad: 1°." + GyroFlagDe + DialUsageDe + TypeUsageDe, "<b>Gyro angle, coarse</b>\nOne turn = 360°. Mouse wheel: 1°." + GyroFlagEn + DialUsageEn + TypeUsageEn); }
         }
         public static string DialGroupSpread { get { return T("STREUWINKEL", "SPREAD ANGLE"); } }
         public static string TipDialGroupSpread
         {
             get
             {
-                return T("<b>Streuwinkel</b>\nMessingzeiger: der vom Rechner empfangene Streuwinkel (0 bis 20 Grad). Rote Fahne: der an den Rohren eingestellte. Mausrad: 0,5 Grad." + DialUsageDe,
-                         "<b>Spread angle</b>\nBrass needle: the spread angle received from the TDC (0 to 20 degrees). Red flag: the angle set on the tubes. Mouse wheel: 0.5°." + DialUsageEn);
+                return T("<b>Streuwinkel</b>\nMessingzeiger: der vom Rechner empfangene Streuwinkel (0 bis 20 Grad). Rote Fahne: der an den Rohren eingestellte. Mausrad: 0,5 Grad." + DialUsageDe + TypeUsageDe,
+                         "<b>Spread angle</b>\nBrass needle: the spread angle received from the TDC (0 to 20 degrees). Red flag: the angle set on the tubes. Mouse wheel: 0.5°." + DialUsageEn + TypeUsageEn);
             }
         }
         public static string DialHandWheel { get { return T("HANDRAD", "HAND WHEEL"); } }
@@ -604,8 +604,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Zielrichtung grob</b>\nEine Umdrehung = 360°, vom Bug rechts herum. Mausrad: 1°." + BearingNeedleDe + DialUsageDe,
-                         "<b>Target bearing, coarse</b>\nOne turn = 360°, clockwise from the bow. Mouse wheel: 1°." + BearingNeedleEn + DialUsageEn);
+                return T("<b>Zielrichtung grob</b>\nEine Umdrehung = 360°, vom Bug rechts herum. Mausrad: 1°." + BearingNeedleDe + DialUsageDe + TypeUsageDe,
+                         "<b>Target bearing, coarse</b>\nOne turn = 360°, clockwise from the bow. Mouse wheel: 1°." + BearingNeedleEn + DialUsageEn + TypeUsageEn);
             }
         }
         public static string TipBearingIcon
@@ -690,8 +690,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Tiefe</b>\nLauftiefe des Torpedos, 1 bis 14 m (rot: nicht einstellbar). Gilt für den nächsten Schuss, wie der Tiefenregler im Spiel. Scheibe drehen, auf der Skala anklicken oder Mausrad; in Schritten von 0,25 m." + TorpRoomDe,
-                         "<b>Depth</b>\nThe torpedo's running depth, 1 to 14 m (red: can't be set). Applies to the next shot, like the game's depth control. Turn the dial, click the scale or use the mouse wheel; in 0.25 m steps." + TorpRoomEn);
+                return T("<b>Tiefe</b>\nLauftiefe des Torpedos, 1 bis 14 m (rot: nicht einstellbar). Gilt für den nächsten Schuss, wie der Tiefenregler im Spiel. Scheibe drehen, auf der Skala anklicken oder Mausrad; in Schritten von 0,25 m." + TypeUsageDe + TorpRoomDe,
+                         "<b>Depth</b>\nThe torpedo's running depth, 1 to 14 m (red: can't be set). Applies to the next shot, like the game's depth control. Turn the dial, click the scale or use the mouse wheel; in 0.25 m steps." + TypeUsageEn + TorpRoomEn);
             }
         }
 
@@ -787,12 +787,39 @@ namespace ScopeTdcControls
         public static string DialDistance { get { return T("ENTFERNUNG", "TARGET DISTANCE"); } }
         public static string DialLength { get { return T("STREUBREITE", "TARGET LENGTH"); } }
 
+        // ---- typing a value into a dial's readout ----
+        public static string TypeValuePlaceholder { get { return T("Wert eintippen", "type a value"); } }
+        /// <summary>The readout's pop-up; {0} = what may be typed.</summary>
+        public static string TipTypeValue
+        {
+            get
+            {
+                return T("<b>Wert eintippen</b>\nKlicken und {0} eintippen.\nEnter = einstellen, Esc = abbrechen. Werte außerhalb des Bereichs werden abgewiesen; die Scheibe bleibt dann, wie sie war.",
+                         "<b>Type a value</b>\nClick and type {0}.\nEnter = set, Esc = cancel. A value out of range is refused, and the dial stays as it was.");
+            }
+        }
+        public static string RangeAob { get { return T("-180..180 (+ Stb, - Bb)", "-180..180 (+ stbd, - port)"); } }
+        public static string TypeAob { get { return T("einen Lagewinkel von -180 bis 180: positiv = Steuerbord, negativ = Backbord (30 = Stb 030°, -30 = Bb 030°)", "an angle on bow from -180 to 180: positive = starboard, negative = port (30 = Stbd 030°, -30 = Port 030°)"); } }
+        public static string RangeSpeed { get { return T("0..55 kn", "0..55 kn"); } }
+        public static string TypeSpeed { get { return T("eine Gegnerfahrt von 0 bis 55 kn", "a target speed from 0 to 55 kn"); } }
+        public static string RangeDistance { get { return T("3..100 hm", "3..100 hm"); } }
+        public static string TypeDistance { get { return T("eine Entfernung von 300 bis 10000 m: 4500, 45 hm oder 4,5 km (eine Zahl ohne Einheit unter 300 gilt als hm)", "a distance from 300 to 10000 m: 4500, 45 hm or 4.5 km (a bare number under 300 is hm)"); } }
+        public static string RangeAngle360 { get { return T("0..360°", "0..360°"); } }
+        public static string TypeGyro { get { return T("einen Schusswinkel von 0 bis 360°", "a gyro angle from 0 to 360°"); } }
+        public static string TypeBearing { get { return T("eine Zielpeilung von 0 bis 360°", "a target bearing from 0 to 360°"); } }
+        public static string RangeSpread { get { return T("0..20°", "0..20°"); } }
+        public static string TypeSpread { get { return T("einen Streuwinkel von 0 bis 20°", "a spread angle from 0 to 20°"); } }
+        public static string RangeLength { get { return T("100..200 m", "100..200 m"); } }
+        public static string TypeLength { get { return T("eine Streubreite (Ziellänge) von 100 bis 200 m", "a target length from 100 to 200 m"); } }
+        public static string RangeDepth { get { return T("1..14 m", "1..14 m"); } }
+        public static string TypeDepth { get { return T("eine Lauftiefe von 1 bis 14 m (auf Viertelmeter gerundet)", "a running depth from 1 to 14 m (rounded to quarter metres)"); } }
+
         public static string TipDialLength
         {
             get
             {
-                return T("<b>Streubreite</b>\nLänge des Ziels (100 bis 200 m), wie die Streubreite-Scheibe am Vorhaltrechner. Daraus und aus der Entfernung errechnet der Rechner den Streuwinkel für einen Fächer. Mausrad: 1 m." + DialUsageDe,
-                         "<b>Target length</b>\nThe target's length (100 to 200 m), as on the TDC's target length (Streubreite) dial. With the distance, the TDC works out the spread angle for a salvo from it. Mouse wheel: 1 m." + DialUsageEn);
+                return T("<b>Streubreite</b>\nLänge des Ziels (100 bis 200 m), wie die Streubreite-Scheibe am Vorhaltrechner. Daraus und aus der Entfernung errechnet der Rechner den Streuwinkel für einen Fächer. Mausrad: 1 m." + DialUsageDe + TypeUsageDe,
+                         "<b>Target length</b>\nThe target's length (100 to 200 m), as on the TDC's target length (Streubreite) dial. With the distance, the TDC works out the spread angle for a salvo from it. Mouse wheel: 1 m." + DialUsageEn + TypeUsageEn);
             }
         }
 
@@ -803,8 +830,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Streuwinkel</b>\nMessingzeiger: der Fächerwinkel, den der Rechner aus Streubreite und Entfernung errechnet (0 bis 20 Grad). Rote Fahne: der eingestellte Winkel, der an die Rohre geht; die Anzeige darunter.\nScheibe drehen, auf der Skala anklicken oder Mausrad (0,5 Grad), um die Fahne zu stellen. Bei eingeschaltetem Streuwinkelmotor fährt der Rechner die Fahne selbst auf den errechneten Winkel.",
-                         "<b>Spread angle</b>\nBrass needle: the salvo spread angle the TDC works out from the target length and distance (0 to 20 degrees). Red flag: the angle set, which goes to the tubes; the readout shows it.\nTurn the dial, click the scale or use the mouse wheel (0.5°) to move the flag. With the spread motor on, the TDC drives the flag to the computed angle itself.");
+                return T("<b>Streuwinkel</b>\nMessingzeiger: der Fächerwinkel, den der Rechner aus Streubreite und Entfernung errechnet (0 bis 20 Grad). Rote Fahne: der eingestellte Winkel, der an die Rohre geht; die Anzeige darunter.\nScheibe drehen, auf der Skala anklicken oder Mausrad (0,5 Grad), um die Fahne zu stellen. Bei eingeschaltetem Streuwinkelmotor fährt der Rechner die Fahne selbst auf den errechneten Winkel." + TypeUsageDe,
+                         "<b>Spread angle</b>\nBrass needle: the salvo spread angle the TDC works out from the target length and distance (0 to 20 degrees). Red flag: the angle set, which goes to the tubes; the readout shows it.\nTurn the dial, click the scale or use the mouse wheel (0.5°) to move the flag. With the spread motor on, the TDC drives the flag to the computed angle itself." + TypeUsageEn);
             }
         }
 
@@ -941,13 +968,15 @@ namespace ScopeTdcControls
 
         const string DialUsageDe = "\nZum Einstellen die Scheibe greifen und um ihre Mitte drehen, wie am Rechner, oder einen Wert auf der Skala anklicken. Umschalt = 10x feiner, Mausrad = in Schritten.";
         const string DialUsageEn = "\nGrab the dial and turn it around its centre, like on the TDC, or click a value on the scale. Shift = 10x finer, mouse wheel = steps.";
+        const string TypeUsageDe = "\nOder das Wertfeld darunter anklicken und den Wert eintippen.";
+        const string TypeUsageEn = "\nOr click the value box below it and type the value.";
 
         public static string TipDialAob
         {
             get
             {
-                return T("<b>Lage</b>\nLagewinkel des Ziels, wie die Lage-Scheibe am Vorhaltrechner: 0 = Bug auf uns zu, 180 = Heck. Steuerbordhälfte grün, Backbordhälfte rot; im Fenster unten die Einer (grün Steuerbord, rot Backbord). Der Rechner folgt der Scheibe sofort beim Drehen. Gesperrt, solange die Sperre ausgelöst ist. Mausrad: 1°." + DialUsageDe,
-                         "<b>AOB</b>\nThe target's angle on the bow, as on the TDC's AOB dial: 0 = bow on, 180 = stern on. Starboard half green, port half red; the window at the bottom shows the ones digit (green starboard, red port). The TDC follows the dial as you turn it. Locked while the locking mechanism is triggered. Mouse wheel: 1°." + DialUsageEn);
+                return T("<b>Lage</b>\nLagewinkel des Ziels, wie die Lage-Scheibe am Vorhaltrechner: 0 = Bug auf uns zu, 180 = Heck. Steuerbordhälfte grün, Backbordhälfte rot; im Fenster unten die Einer (grün Steuerbord, rot Backbord). Der Rechner folgt der Scheibe sofort beim Drehen. Gesperrt, solange die Sperre ausgelöst ist. Mausrad: 1°." + DialUsageDe + TypeUsageDe,
+                         "<b>AOB</b>\nThe target's angle on the bow, as on the TDC's AOB dial: 0 = bow on, 180 = stern on. Starboard half green, port half red; the window at the bottom shows the ones digit (green starboard, red port). The TDC follows the dial as you turn it. Locked while the locking mechanism is triggered. Mouse wheel: 1°." + DialUsageEn + TypeUsageEn);
             }
         }
 
@@ -955,8 +984,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Gegnerfahrt</b>\nFahrt des Ziels in Knoten (0 bis 55), wie die Gegnerfahrt-Scheibe am Vorhaltrechner. Mausrad: 0,5 kn." + DialUsageDe,
-                         "<b>Target speed</b>\nThe target's speed in knots (0 to 55), as on the TDC's speed dial. Mouse wheel: 0.5 kn." + DialUsageEn);
+                return T("<b>Gegnerfahrt</b>\nFahrt des Ziels in Knoten (0 bis 55), wie die Gegnerfahrt-Scheibe am Vorhaltrechner. Mausrad: 0,5 kn." + DialUsageDe + TypeUsageDe,
+                         "<b>Target speed</b>\nThe target's speed in knots (0 to 55), as on the TDC's speed dial. Mouse wheel: 0.5 kn." + DialUsageEn + TypeUsageEn);
             }
         }
 
@@ -964,8 +993,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Entfernung</b>\nEntfernung zum Ziel (3 bis 100 hm, also 300 m bis 10 km), wie die Entfernungs-Scheibe am Vorhaltrechner. Mausrad: 100 m." + DialUsageDe,
-                         "<b>Target distance</b>\nRange to the target (3 to 100 hm, i.e. 300 m to 10 km), as on the TDC's range dial. Mouse wheel: 100 m." + DialUsageEn);
+                return T("<b>Entfernung</b>\nEntfernung zum Ziel (3 bis 100 hm, also 300 m bis 10 km), wie die Entfernungs-Scheibe am Vorhaltrechner. Mausrad: 100 m." + DialUsageDe + TypeUsageDe,
+                         "<b>Target distance</b>\nRange to the target (3 to 100 hm, i.e. 300 m to 10 km), as on the TDC's range dial. Mouse wheel: 100 m." + DialUsageEn + TypeUsageEn);
             }
         }
 

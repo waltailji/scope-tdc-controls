@@ -61,6 +61,7 @@ namespace ScopeTdcControls
             float row = y;
             float yCoarse = AddDial(font, x0, row, inner, Strings.DialGyroCoarse, () => Strings.TipDialGyroCoarse, GyroDialSpec(SternGroup, false),
                                     (spec, f) => DrawBearingCoarseScale(spec, f), "", sternSetPanel, sternSetDials);
+            AddTypedEntry(sternSetDials[sternSetDials.Count - 1], font, ParseTypedAngle, () => Strings.RangeAngle360, () => Strings.TypeGyro);
             float yFine = AddDial(font, x0 + col, row, inner, Strings.DialGyroFine, () => Strings.TipDialGyroFine, GyroDialSpec(SternGroup, true),
                                   (spec, f) => DrawBearingFineScale(spec, f), "", sternSetPanel, sternSetDials);
             sternSetDials[sternSetDials.Count - 1].Readout.transform.parent.gameObject.SetActive(false); // one readout, under the coarse dial

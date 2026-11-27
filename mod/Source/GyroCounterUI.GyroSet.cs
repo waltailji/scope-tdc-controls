@@ -92,6 +92,7 @@ namespace ScopeTdcControls
 
             float yCoarse = AddDial(font, x0 + col, row, inner, Strings.DialGyroCoarse, () => Strings.TipDialGyroCoarse, GyroDialSpec(BowGroup, false),
                                     (spec, f) => DrawBearingCoarseScale(spec, f), "", gyroSetPanel, gyroSetDials);
+            AddTypedEntry(gyroSetDials[gyroSetDials.Count - 1], font, ParseTypedAngle, () => Strings.RangeAngle360, () => Strings.TypeGyro);
 
             float ySpread = AddDial(font, x0, row, inner, Strings.DialGroupSpread, () => Strings.TipDialGroupSpread, new DialSpec
             {
@@ -104,6 +105,7 @@ namespace ScopeTdcControls
                 WheelStep = -0.5f,
                 Format = v => v.ToString("0.0", CultureInfo.InvariantCulture) + "°"
             }, (spec, f) => DrawSpreadAngleScale(spec, f), "", gyroSetPanel, gyroSetDials);
+            AddTypedEntry(gyroSetDials[gyroSetDials.Count - 1], font, TypedNumber(0f, GroupSpreadMax, 0.1f), () => Strings.RangeSpread, () => Strings.TypeSpread);
             BuildFastSyncLever(font, x0 + col * 3f, FastSyncColW, row);
             y = Mathf.Min(yFine, Mathf.Min(yCoarse, ySpread));
 

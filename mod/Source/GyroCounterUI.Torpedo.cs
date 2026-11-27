@@ -308,6 +308,7 @@ namespace ScopeTdcControls
             y -= ControlH + ReadoutGap;
 
             depthSpec.Readout = ReadoutBox(torpedoPanel, font, x + inner * 0.5f, y);
+            AddTypedEntry(depthSpec, font, TypedNumber(DepthMin, DepthMax, DepthStep, "m"), () => Strings.RangeDepth, () => Strings.TypeDepth);
         }
 
         static readonly Dictionary<string, Sprite> arcSprites = new Dictionary<string, Sprite>();

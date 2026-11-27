@@ -187,6 +187,7 @@ namespace ScopeTdcControls
                 WheelStep = 1f,
                 Format = FormatAob
             }, (spec, f) => DrawAobScale(spec, f), "");
+            AddTypedEntry(dials[dials.Count - 1], font, ParseTypedAob, () => Strings.RangeAob, () => Strings.TypeAob);
 
             // AOB motor (Lagenwinkelmotor): on = the TDC keeps the AOB in step with own course and
             // bearing changes (needed for AOB tracking). Only on a TDC that has the switch (the
@@ -209,6 +210,7 @@ namespace ScopeTdcControls
                 WheelStep = -0.5f,   // wheel toward you = more, like turning the dial clockwise
                 Format = v => v.ToString("0.0", CultureInfo.InvariantCulture) + " " + Strings.UnitKnots
             }, (spec, f) => DrawSpeedScale(spec, f), Strings.UnitKnots);
+            AddTypedEntry(dials[dials.Count - 1], font, TypedNumber(0f, 55f, 0.1f, "knots", "kts", "kn", "kt"), () => Strings.RangeSpeed, () => Strings.TypeSpeed);
 
             // target distance: 3..100 hm on the real dial's stretched scale
             float[] hm, rot;
@@ -235,6 +237,7 @@ namespace ScopeTdcControls
                 RoundTo = 10f,      // drag and click: to the nearest 10 m
                 Format = v => Mathf.RoundToInt(v).ToString(CultureInfo.InvariantCulture) + " m"
             }, (spec, f) => DrawDistanceScale(spec, f), ""); // "hm" is printed on the rim
+            AddTypedEntry(dials[dials.Count - 1], font, ParseTypedDistance, () => Strings.RangeDistance, () => Strings.TypeDistance);
             // target length: in the salvo spread window (GyroCounterUI.Spread.cs)
 
             // own angular speed: its own window beside the TDC dials (GyroCounterUI.TurnRate.cs)

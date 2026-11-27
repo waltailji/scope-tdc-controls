@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.5.4 (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.5.5 (UBOAT 2026.1 patch 21)
 ===================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -65,6 +65,16 @@ exact value.
   distance dial sets it to the nearest 10 m. Ctrl+drag moves the window. Greyed out
   and locked while the TDC is not manned. Shown or hidden with the
   Rechnerscheiben (TDC dials) check box on the control panel.
+  Typing a value: click the black readout under a dial, type the value and
+  press Enter (Esc cancels). AOB -180 to 180 (+ starboard, - port), speed
+  0-55 kn, distance 300-10000 m ("4500", "45 hm", "4.5 km"; a bare number
+  under 300 is hm). The same works on the target length (100-200 m), spread
+  angle (0-20°), bow and stern gyro coarse dials and the bow spread angle
+  (0-360° / 0-20°), the TDC target bearing coarse dial (0-360°) and the
+  torpedo depth (1-14 m, in quarter metres). A value out of range is refused
+  and the dial stays as it was: after Enter the box stays open showing the
+  range in red; clicking away flashes the readout red. The game's keys and
+  the mod's hotkey hold off while you type.
 
 Salvo spread (Fächer): a window just right of the TDC dials, stacked:
   Target length  STREUBREITE, 100-200 m, like the TDC's dial: the numbers are
@@ -195,6 +205,10 @@ game's raise/lower control and these buttons; the keys still raise and lower
 the periscope.
 
 Version history
+  1.5.5 Type values into the dials' readouts (from the Contact Keeper mod):
+       AOB, target speed, target distance, target length, spread angle, bow
+       gyro coarse and spread angle, stern gyro coarse, TDC target bearing
+       coarse and torpedo depth. Values are checked against each dial's range.
   1.5.4 The gyro angle counters keep their spot: placed under the bearing
        tape once, on first start, they no longer follow it (or another
        compass on screen) around. Ctrl+drag still moves them. With the
