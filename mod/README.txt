@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.6.0 (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.6.1 (UBOAT 2026.1 patch 21)
 ===================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -154,6 +154,9 @@ Torpedo tubes (Rohranzeige): a compact window, by default above the bottom
   the crew won't reload it until you shut the door (right-click, Shut outer
   door, 3 s) and drain it (double-click or right-click, Drain). No tube can be
   drained with its door open, here, on the game's torpedo panel or by the crew.
+  With the doors already open, a fire command (the launch lever or the game's
+  fire key) launches the first torpedo after 0.25 s instead of the game's
+  1.5 s; the 4 s between salvo tubes is unchanged.
   The door state isn't saved with the game: after loading, all doors are shut.
   The game's own fire key skips a selected tube whose door isn't fully open
   (the others still fire). Fired by the crew at the lever in the torpedo room
@@ -198,10 +201,10 @@ Launch lever (T-Abf.-Schalter): a narrow window at the bottom right with a
                outer door not fully open
              - the gyro angle receiver not on the selected tubes' end
                (Bug for bow tubes, Heck for stern tubes)
-             - the set distance beyond the torpedo's run: the TDC's "max
-               distance to target" drum (its geometry ratio x the torpedo
-               range on its range knob) - how the watch officer made the
-               system safe
+             - the set distance beyond the selected torpedoes' run: each
+               torpedo's own run at its set speed (the shortest one), times
+               the geometry ratio of the TDC's "max distance to target"
+               drum - how the watch officer made the system safe
              - the gyro angle past the gyro setting gear's ±135° stop,
                measured from the tube axis (0° bow tubes, 180° stern tubes)
     amber  firing
@@ -221,6 +224,13 @@ game's raise/lower control and these buttons; the keys still raise and lower
 the periscope.
 
 Version history
+  1.6.1 Launch lever range check: uses the selected torpedoes' own run at
+       their set speed (the shortest one), as the game's salvo preview does,
+       instead of the TDC's range knob (5000 m unless turned), which could
+       hold the lever red on targets well within a torpedo's run, or let it
+       fire past a short-ranged one.
+       With enhanced torpedo tube handling, the wait between a fire command
+       and the first launch is 0.25 s instead of 1.5 s.
   1.6.0 Torpedo tube outer doors: right-click a flooded tube to open its door
        (3 s, the tube's door opens on the boat) or shut it. The launch lever
        and each tube's own lever fire only with the door fully open, and the

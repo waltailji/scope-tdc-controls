@@ -197,13 +197,16 @@ namespace ScopeTdcControls
             ready = ok.ToString();
             if (wrongEnd != null) return string.Format(Strings.LeverWrongReceiver, wrongEnd);
 
-            // target beyond the torpedo's run: the TDC's "max distance to target" drum
-            // (MaxDistanceToTargetRatio x the torpedo range set on its range knob)
+            // target beyond the torpedo's run: the TDC's geometry ratio (its "max distance to
+            // target" drum) x the shortest run among the selected torpedoes at their set speed.
+            // (Not the TDC's range knob, which stays wherever it was turned - 5000 m by default.)
             var tdc = Tdc();
-            if (tdc != null && tdc.TorpedoRange > 0)
+            float run = SelectedTorpedoRun(ship);
+            if (tdc != null && run > 0f)
             {
-                float max = tdc.MaxDistanceToTargetRatio * tdc.TorpedoRange;
-                if (max > 0f && tdc.DistanceToTarget > max)
+                float ratio = tdc.MaxDistanceToTargetRatio > 0f ? tdc.MaxDistanceToTargetRatio : 1f;
+                float max = ratio * run;
+                if (tdc.DistanceToTarget > max)
                     return string.Format(Strings.LeverOutOfRange, Mathf.RoundToInt(max));
             }
 
@@ -220,6 +223,38 @@ namespace ScopeTdcControls
         }
 
         const float MaxGyroAngle = 135f; // the gyro setting gear stops at ±135° from the tube axis
+
+        /// <summary>
+        /// The shortest run (m) among the selected tubes' torpedoes, each at its set speed, as
+        /// the game's salvo preview works it out (TorpedoSalvoPreviewUI.DetermineMaxRange): the
+        /// speed clamped to the torpedo's slowest..fastest setting, then the run of the nearest
+        /// setting (Range1/2/3 for Speed1/2/3). With the Torpedo Room mod, each torpedo's own
+        /// speed. 0 = no torpedo with a known run.
+        /// </summary>
+        static float SelectedTorpedoRun(PlayerShip ship)
+        {
+            var tubes = ship != null ? ship.TorpedoLaunchers : null;
+            if (tubes == null) return 0f;
+            float setSpeed = ship.TorpedoAttackSettings != null ? ship.TorpedoAttackSettings.TorpedoSpeed : 0f;
+            float shortest = 0f;
+            foreach (var t in tubes)
+            {
+                if (t == null || !t.IsMarkedForLaunch) continue;
+                var st = t.Torpedo;
+                if (st == null) continue;
+                try
+                {
+                    float speed;
+                    if (!TorpedoRoomLink.TryGetSpeed(st, out speed)) speed = setSpeed;
+                    speed = Mathf.Clamp(speed, (float)st.Speed3, (float)st.Speed1);
+                    int i = st.FindSpeedPresetIndex(speed);
+                    float run = i == 0 ? (float)st.Range1 : i == 1 ? (float)st.Range2 : (float)st.Range3;
+                    if (run > 0f && (shortest <= 0f || run < shortest)) shortest = run;
+                }
+                catch { }
+            }
+            return shortest;
+        }
 
         /// <summary>
         /// The firing station switch (T.Abf. Schalter) powers the lever: on Brücke or
