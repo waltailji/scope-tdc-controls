@@ -1,6 +1,6 @@
 {
   "name": "Scope TDC Controls",
-  "version": "1.5.5",
+  "version": "1.6.0",
   "description": "SH3-style TDC readouts and controls in the periscope and UZO views. Rolling drum counters for the TDC gyro angle (Schusswinkel), the parallax correction and the bow/stern tubes' set gyro angles, with a gyro-set lamp. A panel beside the periscope raise/lower control switches bearing follow-up (Folgen / Nicht folgen), the bearing source (None / UZO / Observation / Attack), the gyro receiver (Aus / Bug / Heck) and the parallax direction, and has options for faster TDC and gyro motors. Fixes the torpedo panel forcing the receiver to Bow. German or English to match the game, pop-up descriptions, Ctrl+drag to reposition.",
   "author": "CrzyDmnd",
   "supportedGameVersions": [

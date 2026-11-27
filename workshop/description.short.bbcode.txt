@@ -54,8 +54,9 @@ Pops up for spreads (or always, with its check box), anchored beside the TDC dia
 Optional TDC rate-of-turn knob (-3 to 3 deg/s) for firing while turning; pops up for a salvo in a turn, on boats whose TDC has it.
 
 [h2]Torpedo tubes[/h2]
-SH3-style tube statuses, fore and aft rows: black = empty, grey = loaded, yellow = maintenance, blue = flooded, green = selected.
-Click to select, double-click to flood or drain, right-click for Flood / Drain, Select and Launch; Ctrl+click fires a tube with its own launch lever.
+SH3-style tube statuses, fore and aft rows: black = empty, grey = loaded, yellow = maintenance, blue = flooded, green = selected, red = firing.
+Click to select, double-click to flood or drain, right-click for Flood / Drain, outer door, Select and Launch; Ctrl+click fires a tube with its own launch lever.
+[b]Outer doors[/b]: open a flooded tube's door by hand (3 s, grey + swept away); tubes fire only with the door open, then stay flooded and empty (grey X) until you shut the door and drain them.
 
 [h2]Torpedo settings[/h2]
 SH3-style torpedo settings window when a tube is selected:
@@ -86,6 +87,7 @@ Buttons above and below the stock periscope control run the scope fully up or do
 [*][b]Auto set gyro receiver[/b] - follows the checked, flooded tubes
 [*][b]Auto set parallax mode[/b] - follows tube, receiver or scope direction
 [*][b]Auto select tube when flooding[/b]
+[*][b]Enhanced torpedo tube handling[/b] - outer doors (above); off = base game
 [*][b]Auto display spread settings[/b], [b]Tint panels with sub lighting[/b]
 [*][b]Realistic TDC follower / receiver sync[/b] - off = 10x faster TDC and gyros
 [*][b]TDC operator required[/b] - off = use the TDC unmanned

@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.5.5 (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.6.0 (UBOAT 2026.1 patch 21)
 ===================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -143,7 +143,21 @@ Torpedo tubes (Rohranzeige): a compact window, by default above the bottom
   first row (Bug / Fore), stern tubes on the second (Heck / Aft), as many as your boat
   has. Colours: black = empty (or loading), grey = loaded, not flooded, yellow =
   in maintenance (the crew servicing the torpedo), blue =
-  flooded (filling while it floods), green = flooded and selected.
+  flooded (filling while it floods), green = flooded and selected, red =
+  firing (for 4 seconds after its torpedo leaves).
+  Outer doors (setting "Enhanced torpedo tube handling", on by default): a grey +
+  across a flooded tube = its outer door is shut. Right-click a flooded tube,
+  Open outer door: the door opens in 3 seconds (the + is swept away and the
+  tube's door opens on the boat) and stays open. A tube fires only with its
+  door fully open. After the shot the tube stays flooded and empty with its
+  door open: blue with a grey X. The game no longer treats it as dry at once:
+  the crew won't reload it until you shut the door (right-click, Shut outer
+  door, 3 s) and drain it (double-click or right-click, Drain). No tube can be
+  drained with its door open, here, on the game's torpedo panel or by the crew.
+  The door state isn't saved with the game: after loading, all doors are shut.
+  The game's own fire key skips a selected tube whose door isn't fully open
+  (the others still fire). Fired by the crew at the lever in the torpedo room
+  with the door shut, the tube still fires and its door counts as open after.
   Click a flooded tube to select it for a single shot: the Einzelschuss switch
   turns to it and Faecherschuss to Aus, as on the switch box (not while the
   firing circuit lamp is lit). Double-click a loaded tube to flood it, or to
@@ -174,12 +188,14 @@ Launch lever (T-Abf.-Schalter): a narrow window at the bottom right with a
   it stays down while the mouse button is held and springs back when you let
   go. It fires through the boat's own launch lever (which moves
   along), with the same checks: not while torpedoes are being launched, and
-  every checked tube must be flooded.
+  every checked tube must be flooded; with outer doors, every checked tube's
+  door must also be fully open (for a salvo, all of them).
   Ready lamp under the slot (hover it for what it shows right now and why):
     green  ready
     red    safe - the lever does not fire (stricter than the boat's own
            lever, which only refuses while launching or with a dry tube):
-             - no tube selected, or a selected tube not flooded
+             - no tube selected, or a selected tube not flooded or its
+               outer door not fully open
              - the gyro angle receiver not on the selected tubes' end
                (Bug for bow tubes, Heck for stern tubes)
              - the set distance beyond the torpedo's run: the TDC's "max
@@ -205,6 +221,16 @@ game's raise/lower control and these buttons; the keys still raise and lower
 the periscope.
 
 Version history
+  1.6.0 Torpedo tube outer doors: right-click a flooded tube to open its door
+       (3 s, the tube's door opens on the boat) or shut it. The launch lever
+       and each tube's own lever fire only with the door fully open, and the
+       game's fire key skips a tube whose door isn't open. After a
+       shot the tube stays flooded and empty, door open, until you shut and
+       drain it; the crew reloads it only then. Tube indicator: red while
+       firing, a grey + for a shut door, a grey X for a fired tube still
+       flooded. New setting "Enhanced torpedo tube handling" (on by default).
+       The settings drop-down is more compact and scrolls (mouse wheel or
+       its scroll bar) when it doesn't fit on the screen.
   1.5.5 Type values into the dials' readouts (from the Contact Keeper mod):
        AOB, target speed, target distance, target length, spread angle, bow
        gyro coarse and spread angle, stern gyro coarse, TDC target bearing

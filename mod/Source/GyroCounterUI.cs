@@ -103,6 +103,9 @@ namespace ScopeTdcControls
         Btn btnSettings;
         Btn btnFollow, btnNoFollow, btnResetSizes;
         RectTransform settingsPanel;      // drop-down under the control panel
+        RectTransform settingsContent;    // its rows, scrolled inside the drop-down
+        const float SetRowH = 17f, SetRowGap = 1f; // the drop-down's rows: tighter than the control panel's
+        float checkRowH = RowH, checkRowGap = RowGap;
         bool settingsOpen;
         readonly List<Check> checks = new List<Check>();
         readonly List<Check> windowChecks = new List<Check>(); // the WINDOWS check boxes, always on the panel
@@ -310,6 +313,7 @@ namespace ScopeTdcControls
             btnHotkey = null;
             capturingKey = false;
             settingsPanel = null; // destroyed with controlsPanel
+            settingsContent = null;
             checks.Clear();
             windowChecks.Clear();
             pendingTip = null;
@@ -933,8 +937,21 @@ namespace ScopeTdcControls
         {
             settingsPanel = NewRect("GyroSettings", controlsPanel);
             Frame(settingsPanel, true);
+            settingsPanel.gameObject.AddComponent<WheelGuard>(); // the wheel scrolls the list, not the scope
 
-            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptAutoSpread, Strings.OptKeepScopeBearing, Strings.OptTrueOnBinoculars, Strings.OptHideStockElevator, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag, Strings.HotkeyPress, Strings.HotkeyPrefix + "RightControl" };
+            // the rows sit in a content rect inside a clipping viewport; the drop-down is cut to
+            // fit the screen below the control panel and scrolls (SettingsScroller)
+            var view = NewRect("View", settingsPanel);
+            view.anchorMin = Vector2.zero; view.anchorMax = Vector2.one;
+            view.offsetMin = view.offsetMax = Vector2.zero;
+            view.gameObject.AddComponent<RectMask2D>();
+            settingsContent = NewRect("Content", view);
+            settingsContent.anchorMin = new Vector2(0f, 1f); settingsContent.anchorMax = new Vector2(1f, 1f);
+            settingsContent.pivot = new Vector2(0.5f, 1f);
+            settingsContent.anchoredPosition = Vector2.zero;
+            checkRowH = SetRowH; checkRowGap = SetRowGap;
+
+            string[] labels = { Strings.OptShowReceiver, Strings.OptActiveReceiverOnly, Strings.OptShowParallax, Strings.OptAutoReceiver, Strings.OptAutoParallax, Strings.OptAutoSelectTube, Strings.OptEnhancedTubes, Strings.OptAutoSpread, Strings.OptKeepScopeBearing, Strings.OptTrueOnBinoculars, Strings.OptHideStockElevator, Strings.OptTintPanels, Strings.OptRealisticTdc, Strings.OptRealisticSync, Strings.OptRealisticFire, Strings.OptTdcOperator, Strings.OptVoiceCallouts, Strings.OptCtrlDrag, Strings.HotkeyPress, Strings.HotkeyPrefix + "RightControl" };
             float inner = 0f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 26f);
 
@@ -968,6 +985,10 @@ namespace ScopeTdcControls
                 () => GyroConfig.AutoSelectFloodedTube,
                 v => { GyroConfig.AutoSelectFloodedTube = v; GyroConfig.Save("AutoSelectFloodedTube", v); },
                 () => Strings.TipOptAutoSelectTube);
+            MakeCheck(font, Strings.OptEnhancedTubes, ref y, inner,
+                () => GyroConfig.EnhancedTubeHandling,
+                v => { GyroConfig.EnhancedTubeHandling = v; GyroConfig.Save("EnhancedTubeHandling", v); },
+                () => Strings.TipOptEnhancedTubes);
             MakeCheck(font, Strings.OptAutoSpread, ref y, inner,
                 () => GyroConfig.AutoSpread,
                 v => { GyroConfig.AutoSpread = v; GyroConfig.Save("AutoSpread", v); HideTip(); },
@@ -1014,23 +1035,39 @@ namespace ScopeTdcControls
                 () => Strings.TipOptCtrlDrag);
             // the show / hide hotkey: click, then press a key (Backspace / Delete = none, Esc = cancel)
             capturingKey = false;
-            btnHotkey = MakeButton(settingsPanel, font, HotkeyLabel(), ref y, inner, () =>
+            btnHotkey = MakeButton(settingsContent, font, HotkeyLabel(), ref y, inner, () =>
             {
                 capturingKey = !capturingKey;
                 HideTip();
                 if (btnHotkey != null) btnHotkey.Label.text = HotkeyLabel();
             }, () => Strings.TipHotkey);
 
-            settingsPanel.sizeDelta = new Vector2(inner + CPad * 2f, -y + CPad - RowGap);
+            checkRowH = RowH; checkRowGap = RowGap;
+            float fullH = -y + CPad - RowGap;
+            settingsContent.sizeDelta = new Vector2(0f, fullH);
+            settingsPanel.sizeDelta = new Vector2(inner + CPad * 2f, fullH);
+
+            var bar = NewRect("ScrollBar", settingsPanel); // a thin thumb in the right padding
+            bar.anchorMin = bar.anchorMax = bar.pivot = new Vector2(1f, 1f);
+            var barImg = bar.gameObject.AddComponent<Image>();
+            barImg.color = new Color(DialScale.r, DialScale.g, DialScale.b, 0.55f);
+            barImg.raycastTarget = true;
+            var scroller = settingsPanel.gameObject.AddComponent<SettingsScroller>();
+            scroller.Content = settingsContent;
+            scroller.Thumb = bar;
+            scroller.FullH = fullH;
+            scroller.MinH = (SetRowH + SetRowGap) * 5f + CPad * 2f;
+            scroller.Step = (SetRowH + SetRowGap) * 2f;
+            bar.gameObject.AddComponent<SettingsThumbDrag>().Scroller = scroller;
             settingsPanel.gameObject.SetActive(settingsOpen);
         }
 
         void MakeCheck(TMP_FontAsset font, string text, ref float y, float width, Func<bool> get, Action<bool> set, Func<string> tip,
                        RectTransform parent = null, List<Check> list = null, Func<bool> enabled = null)
         {
-            var row = NewRect("Opt_" + text, parent != null ? parent : settingsPanel);
-            PlaceV(row, CPad, y, width, RowH);
-            y -= RowH + RowGap;
+            var row = NewRect("Opt_" + text, parent != null ? parent : settingsContent != null ? settingsContent : settingsPanel);
+            PlaceV(row, CPad, y, width, checkRowH);
+            y -= checkRowH + checkRowGap;
 
             var bg = row.gameObject.AddComponent<Image>();
             bg.color = Color.clear;
@@ -1356,8 +1393,8 @@ namespace ScopeTdcControls
                        UnityEngine.Events.UnityAction onClick, Func<string> tip)
         {
             var r = NewRect("Btn_" + text, parent);
-            PlaceV(r, CPad, y, width, RowH);
-            y -= RowH + RowGap;
+            PlaceV(r, CPad, y, width, checkRowH);
+            y -= checkRowH + checkRowGap;
             return BuildButton(r, font, text, CtlFont, onClick, tip);
         }
 

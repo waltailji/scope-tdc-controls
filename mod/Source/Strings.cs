@@ -172,6 +172,17 @@ namespace ScopeTdcControls
             }
         }
 
+        public static string OptEnhancedTubes { get { return T("Erweiterte Torpedorohr-Bedienung", "Enhanced torpedo tube handling"); } }
+
+        public static string TipOptEnhancedTubes
+        {
+            get
+            {
+                return T("<b>Erweiterte Torpedorohr-Bedienung</b>\nAn: Die Mündungsklappe eines gefluteten Rohrs wird von Hand geöffnet (Rechtsklick auf das Rohr, 3 s). Ein Rohr feuert nur mit ganz geöffneter Klappe (auch die Feuertaste des Spiels überspringt es sonst). Nach dem Schuss bleibt das Rohr geflutet und leer, die Klappe offen; die Besatzung lädt es erst nach, wenn du die Klappe schließt und das Rohr lenzt. Mit offener Klappe kann nicht gelenzt werden. Der Klappenzustand wird nicht mit dem Spielstand gespeichert.\nAus: keine Mündungsklappen (wie im Spiel).",
+                         "<b>Enhanced torpedo tube handling</b>\nOn: a flooded tube's outer door is opened by hand (right-click the tube, 3 s). A tube fires only with its door fully open (the game's fire key skips it otherwise too). After the shot the tube stays flooded and empty with its door open; the crew reloads it only once you shut the door and drain it. A tube can't be drained with its door open. The door state isn't saved with the game.\nOff: no outer doors (base game).");
+            }
+        }
+
         public static string TipOptAutoReceiver
         {
             get
@@ -407,6 +418,7 @@ namespace ScopeTdcControls
         public static string LeverNoBoat { get { return T("Kein Boot", "No boat"); } }
         public static string LeverNotFlooded { get { return T("Rohr {0} nicht bewässert", "Tube {0} not flooded"); } }
         public static string LeverReady { get { return T("Bereit: Rohr {0}", "Ready: tube {0}"); } }
+        public static string LeverDoorShut { get { return T("Mündungsklappe Rohr {0} nicht ganz offen", "Tube {0} outer door not fully open"); } }
 
         public static string TipLever
         {
@@ -423,8 +435,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>grün</b> = bereit\n<b>rot</b> = gesichert, der Hebel feuert nicht:\n – kein Rohr gewählt oder ein gewähltes Rohr nicht bewässert\n – Schusswinkelempfänger nicht auf Bug/Heck der gewählten Rohre\n – Entfernung über der Laufstrecke des Torpedos (Trommel „größte Zielentfernung“ am Rechner) – so hat der WO die Anlage gesichert\n – Schusswinkel über dem Anschlag von ±135° (von der Rohrachse: 0° Bug, 180° Heck)\n<b>gelb</b> = feuert\n<b>dunkel</b> = kein Strom: T.Abf. Schalter auf Aus (Brücke oder Turm schaltet ein)",
-                         "<b>green</b> = ready\n<b>red</b> = safe, the lever does not fire:\n – no tube selected, or a selected tube not flooded\n – gyro angle receiver not on the selected tubes' end (bow/stern)\n – distance beyond the torpedo's run (the TDC's “max distance to target” drum) – how the watch officer made the system safe\n – gyro angle past the ±135° stop (from the tube axis: 0° bow, 180° stern)\n<b>amber</b> = firing\n<b>dark</b> = no power: firing station switch on Off (Bridge or Tower powers it)");
+                return T("<b>grün</b> = bereit\n<b>rot</b> = gesichert, der Hebel feuert nicht:\n – kein Rohr gewählt, ein gewähltes Rohr nicht bewässert oder seine Mündungsklappe nicht ganz offen\n – Schusswinkelempfänger nicht auf Bug/Heck der gewählten Rohre\n – Entfernung über der Laufstrecke des Torpedos (Trommel „größte Zielentfernung“ am Rechner) – so hat der WO die Anlage gesichert\n – Schusswinkel über dem Anschlag von ±135° (von der Rohrachse: 0° Bug, 180° Heck)\n<b>gelb</b> = feuert\n<b>dunkel</b> = kein Strom: T.Abf. Schalter auf Aus (Brücke oder Turm schaltet ein)",
+                         "<b>green</b> = ready\n<b>red</b> = safe, the lever does not fire:\n – no tube selected, or a selected tube not flooded or its outer door not fully open\n – gyro angle receiver not on the selected tubes' end (bow/stern)\n – distance beyond the torpedo's run (the TDC's “max distance to target” drum) – how the watch officer made the system safe\n – gyro angle past the ±135° stop (from the tube axis: 0° bow, 180° stern)\n<b>amber</b> = firing\n<b>dark</b> = no power: firing station switch on Off (Bridge or Tower powers it)");
             }
         }
 
@@ -620,8 +632,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Rohranzeige</b>\nEin kleines Fenster mit einem Kreis je Rohr (oben Bug, unten Heck): schwarz = leer, grau = geladen, blau = geflutet, grün = geflutet und gewählt. Klicken wählt ein geflutetes Rohr, Doppelklick flutet oder lenzt, Strg+Klick stößt mit dem Abfeuerhebel des Rohrs aus, Rechtsklick öffnet die Aktionen.",
-                         "<b>Torpedo tubes</b>\nA small window with one circle per tube (bow on top, stern below): black = empty, grey = loaded, blue = flooded, green = flooded and selected. Click selects a flooded tube, double-click floods or drains it, Ctrl+click launches it with its own launch lever, right-click opens its actions.");
+                return T("<b>Rohranzeige</b>\nEin kleines Fenster mit einem Kreis je Rohr (oben Bug, unten Heck): schwarz = leer, grau = geladen, blau = geflutet, grün = geflutet und gewählt, rot = Schuss (einige Sekunden nach dem Ausstoßen). Graues Kreuz (+) = Mündungsklappe zu (wird beim Öffnen weggewischt), graues X = Rohr leer, aber noch geflutet (nach dem Schuss). Klicken wählt ein geflutetes Rohr, Doppelklick flutet oder lenzt, Strg+Klick stößt mit dem Abfeuerhebel des Rohrs aus, Rechtsklick öffnet die Aktionen (auch Mündungsklappe öffnen und schließen).",
+                         "<b>Torpedo tubes</b>\nA small window with one circle per tube (bow on top, stern below): black = empty, grey = loaded, blue = flooded, green = flooded and selected, red = firing (a few seconds after the launch). Grey cross (+) = outer door shut (swept away as it opens), grey X = tube empty but still flooded (after a shot). Click selects a flooded tube, double-click floods or drains it, Ctrl+click launches it with its own launch lever, right-click opens its actions (including opening and shutting the outer door).");
             }
         }
         public static string TubesBowShort { get { return T("Bug", "Fore"); } }
@@ -635,6 +647,14 @@ namespace ScopeTdcControls
         public static string TubeMaintenance { get { return T("In Wartung (Torpedo wird gewartet)", "In maintenance (torpedo being serviced)"); } }
         public static string TubeFlooded { get { return T("Geladen und geflutet", "Loaded and flooded"); } }
         public static string TubeFloodedSelected { get { return T("Geladen, geflutet und gewählt", "Loaded, flooded and selected"); } }
+        public static string TubeFired { get { return T("Schuss – Torpedo läuft", "Fired – torpedo running"); } }
+        public static string TubeWetEmpty { get { return T("Leer, noch geflutet (lenzen vor dem Nachladen)", "Empty, still flooded (drain before reloading)"); } }
+        public static string TubeDoorLabel { get { return T("Mündungsklappe", "Outer door"); } }
+        public static string DoorShut { get { return T("zu", "shut"); } }
+        public static string DoorOpening { get { return T("öffnet …", "opening …"); } }
+        public static string DoorOpen { get { return T("offen", "open"); } }
+        public static string DoorClosing { get { return T("schließt …", "closing …"); } }
+        public static string TubeDrainDoorOpen { get { return T("Lenzen erst bei geschlossener Mündungsklappe", "Drain only with the outer door shut"); } }
         public static string TubeClickSelect { get { return T("Klicken: dieses Rohr für einen Einzelschuss wählen (Schusswahl folgt)", "Click: select this tube for a single shot (the firing selector follows)"); } }
         public static string TubeClickDeselect { get { return T("Klicken: Rohr abwählen (Einzelschuß auf Aus)", "Click: deselect this tube (launch mode switch to Off)"); } }
         public static string TubeClickNeedsFlood { get { return T("Klicken: wählbar, sobald das Rohr geflutet ist", "Click: selectable once the tube is flooded"); } }
@@ -648,6 +668,24 @@ namespace ScopeTdcControls
         public static string MenuDrain { get { return T("Lenzen", "Drain"); } }
         public static string MenuSelect { get { return T("Wählen", "Select"); } }
         public static string MenuLaunch { get { return T("Ausstoßen", "Launch"); } }
+        public static string MenuDoorOpen { get { return T("Mündungsklappe auf", "Open outer door"); } }
+        public static string MenuDoorClose { get { return T("Mündungsklappe zu", "Shut outer door"); } }
+        public static string TipMenuDoorOpen
+        {
+            get
+            {
+                return T("Die Mündungsklappe öffnen (3 s). Nur bei geflutetem Rohr. Gefeuert wird nur mit ganz geöffneter Klappe.",
+                         "Open the outer door (3 s). Flooded tubes only. The tube fires only with its door fully open.");
+            }
+        }
+        public static string TipMenuDoorClose
+        {
+            get
+            {
+                return T("Die Mündungsklappe schließen (3 s). Erst dann kann das Rohr gelenzt werden.",
+                         "Shut the outer door (3 s). Only then can the tube be drained.");
+            }
+        }
         public static string TipMenuFlood { get { return T("Das Rohr fluten (wie ein Doppelklick).", "Flood the tube (as a double-click does)."); } }
         public static string TipMenuDrain { get { return T("Das Rohr lenzen (wie ein Doppelklick).", "Drain the tube (as a double-click does)."); } }
         public static string TipMenuSelect
@@ -662,8 +700,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("Den Abfeuerhebel des Rohrs im Torpedoraum ziehen (auch Strg+Klick): der Torpedo läuft mit dem an der Rohrgruppe eingestellten Schusswinkel, ohne die Abfeueranlage. Nur bei geflutetem Rohr mit geschlossenem Rohrverschluss.",
-                         "Pull the tube's own launch lever in the torpedo room (also Ctrl+click): the torpedo runs on the gyro angle set on its tube group, without the bridge firing circuit. Only with the tube flooded and its breech door shut.");
+                return T("Den Abfeuerhebel des Rohrs im Torpedoraum ziehen (auch Strg+Klick): der Torpedo läuft mit dem an der Rohrgruppe eingestellten Schusswinkel, ohne die Abfeueranlage. Nur bei geflutetem Rohr mit geschlossenem Rohrverschluss und ganz geöffneter Mündungsklappe.",
+                         "Pull the tube's own launch lever in the torpedo room (also Ctrl+click): the torpedo runs on the gyro angle set on its tube group, without the bridge firing circuit. Only with the tube flooded, its breech door shut and its outer door fully open.");
             }
         }
         public static string TorpDepth { get { return T("TIEFE", "DEPTH"); } }

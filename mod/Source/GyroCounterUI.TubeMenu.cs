@@ -11,14 +11,15 @@ namespace ScopeTdcControls
     /// <summary>
     /// Torpedo tube actions on the tube indicator:
     ///  - right-click a tube: a small menu with
-    ///      Flood / Drain (whichever applies, as a double-click does),
+    ///      Flood / Drain (whichever applies, as a double-click does; drain only with the outer door shut),
+    ///      Open / Shut outer door (flooded tubes, TubeDoors.cs),
     ///      Select (flooded tubes; ticked while selected, as a single click does),
     ///      Launch (flooded tubes): pulls the tube's own launch lever in the torpedo room;
     ///  - Ctrl+click a tube: Launch straight away.
     /// The lever (TorpedoLauncherLaunchLever.Launch) fires that tube on its tube group's set gyro
     /// angle, with the torpedo depth and speed set, exactly as when the lever is pulled in the
     /// torpedo room; it doesn't go through the bridge firing circuit. Same checks as the game's
-    /// lever: the tube flooded and its breech door shut.
+    /// lever: the tube flooded and its breech door shut; and here also its outer door fully open.
     /// </summary>
     public partial class GyroCounterUI
     {
@@ -27,7 +28,7 @@ namespace ScopeTdcControls
         RectTransform tubeMenu, tubeMenuBlocker;
         TubeDot tubeMenuDot;
         TextMeshProUGUI tubeMenuTitle;
-        MenuItem menuFlood, menuSelect, menuLaunch;
+        MenuItem menuFlood, menuDoor, menuSelect, menuLaunch;
         readonly Dictionary<ExtendedTorpedoLauncher, TorpedoLauncherLaunchLever> tubeLevers = new Dictionary<ExtendedTorpedoLauncher, TorpedoLauncherLaunchLever>();
 
         sealed class MenuItem
@@ -43,17 +44,20 @@ namespace ScopeTdcControls
 
         static bool CanFlood(ExtendedTorpedoLauncher l)
         {
-            if (l == null || !TubeHasTorpedo(l) || TubeBusy(l.CurrentState)) return false;
+            if (l == null) return false;
+            if (TubeDoors.WetEmpty(l)) return TubeDoors.CanDrainEmpty(l); // fired: drain once the door is shut
+            if (!TubeHasTorpedo(l) || TubeBusy(l.CurrentState)) return false;
             var s = l.CurrentState;
             if (s != TorpedoLauncher.State.Loaded && s != TorpedoLauncher.State.Flooded && s != TorpedoLauncher.State.Flooding) return false;
             bool flooding = !(!l.IsFlooded && l.FloodingProgress == 0f);
             if (!flooding && l.Group != null && l.Group.HasDisableFlag((DeviceDisableFlag)1)) return false; // tube group damaged
+            if (flooding && !TubeDoors.DoorShut(l)) return false; // no draining with the outer door open
             return true;
         }
 
         static bool WillDrain(ExtendedTorpedoLauncher l)
         {
-            return l != null && (l.IsFlooded || l.FloodingProgress > 0f);
+            return l != null && (l.IsFlooded || l.FloodingProgress > 0f || TubeDoors.WetEmpty(l));
         }
 
         bool CanSelect(ExtendedTorpedoLauncher l)
@@ -65,7 +69,8 @@ namespace ScopeTdcControls
         bool CanLaunch(ExtendedTorpedoLauncher l)
         {
             // the game's own lever check (UseTorpedoLauncherLaunchLever.GetState): flooded, breech door shut
-            return l != null && l.CurrentState == TorpedoLauncher.State.Flooded && !l.HatchOpened && LeverOf(l) != null;
+            // and here: the outer door fully open
+            return l != null && l.CurrentState == TorpedoLauncher.State.Flooded && !l.HatchOpened && TubeDoors.DoorReady(l) && LeverOf(l) != null;
         }
 
         /// <summary>The tube's own launch lever in the torpedo room (looked up once per tube).</summary>
@@ -102,6 +107,24 @@ namespace ScopeTdcControls
             catch (Exception e) { Debug.LogException(e); }
         }
 
+        /// <summary>The door is open or on its way: the menu offers to shut it.</summary>
+        static bool DoorOpening(ExtendedTorpedoLauncher l)
+        {
+            var d = TubeDoors.Door(l);
+            return d == DoorState.Open || d == DoorState.Opening;
+        }
+
+        /// <summary>Open the outer door of a flooded tube, or shut it.</summary>
+        void ToggleDoor(TubeDot dot)
+        {
+            var l = dot != null ? dot.Launcher : null;
+            if (l == null) return;
+            if (TubeDoors.CanClose(l)) TubeDoors.Close(l);
+            else if (TubeDoors.CanOpen(l)) TubeDoors.Open(l);
+            else return;
+            PlayGameSound(AnyBoxKnobSound());
+        }
+
         // ------------------------------------------------------------------ the menu
 
         void OpenTubeMenu(TubeDot dot, Vector2 screenPos)
@@ -136,6 +159,8 @@ namespace ScopeTdcControls
             y -= RowH + RowGap;
 
             menuFlood = MenuRow(font, ref y, false, () => { if (CanFlood(dot.Launcher)) ToggleTubeFlood(dot); }, () => WillDrain(dot.Launcher) ? Strings.TipMenuDrain : Strings.TipMenuFlood);
+            if (TubeDoors.Enabled)
+                menuDoor = MenuRow(font, ref y, false, () => ToggleDoor(dot), () => DoorOpening(dot.Launcher) ? Strings.TipMenuDoorClose : Strings.TipMenuDoorOpen);
             menuSelect = MenuRow(font, ref y, true, () => { if (CanSelect(dot.Launcher)) SelectTube(dot); }, () => Strings.TipMenuSelect);
             menuLaunch = MenuRow(font, ref y, false, () => LaunchTube(dot), () => Strings.TipMenuLaunch);
 
@@ -219,6 +244,8 @@ namespace ScopeTdcControls
             var l = tubeMenuDot.Launcher;
             tubeMenuTitle.text = Strings.TubeWord.ToUpperInvariant() + " " + tubeMenuDot.Number + " (" + (tubeMenuDot.Stern ? Strings.Stern : Strings.Bow).ToUpperInvariant() + ")";
             PaintMenuItem(menuFlood, WillDrain(l) ? Strings.MenuDrain : Strings.MenuFlood, CanFlood(l));
+            if (menuDoor != null)
+                PaintMenuItem(menuDoor, DoorOpening(l) ? Strings.MenuDoorClose : Strings.MenuDoorOpen, TubeDoors.CanOpen(l) || TubeDoors.CanClose(l));
             PaintMenuItem(menuSelect, Strings.MenuSelect, CanSelect(l));
             menuSelect.Tick.enabled = l != null && l.IsFlooded && l.IsMarkedForLaunch;
             PaintMenuItem(menuLaunch, Strings.MenuLaunch, CanLaunch(l));
@@ -240,7 +267,7 @@ namespace ScopeTdcControls
             if (tubeMenuBlocker != null) Destroy(tubeMenuBlocker.gameObject);
             tubeMenu = tubeMenuBlocker = null;
             tubeMenuDot = null;
-            menuFlood = menuSelect = menuLaunch = null;
+            menuFlood = menuDoor = menuSelect = menuLaunch = null;
             HideTip();
         }
 

@@ -48,6 +48,7 @@ namespace ScopeTdcControls
         public static bool RealisticReceiverSync = true;  // false = tube gyro motors run 10x faster
         public static bool SingleTorpedoLaunchFix = true; // fire only the tubes selected when fire was pressed
         public static bool AutoSelectFloodedTube = false; // true = the game checks a tube when it floods (base game)
+        public static bool EnhancedTubeHandling = true;   // tube outer doors by hand, fire only when open, tube stays flooded after a shot
         public static bool TdcOperatorRequired = true;    // false = TDC works without a crew member at it
         public static bool CtrlDragToMove = false;        // false = plain drag on a window background moves it (default for new installs)
         public const float WindowScaleMin = 0.6f, WindowScaleMax = 2.0f;
@@ -212,6 +213,11 @@ SingleTorpedoLaunchFix=true
 #        firing selector switches follow (base game)
 # false = flooding leaves the tube selection and the switches alone
 AutoSelectFloodedTube=false
+# true = the tubes' outer doors are worked by hand (right-click a flooded tube): a tube
+#        fires only with its door fully open, stays flooded and empty after the shot,
+#        and is drained (door shut) before the crew reloads it
+# false = no outer doors (base game)
+EnhancedTubeHandling=true
 # true = the TDC only works with a crew member at it (base game)
 # false = the TDC calculates and can be opened from the station bar unmanned
 TdcOperatorRequired=true
@@ -541,6 +547,7 @@ DebugLog=false
                 case "realisticreceiversync": RealisticReceiverSync = Bool(v, RealisticReceiverSync); break;
                 case "singletorpedolaunchfix": SingleTorpedoLaunchFix = Bool(v, SingleTorpedoLaunchFix); break;
                 case "autoselectfloodedtube": AutoSelectFloodedTube = Bool(v, AutoSelectFloodedTube); break;
+                case "enhancedtubehandling": EnhancedTubeHandling = Bool(v, EnhancedTubeHandling); break;
                 case "tdcoperatorrequired": TdcOperatorRequired = Bool(v, TdcOperatorRequired); break;
                 case "ctrldragtomove": CtrlDragToMove = Bool(v, CtrlDragToMove); break;
                 case "dialsscale": DialsScale = Mathf.Clamp(Num(v, DialsScale), WindowScaleMin, WindowScaleMax); break;

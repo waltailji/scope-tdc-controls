@@ -13,7 +13,11 @@ namespace ScopeTdcControls
     /// SH3-style torpedo tube indicator: a compact window with one numbered circle per tube,
     /// bow tubes on the first row, stern tubes (if the boat has any) on the second.
     ///   black = empty (or loading), grey = loaded but not flooded,
-    ///   blue  = flooded (filling while flooding), green = flooded and selected.
+    ///   blue  = flooded (filling while flooding), green = flooded and selected,
+    ///   red   = firing (a few seconds after the launch).
+    /// With outer doors (TubeDoors.cs): a grey + over a flooded tube = its door is shut (swept
+    /// away clockwise while it opens, back on while it shuts); a grey X on blue = fired, the
+    /// tube empty but still flooded.
     /// Click a flooded tube: select it for a single shot (the Einzelschuß switch turns there,
     /// the salvo switch to Aus). Double-click a loaded tube: flood it, or drain it if flooded
     /// or flooding, exactly as the game's torpedo panel does on a click on the tube.
@@ -31,6 +35,8 @@ namespace ScopeTdcControls
         static readonly Color TubeFlooded = new Color(26f / 255f, 26f / 255f, 1f, 1f);      // #1A1AFF
         static readonly Color TubeMaintenance = new Color(242f / 255f, 204f / 255f, 26f / 255f, 1f); // #F2CC1A: crew servicing the torpedo
         static readonly Color TubeSelected = new Color(46f / 255f, 184f / 255f, 46f / 255f, 1f); // #2EB82E
+        static readonly Color TubeFiring = new Color(0.86f, 0.14f, 0.10f, 1f);
+        static readonly Color TubeMark = new Color(0.72f, 0.72f, 0.70f, 1f); // the door cross and the empty X
 
         sealed class TubeDot
         {
@@ -39,6 +45,8 @@ namespace ScopeTdcControls
             public bool Stern;
             public Image Fill;
             public Image Level;          // the water rising (flooding) or falling (draining), from the bottom
+            public Image EmptyMark;      // grey X: fired, empty but still flooded
+            public Image DoorMark;       // grey +: outer door shut (radial fill = how shut it is)
             public TextMeshProUGUI Label;
         }
 
@@ -138,6 +146,14 @@ namespace ScopeTdcControls
                 dot.Level.fillMethod = Image.FillMethod.Vertical;
                 dot.Level.fillOrigin = (int)Image.OriginVertical.Bottom;
                 dot.Level.fillAmount = 0f;
+                dot.EmptyMark = Disc("EmptyMark", holder, TubeXSprite(), TubeSize - 5f, TubeMark);
+                dot.EmptyMark.enabled = false;
+                dot.DoorMark = Disc("DoorMark", holder, TubePlusSprite(), TubeSize - 5f, TubeMark);
+                dot.DoorMark.type = Image.Type.Filled;
+                dot.DoorMark.fillMethod = Image.FillMethod.Radial360;
+                dot.DoorMark.fillOrigin = (int)Image.Origin360.Top;
+                dot.DoorMark.fillClockwise = false; // swept off clockwise as the door opens
+                dot.DoorMark.enabled = false;
                 dot.Label = NewText("Number", holder, font, dot.Number.ToString(), TubeFont, DigitLight);
                 dot.Label.fontStyle = FontStyles.Bold;
                 dot.Label.alignment = TextAlignmentOptions.Center;
@@ -183,7 +199,11 @@ namespace ScopeTdcControls
                 Color fill;
                 float level = 0f; // blue water level, 0 = none .. 1 = full
                 bool light;   // light number on a dark fill
-                if (!TubeHasTorpedo(l)) { fill = TubeEmpty; light = true; }
+                bool wetEmpty = TubeDoors.WetEmpty(l);
+                bool firing = TubeDoors.Firing(l);
+                if (firing) { fill = TubeFiring; light = true; }           // a torpedo just left
+                else if (wetEmpty) { fill = TubeFlooded; light = true; }   // fired: empty, still flooded
+                else if (!TubeHasTorpedo(l)) { fill = TubeEmpty; light = true; }
                 else if (l.CurrentState == TorpedoLauncher.State.Preheating) { fill = TubeMaintenance; light = false; } // in maintenance
                 else if (l.IsFlooded && l.IsMarkedForLaunch) { fill = TubeSelected; light = false; }
                 else if (l.IsFlooded) { fill = TubeFlooded; light = true; }
@@ -202,7 +222,51 @@ namespace ScopeTdcControls
                     dot.Level.enabled = level > 0.001f;
                 }
                 dot.Label.color = light ? DigitLight : DigitDark;
+
+                // outer door: the + shows how shut it is; the X marks a flooded empty tube
+                bool wet = TubeDoors.Enabled && (l.IsFlooded || wetEmpty);
+                float shut = wet && !firing ? 1f - TubeDoors.Openness(l) : 0f;
+                if (dot.DoorMark != null)
+                {
+                    dot.DoorMark.enabled = shut > 0.001f;
+                    dot.DoorMark.fillAmount = shut;
+                }
+                if (dot.EmptyMark != null) dot.EmptyMark.enabled = wetEmpty && !firing;
             }
+        }
+
+        static Sprite tubePlusSprite, tubeXSprite;
+        const float TubeMarkHalfWidth = 3.4f; // bar half-width in the 64 px sprite (about 3 px on the icon)
+
+        /// <summary>A + across the tube circle: the outer door shut.</summary>
+        static Sprite TubePlusSprite()
+        {
+            if (tubePlusSprite != null) return tubePlusSprite;
+            const int n = 64;
+            float c = n * 0.5f, r = n * 0.5f - 3f;
+            tubePlusSprite = MakeShapeSprite(n, n, (x, y) =>
+            {
+                float dx = x - c, dy = y - c;
+                if (dx * dx + dy * dy > r * r) return false;
+                return Mathf.Abs(dx) <= TubeMarkHalfWidth || Mathf.Abs(dy) <= TubeMarkHalfWidth;
+            });
+            return tubePlusSprite;
+        }
+
+        /// <summary>An X across the tube circle: empty, still flooded.</summary>
+        static Sprite TubeXSprite()
+        {
+            if (tubeXSprite != null) return tubeXSprite;
+            const int n = 64;
+            float c = n * 0.5f, r = n * 0.5f - 3f;
+            const float k = 0.70710678f;
+            tubeXSprite = MakeShapeSprite(n, n, (x, y) =>
+            {
+                float dx = x - c, dy = y - c;
+                if (dx * dx + dy * dy > r * r) return false;
+                return Mathf.Abs(dx - dy) * k <= TubeMarkHalfWidth || Mathf.Abs(dx + dy) * k <= TubeMarkHalfWidth;
+            });
+            return tubeXSprite;
         }
 
         /// <summary>Single shot from this tube: Einzelschuß to it, Fächerschuß to Aus, as on the switch box.</summary>
@@ -239,7 +303,9 @@ namespace ScopeTdcControls
         void ToggleTubeFlood(TubeDot dot)
         {
             var l = dot.Launcher;
-            if (l == null || !TubeHasTorpedo(l) || TubeBusy(l.CurrentState)) return;
+            if (l == null) return;
+            if (TubeDoors.WetEmpty(l)) { TubeDoors.DrainEmpty(l); return; } // fired: drain it (door shut)
+            if (!TubeHasTorpedo(l) || TubeBusy(l.CurrentState)) return;
             var s = l.CurrentState;
             if (s != TorpedoLauncher.State.Loaded && s != TorpedoLauncher.State.Flooded && s != TorpedoLauncher.State.Flooding) return;
             if (!l.IsFlooded && l.FloodingProgress == 0f)
@@ -249,6 +315,7 @@ namespace ScopeTdcControls
             }
             else
             {
+                if (!TubeDoors.DoorShut(l)) return; // not with the outer door open
                 bool wasSelected = l.IsMarkedForLaunch;
                 l.DrainInstantly();
                 if (wasSelected) DeselectTube(); // a drained tube can't stay selected
@@ -276,7 +343,10 @@ namespace ScopeTdcControls
             if (l == null) return sb.ToString();
             var s = l.CurrentState;
             string state;
-            if (s == TorpedoLauncher.State.Empty) state = Strings.TubeEmpty;
+            bool wetEmpty = TubeDoors.WetEmpty(l);
+            if (TubeDoors.Firing(l)) state = Strings.TubeFired;
+            else if (wetEmpty) state = Strings.TubeWetEmpty;
+            else if (s == TorpedoLauncher.State.Empty) state = Strings.TubeEmpty;
             else if (s == TorpedoLauncher.State.Loading) state = Strings.TubeLoading;
             else if (s == TorpedoLauncher.State.Flooding) state = Strings.TubeFlooding;
             else if (s == TorpedoLauncher.State.Draining) state = Strings.TubeDraining;
@@ -285,9 +355,18 @@ namespace ScopeTdcControls
             else if (l.IsFlooded) state = l.IsMarkedForLaunch ? Strings.TubeFloodedSelected : Strings.TubeFlooded;
             else state = Strings.TubeLoaded;
             sb.Append(state);
+            if (TubeDoors.Enabled && TubeDoors.Wet(l))
+            {
+                var door = TubeDoors.Door(l);
+                sb.Append('\n').Append(Strings.TubeDoorLabel).Append(": ").Append(
+                    door == DoorState.Open ? Strings.DoorOpen : door == DoorState.Opening ? Strings.DoorOpening
+                    : door == DoorState.Closing ? Strings.DoorClosing : Strings.DoorShut);
+            }
             sb.Append("\n\n").Append(!l.IsFlooded ? Strings.TubeClickNeedsFlood : l.IsMarkedForLaunch ? Strings.TubeClickDeselect : Strings.TubeClickSelect);
-            if (TubeHasTorpedo(l) && !TubeBusy(s))
-                sb.Append('\n').Append(l.IsFlooded || s == TorpedoLauncher.State.Flooding ? Strings.TubeDoubleDrain : Strings.TubeDoubleFlood);
+            bool drains = wetEmpty || (TubeHasTorpedo(l) && !TubeBusy(s) && (l.IsFlooded || s == TorpedoLauncher.State.Flooding));
+            if (drains && !TubeDoors.DoorShut(l)) sb.Append('\n').Append(Strings.TubeDrainDoorOpen);
+            else if (drains) sb.Append('\n').Append(Strings.TubeDoubleDrain);
+            else if (TubeHasTorpedo(l) && !TubeBusy(s)) sb.Append('\n').Append(Strings.TubeDoubleFlood);
             if (CanLaunch(l)) sb.Append('\n').Append(Strings.TubeCtrlLaunch);
             sb.Append('\n').Append(Strings.TubeRightMenu);
             return sb.ToString();

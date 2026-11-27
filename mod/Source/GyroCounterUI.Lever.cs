@@ -18,7 +18,8 @@ namespace ScopeTdcControls
     /// (TorpedoLaunchLever.Launch, the same call the crew's "use launch lever"
     /// action makes; it also animates the lever in the boat), with that
     /// action's conditions: not while torpedoes are already being launched, and
-    /// every checked tube must be flooded. Without a lever in the scene it
+    /// every checked tube must be flooded (and here its outer door fully open,
+    /// TubeDoors.cs). Without a lever in the scene it
     /// calls PlayerShip.LaunchAllTorpedoes with the lever's parameters.
     ///
     /// The ready lamp also checks what the lever's own tooltip warns about:
@@ -167,6 +168,7 @@ namespace ScopeTdcControls
             var boxes = Boxes();
             var ok = new StringBuilder();
             var dry = new StringBuilder();
+            var shut = new StringBuilder();     // flooded, outer door not fully open
             string wrongEnd = null;
             bool sternTubes = false;
             for (int i = 0; i < tubes.Length; i++)
@@ -174,7 +176,7 @@ namespace ScopeTdcControls
                 var t = tubes[i];
                 if (t == null || !t.IsMarkedForLaunch) continue;
                 string n = i + 1 < Roman.Length ? Roman[i + 1] : (i + 1).ToString();
-                var sb = t.IsFlooded ? ok : dry;
+                var sb = !t.IsFlooded ? dry : !TubeDoors.DoorReady(t) ? shut : ok;
                 if (sb.Length > 0) sb.Append(", ");
                 sb.Append(n);
 
@@ -190,6 +192,7 @@ namespace ScopeTdcControls
                 }
             }
             if (dry.Length > 0) return string.Format(Strings.LeverNotFlooded, dry);
+            if (shut.Length > 0) return string.Format(Strings.LeverDoorShut, shut);
             if (ok.Length == 0) return Strings.LeverNothing;
             ready = ok.ToString();
             if (wrongEnd != null) return string.Format(Strings.LeverWrongReceiver, wrongEnd);
