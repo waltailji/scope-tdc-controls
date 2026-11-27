@@ -234,11 +234,20 @@ namespace ScopeTdcControls
             var swap = toggle as SpriteSwapToggle;
             if (swap != null)
             {
-                // read before changing the image: these fall back to the image's sprite when unset
+                // read before changing the image. The toggle takes its "off" artwork (sprite and
+                // hover / pressed sprites) from the button itself when it first starts, and a copy
+                // made before that has none: take it from the button then, or the redrawn "off"
+                // set would be empty and the button would show no hover glow while off.
                 var baseSprite = swap.BaseSprite;
                 var baseState = swap.BaseSpriteState;
+                if (baseSprite == null && !toggle.isOn)
+                {
+                    baseSprite = image.sprite;
+                    baseState = toggle.spriteState;
+                }
                 var toggledSprite = swap.ToggledSprite;
                 var toggledState = swap.ToggledSpriteState;
+                LogStates(baseSprite, baseState, toggledSprite, toggledState, toggle.transition);
                 if (baseSprite != null) swap.BaseSprite = Redraw(baseSprite);
                 swap.BaseSpriteState = Redraw(baseState);
                 if (toggledSprite != null) swap.ToggledSprite = Redraw(toggledSprite);
@@ -248,6 +257,19 @@ namespace ScopeTdcControls
             image.sprite = Redraw(image.sprite);
             image.overrideSprite = null;
             toggle.spriteState = Redraw(toggle.spriteState);
+        }
+
+        static bool loggedStates;
+
+        /// <summary>Once: the stock button's artwork per state (to check the hover sprites are there).</summary>
+        static void LogStates(Sprite baseSprite, SpriteState b, Sprite toggledSprite, SpriteState t, Selectable.Transition transition)
+        {
+            if (loggedStates) return;
+            loggedStates = true;
+            Func<Sprite, string> n = s => s != null ? s.name : "-";
+            Debug.Log(ScopeTdcControlsMod.Tag + " sidebar button artwork (" + transition + "): off " + n(baseSprite)
+                      + " hover " + n(b.highlightedSprite) + " pressed " + n(b.pressedSprite)
+                      + "; on " + n(toggledSprite) + " hover " + n(t.highlightedSprite) + " pressed " + n(t.pressedSprite));
         }
 
         static SpriteState Redraw(SpriteState s)

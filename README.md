@@ -24,8 +24,9 @@ A panel titled "Scope TDC Controls" beside the periscope raise/lower control (pa
 - **Target bearing** (on the panel): Folgen / Nicht folgen, blue lamp while not following
 - **Direction selector**: rotary switches for the bearing source (Zielrichtung: Off, UZO, observation or attack periscope) and the gyro angle receiver (Schußrichtung: Off, Bow, Stern)
 - **Parallax mode** (on the panel): Forward or Backward
-- **Windows**: show or hide the gyro counters, TDC dials, firing selector, direction selector and launch lever
+- **Windows**: show or hide the gyro counters, TDC dials, firing selector, direction selector and launch lever; reset their sizes or positions
 - Shown or hidden with a button added to the periscope screen's stock left sidebar
+- Windows that end up off screen (for instance after a resolution change) are moved back on screen by themselves
 
 ### TDC dials
 A window on the left of the scope with the TDC's **AOB**, **target speed**, **target distance** and **target length** dials (target length only while a spread is selected). Grab a dial and turn it, just like on the TDC; Shift for fine adjustment, mouse wheel for steps, exact readout under each dial. Shown and hidden with the sidebar button together with the panel. With **Voice callouts** on, the crew member at the scope announces what you dial in using the game's own voice lines, as when sending a locked target to the TDC.

@@ -107,15 +107,6 @@ Buttons above and below the stock periscope control run the scope fully up or do
 [*][b]Keep my scope bearing[/b] - a periscope comes back on the bearing you left it at (also after lock / unlock); works alongside Stop Moving My Scope
 [/list]
 
-[h2]Recommended workflow[/h2]
-[olist]
-[*]Set the scope you attack with as the target bearing source
-[*]Turn it to 0 deg relative, select "Bow" on the receiver selector and let the gyros synchronize
-[*]Turn it to 180 deg relative, select "Stern" and let the stern gyro synchronize
-[*]Leave the receiver selector on "None" until you attack
-[/olist]
-This avoids the stock system's constant gyro chasing and lets you fire quickly in both directions.
-
 [h2]Details[/h2]
 [list]
 [*]English and German (follows the game); pop-up help on every element

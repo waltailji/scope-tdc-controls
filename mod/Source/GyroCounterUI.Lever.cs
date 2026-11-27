@@ -355,9 +355,33 @@ namespace ScopeTdcControls
         {
             if (leverPanel == null) return;
             Vector2 local;
+            if (LeverBesideSwitchesBase(out local))
+            {
+                leverPanel.anchoredPosition = local + new Vector2(GyroConfig.LeverOffsetX, GyroConfig.LeverOffsetY);
+                return;
+            }
             var screen = new Vector2(Screen.width * GyroConfig.LeverX, Screen.height * GyroConfig.LeverY);
             if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screen, null, out local))
                 leverPanel.anchoredPosition = local + new Vector2(GyroConfig.LeverOffsetX, GyroConfig.LeverOffsetY);
+        }
+
+        /// <summary>
+        /// LeverBesideSwitches (the default): right of the firing selector (where it is placed, even
+        /// while hidden), bottom level with it. False, or no firing selector on this boat: LeverX/Y.
+        /// </summary>
+        bool LeverBesideSwitchesBase(out Vector2 pos)
+        {
+            pos = Vector2.zero;
+            if (!GyroConfig.LeverBesideSwitches || switchesPanel == null || leverPanel == null) return false;
+            Vector2 sw;
+            bool anchored = IsAnchored(AnchoredWindow.Switches);
+            if (!BasePosition(AnchoredWindow.Switches, anchored, out sw)) return false;
+            Vector2 swCentre = sw + GetOffset(AnchoredWindow.Switches, anchored);
+            Vector2 swSize = switchesPanel.sizeDelta * EffectiveScale(ResizableWindow.Switches);
+            Vector2 size = leverPanel.sizeDelta * EffectiveScale(ResizableWindow.Lever);
+            pos = new Vector2(swCentre.x + swSize.x * 0.5f + AnchorGap + size.x * 0.5f,
+                              swCentre.y - swSize.y * 0.5f + size.y * 0.5f);
+            return true;
         }
 
         /// <summary>

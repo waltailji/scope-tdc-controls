@@ -101,7 +101,7 @@ namespace ScopeTdcControls
         TextMeshProUGUI tipText;
         Lamp followLamp;
         Btn btnSettings;
-        Btn btnFollow, btnNoFollow, btnResetSizes;
+        Btn btnFollow, btnNoFollow, btnResetSizes, btnResetPositions;
         RectTransform settingsPanel;      // drop-down under the control panel
         RectTransform settingsContent;    // its rows, scrolled inside the drop-down
         const float SetRowH = 17f, SetRowGap = 1f; // the drop-down's rows: tighter than the control panel's
@@ -194,6 +194,7 @@ namespace ScopeTdcControls
                 instance = go.AddComponent<GyroCounterUI>();
             }
             instance.Build();
+            instance.ScheduleOnScreenCheck(3f); // once everything has found its place
             instance.SetVisible(!userHidden);
             SidebarButton.Ensure(ui, OnSidebarButton);
         }
@@ -716,7 +717,7 @@ namespace ScopeTdcControls
             Frame(controlsPanel, true);
 
             // width = widest label
-            string[] labels = { Strings.BearingHeader, Strings.ParallaxHeader, Strings.WindowsHeader, Strings.ResetSizes, "+ " + Strings.SettingsHeader };
+            string[] labels = { Strings.BearingHeader, Strings.ParallaxHeader, Strings.WindowsHeader, Strings.ResetSizes, Strings.ResetPositions, "+ " + Strings.SettingsHeader };
             string[] windowLabels = { Strings.WinTrueBearing, Strings.WinGyros, Strings.WinDials, Strings.WinBearing, Strings.WinSpread, Strings.WinTurnRate, Strings.WinSwitches, Strings.WinDirections, Strings.WinTubes, Strings.WinGyroSet, Strings.WinSternSet, Strings.WinTorpedo, Strings.WinLever };
             float inner = 80f;
             foreach (var s in labels) inner = Mathf.Max(inner, Mathf.Ceil(TextWidth(font, s, CtlFont)) + 18f);
@@ -801,6 +802,7 @@ namespace ScopeTdcControls
             MakeCheck(font, Strings.WinTorpedo, ref y, inner, () => GyroConfig.ShowTorpedo, v => { GyroConfig.ShowTorpedo = v; GyroConfig.Save("ShowTorpedo", v); HideTip(); }, () => Strings.TipWinTorpedo, controlsPanel, windowChecks);
             MakeCheck(font, Strings.WinLever, ref y, inner, () => GyroConfig.ShowLever, v => { if (v != GyroConfig.ShowLever) ToggleLeverWindow(); }, () => Strings.TipWinLever, controlsPanel, windowChecks);
             btnResetSizes = MakeButton(controlsPanel, font, Strings.ResetSizes, ref y, inner, ResetWindowSizes, () => Strings.TipResetSizes);
+            btnResetPositions = MakeButton(controlsPanel, font, Strings.ResetPositions, ref y, inner, ResetWindowPositions, () => Strings.TipResetPositions);
             Divider(ref y, inner);
 
             // --- settings drop-down toggle ---
@@ -1541,7 +1543,14 @@ namespace ScopeTdcControls
             {
                 if (!dragging || Owner == null) return;
                 float k = Owner.canvas != null && Owner.canvas.scaleFactor > 0f ? Owner.canvas.scaleFactor : 1f;
-                Vector2 d = e.delta / k;
+                Move(e.delta / k);
+            }
+
+            public bool Dragging { get { return dragging; } }
+
+            /// <summary>Moves the window by d (canvas units), as a drag does; SaveMove stores it.</summary>
+            public void Move(Vector2 d)
+            {
                 if (Tubes) { GyroConfig.TubesOffsetX += d.x; GyroConfig.TubesOffsetY += d.y; }
                 else if (Bearing) { GyroConfig.BearingOffsetX += d.x; GyroConfig.BearingOffsetY += d.y; }
                 else if (TrueBearing && InBinoculars()) { GyroConfig.TrueBinoOffsetX += d.x; GyroConfig.TrueBinoOffsetY += d.y; }
@@ -1563,6 +1572,11 @@ namespace ScopeTdcControls
             {
                 if (!dragging) return;
                 dragging = false;
+                SaveMove();
+            }
+
+            public void SaveMove()
+            {
                 if (Tubes) { GyroConfig.Save("TubesOffsetX", GyroConfig.TubesOffsetX); GyroConfig.Save("TubesOffsetY", GyroConfig.TubesOffsetY); }
                 else if (Bearing) { GyroConfig.Save("BearingOffsetX", GyroConfig.BearingOffsetX); GyroConfig.Save("BearingOffsetY", GyroConfig.BearingOffsetY); }
                 else if (TrueBearing && InBinoculars()) { GyroConfig.Save("TrueBinoOffsetX", GyroConfig.TrueBinoOffsetX); GyroConfig.Save("TrueBinoOffsetY", GyroConfig.TrueBinoOffsetY); }
@@ -2087,6 +2101,12 @@ namespace ScopeTdcControls
 
         void LateUpdate()
         {
+            LateUpdateLayout();
+            KeepOnScreen(); // after every window has been placed this frame
+        }
+
+        void LateUpdateLayout()
+        {
             SyncElevatorLayer(); // follows our canvas on and off, wherever that was switched
             if (canvas == null || !canvas.enabled || counterPanel == null) return;
             if (periscopeUI == null || !periscopeUI.isActiveAndEnabled) { SetVisible(false); return; }
@@ -2370,6 +2390,7 @@ namespace ScopeTdcControls
             if (btnFollow != null) btnFollow.Paint(follow, true);
             if (btnNoFollow != null) btnNoFollow.Paint(!follow, true);
             if (btnResetSizes != null) btnResetSizes.Paint(false, true);
+            if (btnResetPositions != null) btnResetPositions.Paint(false, true);
             if (btnSettings != null) btnSettings.Paint(settingsOpen, true);
             if (btnHotkey != null && settingsOpen) btnHotkey.Paint(capturingKey, true);
             PaintChecks(windowChecks);

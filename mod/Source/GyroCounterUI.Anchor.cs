@@ -10,7 +10,7 @@ namespace ScopeTdcControls
     /// following another window and standing on their own.
     ///   - salvo spread: right of the TDC dials, top level with theirs;
     ///   - own angular speed: right of the TDC dials, bottom level with theirs;
-    ///   - firing selector: left of the direction selector, bottom level with it.
+    ///   - firing selector: right of the direction selector, bottom level with it.
     /// Each mode keeps its own offset (dragging changes the one in use), and switching
     /// converts between them so the window stays where it is.
     /// </summary>
@@ -121,7 +121,7 @@ namespace ScopeTdcControls
                 var screen = new Vector2(Screen.width * GyroConfig.SwitchesX, Screen.height * GyroConfig.SwitchesY);
                 return RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screen, null, out pos);
             }
-            if (w == AnchoredWindow.Switches) return LeftOfDirections(panel, out pos);
+            if (w == AnchoredWindow.Switches) return RightOfDirections(panel, out pos);
             return BesideDialsBase(panel, ResizableOf(w), w == AnchoredWindow.Spread, out pos);
         }
 
@@ -199,8 +199,8 @@ namespace ScopeTdcControls
             return true;
         }
 
-        /// <summary>Left of the direction selector (where it is placed, even while hidden), bottom level with it.</summary>
-        bool LeftOfDirections(RectTransform panel, out Vector2 pos)
+        /// <summary>Right of the direction selector (where it is placed, even while hidden), bottom level with it.</summary>
+        bool RightOfDirections(RectTransform panel, out Vector2 pos)
         {
             pos = Vector2.zero;
             Vector2 local;
@@ -210,7 +210,7 @@ namespace ScopeTdcControls
             float dirScale = EffectiveScale(ResizableWindow.Directions);
             Vector2 size = panel.sizeDelta * EffectiveScale(ResizableWindow.Switches);
             Vector2 dirSize = directionsPanel != null ? directionsPanel.sizeDelta * dirScale : new Vector2(size.x * 0.7f, size.y);
-            pos = new Vector2(dirCentre.x - dirSize.x * 0.5f - AnchorGap - size.x * 0.5f,
+            pos = new Vector2(dirCentre.x + dirSize.x * 0.5f + AnchorGap + size.x * 0.5f,
                               dirCentre.y - dirSize.y * 0.5f + size.y * 0.5f);
             return true;
         }

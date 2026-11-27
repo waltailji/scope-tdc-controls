@@ -106,7 +106,9 @@ namespace ScopeTdcControls
                 case ResizableWindow.Bearing: GyroConfig.BearingOffsetX += by.x; GyroConfig.BearingOffsetY += by.y; break;
                 case ResizableWindow.GyroSet: GyroConfig.GyroSetOffsetX += by.x; GyroConfig.GyroSetOffsetY += by.y; break;
                 case ResizableWindow.SternGyroSet: GyroConfig.SternSetOffsetX += by.x; GyroConfig.SternSetOffsetY += by.y; break;
-                default: GyroConfig.LeverOffsetX += by.x; GyroConfig.LeverOffsetY += by.y; break;
+                default:
+                    if (GyroConfig.LeverBesideSwitches) break; // placed by its bottom-left corner beside the firing selector
+                    GyroConfig.LeverOffsetX += by.x; GyroConfig.LeverOffsetY += by.y; break;
             }
         }
 
@@ -172,6 +174,15 @@ namespace ScopeTdcControls
                              : w == ResizableWindow.GyroSet || w == ResizableWindow.SternGyroSet ? GyroConfig.GyroSetScaleDefault : 1f;
                 if (Mathf.Abs(WindowScale(w) - normal) > 0.0001f) SetWindowScale(w, normal, true);
             }
+        }
+
+        /// <summary>The panel button: every window back to where a new install puts it (sizes stay).</summary>
+        void ResetWindowPositions()
+        {
+            HideTip();
+            GyroConfig.ResetPositions();
+            ScheduleOnScreenCheck(0.5f); // a window made larger than normal could still reach past an edge
+            Debug.Log(ScopeTdcControlsMod.Tag + " window positions reset");
         }
 
         /// <summary>Add the corner grip to a window; also applies its saved size.</summary>

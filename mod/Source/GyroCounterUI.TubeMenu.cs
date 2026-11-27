@@ -11,10 +11,10 @@ namespace ScopeTdcControls
 {
     /// <summary>
     /// Torpedo tube actions on the tube indicator:
-    ///  - right-click a tube: a small menu with
+    ///  - right-click a tube: a small menu with (only what can be done right now; selecting a
+    ///    tube is a left click, or the firing selector)
     ///      Flood / Drain (whichever applies, as a double-click does; drain only with the outer door shut),
     ///      Open / Shut outer door (flooded tubes, TubeDoors.cs),
-    ///      Select (flooded tubes; ticked while selected, as a single click does),
     ///      Launch (flooded tubes): pulls the tube's own launch lever in the torpedo room;
     ///  - Ctrl+click a tube: Launch straight away.
     /// The lever (TorpedoLauncherLaunchLever.Launch) fires that tube on its tube group's set gyro
@@ -28,17 +28,29 @@ namespace ScopeTdcControls
 
         RectTransform tubeMenu, tubeMenuBlocker;
         TubeDot tubeMenuDot;
-        TextMeshProUGUI tubeMenuTitle;
-        MenuItem menuFlood, menuDoor, menuSelect, menuLaunch;
+        TextMeshProUGUI tubeMenuTitle, tubeMenuNone;
+        MenuItem menuFlood, menuDoor, menuLaunch;
+        readonly List<MenuItem> menuItems = new List<MenuItem>();
+
+        // the menu's own colours: slate blue, the launch button red
+        const float MenuBtnH = 22f, MenuBtnGap = 4f, MenuPad = 6f, MenuTitleH = 18f;
+        static readonly Color MenuBack = new Color(0.10f, 0.12f, 0.15f, 0.96f);
+        static readonly Color MenuEdge = new Color(0.36f, 0.44f, 0.52f, 1f);
+        static readonly Color MenuTitleInk = new Color(0.72f, 0.82f, 0.92f, 1f);
+        static readonly Color MenuBtnIdle = new Color(0.20f, 0.26f, 0.33f, 1f);
+        static readonly Color MenuBtnHover = new Color(0.28f, 0.40f, 0.53f, 1f);
+        static readonly Color MenuFireIdle = new Color(0.46f, 0.15f, 0.13f, 1f);
+        static readonly Color MenuFireHover = new Color(0.64f, 0.20f, 0.17f, 1f);
         readonly Dictionary<ExtendedTorpedoLauncher, TorpedoLauncherLaunchLever> tubeLevers = new Dictionary<ExtendedTorpedoLauncher, TorpedoLauncherLaunchLever>();
 
         sealed class MenuItem
         {
+            public RectTransform Rect;
             public Image Bg;
             public TextMeshProUGUI Label;
-            public Image Box, Tick;     // Select only: the check box and its fill
             public bool Hover;
-            public bool Enabled;
+            public bool Enabled;        // shown (only what can be done right now is offered)
+            public bool Fire;           // the launch button: red
         }
 
         // ------------------------------------------------------------------ actions
@@ -61,17 +73,12 @@ namespace ScopeTdcControls
             return l != null && (l.IsFlooded || l.FloodingProgress > 0f || TubeDoors.WetEmpty(l));
         }
 
-        bool CanSelect(ExtendedTorpedoLauncher l)
-        {
-            var ship = Ship();
-            return l != null && l.IsFlooded && ship != null && !FiringCircuitLive && !ship.IsPreparingToLaunchTorpedoes;
-        }
-
         bool CanLaunch(ExtendedTorpedoLauncher l)
         {
             // the game's own lever check (UseTorpedoLauncherLaunchLever.GetState): flooded, breech door shut
             // and here: the outer door fully open
-            return l != null && l.CurrentState == TorpedoLauncher.State.Flooded && !l.HatchOpened && TubeDoors.DoorReady(l) && LeverOf(l) != null;
+            return l != null && l.CurrentState == TorpedoLauncher.State.Flooded && l.Torpedo != null // a fired tube is flooded too, with nothing in it
+                   && !l.HatchOpened && TubeDoors.DoorReady(l) && LeverOf(l) != null;
         }
 
         /// <summary>The tube's own launch lever in the torpedo room (looked up once per tube).</summary>
@@ -164,26 +171,39 @@ namespace ScopeTdcControls
             tubeMenu = NewRect("TubeMenu", transform);
             tubeMenu.anchorMin = tubeMenu.anchorMax = new Vector2(0.5f, 0.5f);
             tubeMenu.pivot = new Vector2(0f, 1f);
-            Frame(tubeMenu, true);
+            var back = tubeMenu.gameObject.AddComponent<Image>();
+            back.color = MenuBack;
+            RoundValueBox(back);
+            back.raycastTarget = true;
+            var edge = tubeMenu.gameObject.AddComponent<Outline>();
+            edge.effectColor = MenuEdge;
+            edge.effectDistance = new Vector2(1f, -1f);
             tubeMenu.localScale = Vector3.one * EffectiveScale(ResizableWindow.Tubes);
             tubeMenu.gameObject.AddComponent<MenuWatch>().Owner = this;
 
-            float y = -CPad;
-            tubeMenuTitle = NewText("Title", tubeMenu, font, "", CtlFont, LabelColor);
+            tubeMenuTitle = NewText("Title", tubeMenu, font, "", CtlFont, MenuTitleInk);
             tubeMenuTitle.fontStyle = FontStyles.Bold;
             tubeMenuTitle.alignment = TextAlignmentOptions.Center;
-            PlaceV(tubeMenuTitle.rectTransform, CPad, y, MenuW, RowH);
-            y -= RowH + RowGap;
+            PlaceV(tubeMenuTitle.rectTransform, MenuPad, -MenuPad, MenuW, MenuTitleH);
 
-            menuFlood = MenuRow(font, ref y, false, () => { if (CanFlood(dot.Launcher)) ToggleTubeFlood(dot); }, () => WillDrain(dot.Launcher) ? Strings.TipMenuDrain : Strings.TipMenuFlood);
+            // shown when there is nothing to do with the tube right now
+            tubeMenuNone = NewText("None", tubeMenu, font, Strings.MenuNothing, CtlFont - 1f, new Color(MenuTitleInk.r, MenuTitleInk.g, MenuTitleInk.b, 0.6f));
+            tubeMenuNone.fontStyle = FontStyles.Italic;
+            tubeMenuNone.alignment = TextAlignmentOptions.Center;
+            PlaceV(tubeMenuNone.rectTransform, MenuPad, -MenuPad - MenuTitleH - MenuBtnGap, MenuW, MenuBtnH);
+
+            menuItems.Clear();
+            // top to bottom: Launch, outer door, Flood / Drain (so Open door sits above Drain, and
+            // Launch above Shut door; each shows only when it can be used). Selecting a tube is a
+            // left click on it, or the firing selector.
+            menuLaunch = MenuButton(font, () => LaunchTube(dot), () => Strings.TipMenuLaunch);
+            menuLaunch.Fire = true;
             if (TubeDoors.Enabled)
-                menuDoor = MenuRow(font, ref y, false, () => ToggleDoor(dot), () => DoorOpening(dot.Launcher) ? Strings.TipMenuDoorClose : Strings.TipMenuDoorOpen);
-            menuSelect = MenuRow(font, ref y, true, () => { if (CanSelect(dot.Launcher)) SelectTube(dot); }, () => Strings.TipMenuSelect);
-            menuLaunch = MenuRow(font, ref y, false, () => LaunchTube(dot), () => Strings.TipMenuLaunch);
+                menuDoor = MenuButton(font, () => ToggleDoor(dot), () => DoorOpening(dot.Launcher) ? Strings.TipMenuDoorClose : Strings.TipMenuDoorOpen);
+            menuFlood = MenuButton(font, () => { if (CanFlood(dot.Launcher)) ToggleTubeFlood(dot); }, () => WillDrain(dot.Launcher) ? Strings.TipMenuDrain : Strings.TipMenuFlood);
 
-            tubeMenu.sizeDelta = new Vector2(MenuW + CPad * 2f, -y + CPad - RowGap);
-
-            // top-left corner at the pointer, kept on screen
+            // top-left corner at the pointer, kept on screen (room for every button, however many show)
+            tubeMenu.sizeDelta = new Vector2(MenuW + MenuPad * 2f, MenuHeight(menuItems.Count));
             Vector2 local;
             if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPos, null, out local))
             {
@@ -197,44 +217,46 @@ namespace ScopeTdcControls
             RefreshTubeMenu();
         }
 
-        /// <summary>One menu row: hover highlight, a check box gutter on the left (Select only), the label.</summary>
-        MenuItem MenuRow(TMP_FontAsset font, ref float y, bool withBox, Action onClick, Func<string> tip)
+        readonly List<MenuItem> menuOrder = new List<MenuItem>();
+
+        /// <summary>The buttons top to bottom: as built, or with Flood / Drain moved above the door.</summary>
+        List<MenuItem> MenuOrder(bool drainFirst)
+        {
+            menuOrder.Clear();
+            menuOrder.AddRange(menuItems);
+            if (drainFirst && menuFlood != null && menuDoor != null)
+            {
+                menuOrder.Remove(menuFlood);
+                menuOrder.Insert(menuOrder.IndexOf(menuDoor), menuFlood);
+            }
+            return menuOrder;
+        }
+
+        /// <summary>Menu height with n buttons shown (n = 0: the "nothing to do" line).</summary>
+        static float MenuHeight(int n)
+        {
+            return MenuPad + MenuTitleH + MenuBtnGap + Mathf.Max(1, n) * (MenuBtnH + MenuBtnGap) - MenuBtnGap + MenuPad;
+        }
+
+        /// <summary>One menu button: rounded, with a hover colour; placed by RefreshTubeMenu.</summary>
+        MenuItem MenuButton(TMP_FontAsset font, Action onClick, Func<string> tip)
         {
             var row = NewRect("Item", tubeMenu);
-            PlaceV(row, CPad, y, MenuW, RowH);
-            y -= RowH + RowGap;
+            PlaceV(row, MenuPad, 0f, MenuW, MenuBtnH);
             var item = new MenuItem();
+            item.Rect = row;
             item.Bg = row.gameObject.AddComponent<Image>();
-            item.Bg.color = BtnIdle;
+            item.Bg.color = MenuBtnIdle;
+            RoundValueBox(item.Bg);
             item.Bg.raycastTarget = true;
-
-            if (withBox)
-            {
-                var box = NewRect("Box", row);
-                box.anchorMin = box.anchorMax = box.pivot = new Vector2(0f, 0.5f);
-                box.sizeDelta = new Vector2(13f, 13f);
-                box.anchoredPosition = new Vector2(4f, 0f);
-                item.Box = box.gameObject.AddComponent<Image>();
-                item.Box.color = DrumBlack;
-                item.Box.raycastTarget = false;
-                var edge = box.gameObject.AddComponent<Outline>();
-                edge.effectColor = FrameEdge;
-                edge.effectDistance = new Vector2(1f, -1f);
-                var tick = NewRect("Tick", box);
-                tick.anchorMin = Vector2.zero; tick.anchorMax = Vector2.one;
-                tick.offsetMin = new Vector2(1f, 1f); tick.offsetMax = new Vector2(-1f, -1f);
-                item.Tick = tick.gameObject.AddComponent<Image>();
-                item.Tick.sprite = TickSprite();
-                item.Tick.color = BtnSelected;
-                item.Tick.raycastTarget = false;
-            }
+            menuItems.Add(item);
 
             item.Label = NewText("Text", row, font, "", CtlFont, DigitLight);
             item.Label.fontStyle = FontStyles.Bold;
-            item.Label.alignment = TextAlignmentOptions.Left;
+            item.Label.alignment = TextAlignmentOptions.Center;
             var lr = item.Label.rectTransform;
             lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one;
-            lr.offsetMin = new Vector2(23f, 0f); lr.offsetMax = new Vector2(-4f, 0f);
+            lr.offsetMin = new Vector2(4f, 0f); lr.offsetMax = new Vector2(-4f, 0f);
 
             var button = row.gameObject.AddComponent<Button>();
             button.transition = Selectable.Transition.None;
@@ -263,19 +285,32 @@ namespace ScopeTdcControls
             PaintMenuItem(menuFlood, WillDrain(l) ? Strings.MenuDrain : Strings.MenuFlood, CanFlood(l));
             if (menuDoor != null)
                 PaintMenuItem(menuDoor, DoorOpening(l) ? Strings.MenuDoorClose : Strings.MenuDoorOpen, TubeDoors.CanOpen(l) || TubeDoors.CanClose(l));
-            PaintMenuItem(menuSelect, Strings.MenuSelect, CanSelect(l));
-            menuSelect.Tick.enabled = l != null && l.IsFlooded && l.IsMarkedForLaunch;
             PaintMenuItem(menuLaunch, Strings.MenuLaunch, CanLaunch(l));
+
+            // only the buttons that can be used, stacked under the title
+            float y = -MenuPad - MenuTitleH - MenuBtnGap;
+            int shown = 0;
+            // a fired tube still flooded: Drain first (getting it ready to reload), the door after
+            bool drainFirst = TubeDoors.WetEmpty(l) && menuDoor != null;
+            foreach (var item in MenuOrder(drainFirst))
+            {
+                if (item.Rect.gameObject.activeSelf != item.Enabled) item.Rect.gameObject.SetActive(item.Enabled);
+                if (!item.Enabled) { item.Hover = false; continue; }
+                item.Rect.anchoredPosition = new Vector2(MenuPad, y);
+                y -= MenuBtnH + MenuBtnGap;
+                shown++;
+            }
+            if (tubeMenuNone.gameObject.activeSelf != (shown == 0)) tubeMenuNone.gameObject.SetActive(shown == 0);
+            float h = MenuHeight(shown);
+            if (!Mathf.Approximately(tubeMenu.sizeDelta.y, h)) tubeMenu.sizeDelta = new Vector2(tubeMenu.sizeDelta.x, h);
         }
 
         static void PaintMenuItem(MenuItem item, string text, bool enabled)
         {
             item.Enabled = enabled;
             if (item.Label.text != text) item.Label.text = text;
-            item.Bg.color = item.Hover && enabled ? BtnHover : BtnIdle;
-            Color c = DigitLight;
-            if (!enabled) c.a = 0.35f;
-            item.Label.color = c;
+            item.Bg.color = item.Fire ? (item.Hover ? MenuFireHover : MenuFireIdle) : (item.Hover ? MenuBtnHover : MenuBtnIdle);
+            item.Label.color = DigitLight;
         }
 
         void CloseTubeMenu()
@@ -284,31 +319,10 @@ namespace ScopeTdcControls
             if (tubeMenuBlocker != null) Destroy(tubeMenuBlocker.gameObject);
             tubeMenu = tubeMenuBlocker = null;
             tubeMenuDot = null;
-            menuFlood = menuDoor = menuSelect = menuLaunch = null;
+            menuFlood = menuDoor = menuLaunch = null;
+            menuItems.Clear();
+            tubeMenuNone = null;
             HideTip();
-        }
-
-        static Sprite tickSprite;
-
-        /// <summary>A check mark.</summary>
-        static Sprite TickSprite()
-        {
-            if (tickSprite != null) return tickSprite;
-            const int n = 32;
-            tickSprite = MakeShapeSprite(n, n, (x, y) =>
-            {
-                // short stroke down-right from (6,16) to (13,8), long stroke up-right from (13,8) to (27,25)
-                return SegDist(x, y, 6f, 16f, 13f, 8f) <= 2.6f || SegDist(x, y, 13f, 8f, 27f, 25f) <= 2.6f;
-            });
-            return tickSprite;
-        }
-
-        static float SegDist(float px, float py, float ax, float ay, float bx, float by)
-        {
-            float dx = bx - ax, dy = by - ay;
-            float t = Mathf.Clamp01(((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy));
-            float cx = ax + t * dx - px, cy = ay + t * dy - py;
-            return Mathf.Sqrt(cx * cx + cy * cy);
         }
 
         /// <summary>A click anywhere outside the menu closes it.</summary>

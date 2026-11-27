@@ -202,6 +202,11 @@ namespace ScopeTdcControls
                 bool wetEmpty = TubeDoors.WetEmpty(l);
                 bool firing = TubeDoors.Firing(l);
                 if (firing) { fill = TubeFiring; light = true; }           // a torpedo just left
+                else if (wetEmpty && l.CurrentState == TorpedoLauncher.State.Draining)
+                {
+                    // fired tube being drained: empty, the water level falling
+                    fill = TubeEmpty; light = true; level = Mathf.Clamp01(l.FloodingProgress);
+                }
                 else if (wetEmpty) { fill = TubeFlooded; light = true; }   // fired: empty, still flooded
                 else if (!TubeHasTorpedo(l)) { fill = TubeEmpty; light = true; }
                 else if (l.CurrentState == TorpedoLauncher.State.Preheating) { fill = TubeMaintenance; light = false; } // in maintenance
@@ -274,7 +279,7 @@ namespace ScopeTdcControls
         {
             var ship = Ship();
             var l = dot.Launcher;
-            if (ship == null || l == null || !l.IsFlooded) return;
+            if (ship == null || l == null || !l.IsFlooded || l.Torpedo == null) return; // a fired tube is flooded but empty
             if (FiringCircuitLive || ship.IsPreparingToLaunchTorpedoes) return; // switches can't be changed now
             var boxes = ship.GetEquipment<TorpedoFireControlBoxes>();
             if (boxes == null) return;
@@ -362,7 +367,8 @@ namespace ScopeTdcControls
                     door == DoorState.Open ? Strings.DoorOpen : door == DoorState.Opening ? Strings.DoorOpening
                     : door == DoorState.Closing ? Strings.DoorClosing : Strings.DoorShut);
             }
-            sb.Append("\n\n").Append(!l.IsFlooded ? Strings.TubeClickNeedsFlood : l.IsMarkedForLaunch ? Strings.TubeClickDeselect : Strings.TubeClickSelect);
+            if (!wetEmpty) sb.Append("\n\n").Append(!l.IsFlooded ? Strings.TubeClickNeedsFlood : l.IsMarkedForLaunch ? Strings.TubeClickDeselect : Strings.TubeClickSelect);
+            else sb.Append('\n');
             bool drains = wetEmpty || (TubeHasTorpedo(l) && !TubeBusy(s) && (l.IsFlooded || s == TorpedoLauncher.State.Flooding));
             if (drains && !TubeDoors.DoorShut(l)) sb.Append('\n').Append(Strings.TubeDrainDoorOpen);
             else if (drains) sb.Append('\n').Append(Strings.TubeDoubleDrain);

@@ -29,9 +29,31 @@ namespace ScopeTdcControls
         public static void OnTorpedoLaunched(TorpedoLauncher tube, Torpedo torpedo)
         {
             if (!GyroConfig.Enabled || !GyroConfig.TorpedoTimers) return;
-            float seconds = impactSeconds;   // what the time-to-impact drums show
-            if (!(seconds >= 1f)) return;    // no time worked out yet: nothing to count down
-            TorpedoTimerHud.Ensure().Add(seconds, torpedo);
+            // worked out now for this torpedo (whether its tube was selected or not): the TDC's
+            // entries as they are, the torpedo's own speed and the gyro angle its tube was set to.
+            // If that can't be done, what the time-to-impact drums show.
+            float seconds;
+            if (!LaunchTime(tube, torpedo, out seconds)) seconds = impactSeconds;
+            if (!(seconds >= 1f)) return;    // no time to count down
+            TorpedoTimerHud.Ensure().Add(Mathf.Min(seconds, ImpactTimeMax), torpedo);
+        }
+
+        static bool LaunchTime(TorpedoLauncher tube, Torpedo torpedo, out float seconds)
+        {
+            seconds = 0f;
+            try
+            {
+                var tdc = Tdc();
+                if (tdc == null) return false;
+                float speed = 0f;
+                if (torpedo != null && torpedo) speed = torpedo.Velocity; // what it was launched at, m/s
+                if (!(speed > 1f && speed < 40f)) speed = 0f;              // not a plausible m/s: the TDC's speed
+                float gyro = float.NaN;
+                var group = tube != null ? tube.Group : null;
+                if (group != null && !float.IsNaN(group.SetGyroAngle)) gyro = group.SetGyroAngle;
+                return TryImpactTimeFor(tdc, speed, gyro, out seconds);
+            }
+            catch { return false; }
         }
 
         sealed class TorpedoTimerHud : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
@@ -193,7 +215,12 @@ namespace ScopeTdcControls
             void Place()
             {
                 var cr = ((RectTransform)transform).rect;
-                stack.anchoredPosition = new Vector2(cr.width * GyroConfig.TimersX, cr.height * GyroConfig.TimersY);
+                Vector2 p = new Vector2(cr.width * GyroConfig.TimersX, cr.height * GyroConfig.TimersY);
+                // kept on screen whatever the saved point (the top centre of the stack sits there)
+                Vector2 size = stack.sizeDelta;
+                p.x = Mathf.Clamp(p.x, Mathf.Min(size.x * 0.5f, cr.width * 0.5f), Mathf.Max(cr.width - size.x * 0.5f, cr.width * 0.5f));
+                p.y = Mathf.Clamp(p.y, Mathf.Min(size.y, cr.height), cr.height);
+                stack.anchoredPosition = p;
             }
 
             public void OnBeginDrag(PointerEventData e)

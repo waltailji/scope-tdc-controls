@@ -179,8 +179,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Torpedo-Laufzeituhren</b>\nAn: Für jeden abgefeuerten Torpedo erscheint oben am Bildschirm ein Torpedo mit einer Uhr, die von der Laufzeit herunterzählt, die beim Schuss angezeigt wurde (in Spielzeit, auch in allen anderen Ansichten). Mehrere Torpedos stehen untereinander. Bei 0:00 verblasst der Eintrag über eine Minute. Zum Verschieben ziehen. Doppelklick auf einen Eintrag: die Orbit-Kamera auf diesem Torpedo, wie die Kamera-Taste auf der Karte (nochmal Doppelklick: zurück).",
-                         "<b>Torpedo run timers</b>\nOn: each torpedo launched gets a torpedo and a clock near the top of the screen, counting down from the time to impact shown at launch (in game time, and in every view). Several torpedoes stack. At 0:00 the entry fades out over a minute. Drag to move them. Double-click an entry: the orbit camera on that torpedo, as with the map's camera button (double-click again to go back).");
+                return T("<b>Torpedo-Laufzeituhren</b>\nAn: Für jeden abgefeuerten Torpedo erscheint oben am Bildschirm ein Torpedo mit einer Uhr, die von seiner Laufzeit herunterzählt: beim Schuss aus den Werten des Vorhaltrechners für genau diesen Torpedo berechnet, auch wenn sein Rohr nicht gewählt war (in Spielzeit, auch in allen anderen Ansichten). Mehrere Torpedos stehen untereinander. Bei 0:00 verblasst der Eintrag über eine Minute. Zum Verschieben ziehen. Doppelklick auf einen Eintrag: die Orbit-Kamera auf diesem Torpedo, wie die Kamera-Taste auf der Karte (nochmal Doppelklick: zurück).",
+                         "<b>Torpedo run timers</b>\nOn: each torpedo launched gets a torpedo and a clock near the top of the screen, counting down from its time to impact: worked out at launch from the TDC for that very torpedo, even if its tube wasn't selected (in game time, and in every view). Several torpedoes stack. At 0:00 the entry fades out over a minute. Drag to move them. Double-click an entry: the orbit camera on that torpedo, as with the map's camera button (double-click again to go back).");
             }
         }
 
@@ -188,8 +188,8 @@ namespace ScopeTdcControls
         {
             get
             {
-                return T("<b>Erweiterte Torpedorohr-Bedienung</b>\nAn: Die Mündungsklappe eines gefluteten Rohrs wird von Hand geöffnet (Rechtsklick auf das Rohr, 3 s). Ein Rohr feuert nur mit ganz geöffneter Klappe (auch die Feuertaste des Spiels überspringt es sonst). Nach dem Schuss bleibt das Rohr geflutet und leer, die Klappe offen; die Besatzung lädt es erst nach, wenn du die Klappe schließt und das Rohr lenzt. Mit offener Klappe kann nicht gelenzt werden. Nach dem Feuerbefehl läuft der erste Torpedo nach 0,25 s statt 1,5 s (die Klappen sind ja schon offen). Der Klappenzustand wird nicht mit dem Spielstand gespeichert.\nAus: keine Mündungsklappen (wie im Spiel).",
-                         "<b>Enhanced torpedo tube handling</b>\nOn: a flooded tube's outer door is opened by hand (right-click the tube, 3 s). A tube fires only with its door fully open (the game's fire key skips it otherwise too). After the shot the tube stays flooded and empty with its door open; the crew reloads it only once you shut the door and drain it. A tube can't be drained with its door open. After a fire command the first torpedo goes after 0.25 s instead of 1.5 s (the doors are already open). The door state isn't saved with the game.\nOff: no outer doors (base game).");
+                return T("<b>Erweiterte Torpedorohr-Bedienung</b>\nAn: Die Mündungsklappe eines gefluteten Rohrs wird von Hand geöffnet (Rechtsklick auf das Rohr, 3 s). Ein Rohr feuert nur mit ganz geöffneter Klappe (auch die Feuertaste des Spiels überspringt es sonst, und der Abfeuerhebel im Torpedoraum lässt sich nicht ziehen). Nach dem Schuss bleibt das Rohr geflutet und leer, die Klappe offen; die Besatzung lädt es erst nach, wenn du die Klappe schließt und das Rohr lenzt. Mit offener Klappe wird nicht gelenzt: hier erst die Klappe schließen; lenzt das Spiel selbst (sein Torpedo-Fenster, die Besatzung am Flutventil), schließt sich die Klappe zuerst (3 s), dann wird gelenzt. Nach dem Feuerbefehl läuft der erste Torpedo nach 0,25 s statt 1,5 s (die Klappen sind ja schon offen). Der Klappenzustand wird nicht mit dem Spielstand gespeichert.\nAus: keine Mündungsklappen (wie im Spiel).",
+                         "<b>Enhanced torpedo tube handling</b>\nOn: a flooded tube's outer door is opened by hand (right-click the tube, 3 s). A tube fires only with its door fully open (the game's fire key skips it otherwise too, and the launch lever in the torpedo room can't be pulled). After the shot the tube stays flooded and empty with its door open; the crew reloads it only once you shut the door and drain it. A tube never drains with its door open: here, shut the door first; when the game drains it (its torpedo panel, the crew at the flood valve), the door shuts first (3 s) and the drain follows. After a fire command the first torpedo goes after 0.25 s instead of 1.5 s (the doors are already open). The door state isn't saved with the game.\nOff: no outer doors (base game).");
             }
         }
 
@@ -248,6 +248,16 @@ namespace ScopeTdcControls
         }
 
         public static string ResetSizes { get { return T("FENSTERGRÖSSEN ZURÜCK", "RESET WINDOW SIZES"); } }
+        public static string ResetPositions { get { return T("FENSTERPOSITIONEN ZURÜCK", "RESET WINDOW POSITIONS"); } }
+
+        public static string TipResetPositions
+        {
+            get
+            {
+                return T("<b>Fensterpositionen zurücksetzen</b>\nStellt alle Fenster, die Schusswinkelzähler (unter das Peilband) und die Torpedo-Laufzeituhren wieder an ihren ursprünglichen Platz, auch die Verankerung der Fenster. Die Größen bleiben.",
+                         "<b>Reset window positions</b>\nPuts every window, the gyro angle counters (under the bearing tape) and the torpedo run timers back where a new install has them, anchoring included. Sizes stay as they are.");
+            }
+        }
 
         public static string TipResetSizes
         {
@@ -676,8 +686,9 @@ namespace ScopeTdcControls
         // tube actions menu (right-click on a tube)
         public static string MenuFlood { get { return T("Fluten", "Flood"); } }
         public static string MenuDrain { get { return T("Lenzen", "Drain"); } }
-        public static string MenuSelect { get { return T("Wählen", "Select"); } }
         public static string MenuLaunch { get { return T("Ausstoßen", "Launch"); } }
+        public static string LeverDoorNotOpen { get { return T("<color=#e07060>Mündungsklappe nicht offen</color> (Rechtsklick auf das Rohr in der Rohranzeige)", "<color=#e07060>Outer door not open</color> (right-click the tube in the tube indicator)"); } }
+        public static string MenuNothing { get { return T("Gerade nichts zu tun", "Nothing to do right now"); } }
         public static string MenuDoorOpen { get { return T("Mündungsklappe auf", "Open outer door"); } }
         public static string MenuDoorClose { get { return T("Mündungsklappe zu", "Shut outer door"); } }
         public static string TipMenuDoorOpen
@@ -698,14 +709,6 @@ namespace ScopeTdcControls
         }
         public static string TipMenuFlood { get { return T("Das Rohr fluten (wie ein Doppelklick).", "Flood the tube (as a double-click does)."); } }
         public static string TipMenuDrain { get { return T("Das Rohr lenzen (wie ein Doppelklick).", "Drain the tube (as a double-click does)."); } }
-        public static string TipMenuSelect
-        {
-            get
-            {
-                return T("Das Rohr für einen Einzelschuss wählen oder abwählen (wie ein Klick). Nur geflutete Rohre, nicht während die Abfeueranlage unter Strom steht.",
-                         "Select or deselect the tube for a single shot (as a click does). Flooded tubes only, not while the firing circuit is live.");
-            }
-        }
         public static string TipMenuLaunch
         {
             get

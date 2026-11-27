@@ -18,11 +18,16 @@ namespace ScopeTdcControls
     ///    point where the door is fully open, and stays there. Closing runs it back.
     ///  - A tube fires only with its door fully open: the launch levers refuse, and the game's
     ///    fire sequence (its fire key) skips the tube.
-    ///  - After a launch the tube stays flooded and empty with its door open: the game's own
-    ///    reset to "dry and empty" is taken over. The crew won't reload it (it reads as in use)
-    ///    until you close the door and drain it.
-    ///  - A tube can't be drained (here, on the game's torpedo panel or by the crew's flood
-    ///    valve) while its door is not shut.
+    ///  - After a launch the tube stays flooded and empty with its door open, in the game too:
+    ///    once the launch is complete the tube is set back to flooded (water in, no torpedo), so
+    ///    the game's torpedo panel, the torpedo room and the crew all see it flooded. The crew
+    ///    won't reload it until you shut the door and drain it; draining is the game's own drain
+    ///    (its time and sound), and a drained empty tube is set to empty (the game would call it
+    ///    loaded). A flooded empty tube can't be selected or fired. Being the game's own state,
+    ///    it is saved with the game; with the option off, such a tube is simply drained.
+    ///  - A tube never drains with its door open. Draining it here waits for you to shut the
+    ///    door; a drain from the game itself (its torpedo panel, the crew at the flood valve),
+    ///    which knows nothing of the door, shuts the door first (3 s) and then goes ahead.
     /// The door state is not saved with the game: after loading, all doors are shut.
     /// </summary>
     public static class TubeDoors
@@ -36,6 +41,8 @@ namespace ScopeTdcControls
             public float From;           // door position (0 shut .. 1 open) when the move began
             public float Since;          // Time.time the move began
             public bool WetEmpty;        // fired: the tube is flooded, without a torpedo
+            public int PendingDrain;     // a game drain waiting for the door to shut: 0 none, 1 Drain, 2 DrainInstantly
+            public bool PendingSilent;
             public float FiredAt = float.NegativeInfinity;
             // the tube's launch animation, driven to hold the door
             public bool AnimResolved, AnimOk;
@@ -43,10 +50,77 @@ namespace ScopeTdcControls
             public int StateHash;
             public float OpenNorm;       // normalized time in the launch animation where the door is fully open
             public float Posed = -1f;    // last door position applied to the animation
+            public bool Held;            // the tube's animator is held by the door (speed 0); else the game's
         }
 
         static readonly Dictionary<TorpedoLauncher, Tube> tubes = new Dictionary<TorpedoLauncher, Tube>();
         static readonly AccessTools.FieldRef<TorpedoLauncher, Animator> animatorRef = AccessTools.FieldRefAccess<TorpedoLauncher, Animator>("launcherAnimator");
+        static AccessTools.FieldRef<TorpedoLauncher, bool> isFloodedRef;
+        static AccessTools.FieldRef<TorpedoLauncher, float> floodingProgressRef;
+        static System.Reflection.MethodInfo setStateMethod;
+        static bool stateResolved, stateOk;
+
+        static bool ResolveState()
+        {
+            if (stateResolved) return stateOk;
+            stateResolved = true;
+            try
+            {
+                isFloodedRef = AccessTools.FieldRefAccess<TorpedoLauncher, bool>("isFlooded");
+                floodingProgressRef = AccessTools.FieldRefAccess<TorpedoLauncher, float>("floodingProgress");
+                setStateMethod = AccessTools.PropertySetter(typeof(TorpedoLauncher), "CurrentState");
+                stateOk = setStateMethod != null;
+            }
+            catch (Exception e) { Debug.LogWarning(ScopeTdcControlsMod.Tag + " tube state fields not found: " + e.Message); stateOk = false; }
+            if (!stateOk) Debug.LogWarning(ScopeTdcControlsMod.Tag + " fired tubes can't be shown flooded to the game (state setter not found)");
+            return stateOk;
+        }
+
+        static void SetState(TorpedoLauncher l, TorpedoLauncher.State s)
+        {
+            if (l.CurrentState == s || !ResolveState()) return;
+            setStateMethod.Invoke(l, new object[] { s }); // the game's setter: its panel and the torpedo room hear of it
+        }
+
+        /// <summary>Water in, no torpedo, as the game's own flooded state (after a shot, the launch complete).</summary>
+        static void MakeFloodedEmpty(TorpedoLauncher l)
+        {
+            if (!ResolveState()) return;
+            isFloodedRef(l) = true;
+            floodingProgressRef(l) = 1f;
+            var x = l as ExtendedTorpedoLauncher;
+            if (x != null && x.IsMarkedForLaunch) x.IsMarkedForLaunch = false; // nothing in it to fire
+            SetState(l, TorpedoLauncher.State.Flooded);
+        }
+
+        /// <summary>No water and no torpedo: the game's empty state (a drained empty tube, or the option off).</summary>
+        static void MakeDryEmpty(TorpedoLauncher l)
+        {
+            if (!ResolveState()) return;
+            isFloodedRef(l) = false;
+            floodingProgressRef(l) = 0f;
+            SetState(l, TorpedoLauncher.State.Empty);
+        }
+
+        /// <summary>The game holds this tube flooded with no torpedo in it.</summary>
+        static bool GameFloodedEmpty(TorpedoLauncher l)
+        {
+            return l != null && l.IsFlooded && l.Torpedo == null && l.CurrentState == TorpedoLauncher.State.Flooded;
+        }
+
+        /// <summary>The game finished draining a tube with nothing in it (it calls that loaded): make it empty.</summary>
+        internal static void AfterDrain(TorpedoLauncher l)
+        {
+            try
+            {
+                if (l == null || l.IsFlooded || l.Torpedo != null || l.CurrentState != TorpedoLauncher.State.Loaded) return;
+                var t = Of(l, false);
+                if (t != null) t.WetEmpty = false;
+                MakeDryEmpty(l);
+                if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " fired tube drained: " + l.name);
+            }
+            catch (Exception e) { Debug.LogException(e); }
+        }
         static Driver driver;
 
         public static bool Enabled { get { return GyroConfig.EnhancedTubeHandling; } }
@@ -117,11 +191,18 @@ namespace ScopeTdcControls
         /// <summary>The door is shut (or doors aren't modelled): the tube may be drained.</summary>
         public static bool DoorShut(TorpedoLauncher l) { return !Enabled || Door(l) == DoorState.Shut; }
 
-        /// <summary>Fired and still flooded: no torpedo, water in the tube.</summary>
+        /// <summary>Fired and still flooded: no torpedo, water in the tube (also one loaded from a save).</summary>
         public static bool WetEmpty(TorpedoLauncher l)
         {
             var t = Of(l, false);
-            return t != null && t.WetEmpty;
+            if (t != null && t.WetEmpty) return true;
+            if (GameFloodedEmpty(l))
+            {
+                if (!Enabled) { MakeDryEmpty(l); return false; } // option off: no tube is left flooded and empty
+                Of(l, true).WetEmpty = true; // a saved game kept it flooded and empty
+                return true;
+            }
+            return false;
         }
 
         /// <summary>Water in the tube: flooded with a torpedo, or flooded and empty after a shot.</summary>
@@ -176,14 +257,31 @@ namespace ScopeTdcControls
             if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " outer door closing: " + l.name);
         }
 
-        /// <summary>Drain a fired (flooded, empty) tube with its door shut.</summary>
-        public static bool CanDrainEmpty(TorpedoLauncher l) { return Enabled && WetEmpty(l) && Door(l) == DoorState.Shut; }
+        /// <summary>
+        /// The game asked to drain a tube whose door isn't shut (its panel, the crew's valve): the
+        /// door shuts, and the drain follows once it is (see Tick).
+        /// </summary>
+        internal static void DrainAfterClosing(TorpedoLauncher l, bool instant, bool silent)
+        {
+            var t = Of(l, true);
+            if (CanClose(l)) Close(l);
+            t.PendingDrain = instant ? 2 : 1;
+            t.PendingSilent = silent;
+            if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " drain of " + l.name + " asked with the outer door open: shutting it first");
+        }
 
+        /// <summary>Drain a fired (flooded, empty) tube with its door shut.</summary>
+        public static bool CanDrainEmpty(TorpedoLauncher l)
+        {
+            return Enabled && WetEmpty(l) && Door(l) == DoorState.Shut && l.IsFlooded && l.CurrentState == TorpedoLauncher.State.Flooded;
+        }
+
+        /// <summary>The game's own drain (time, sound, torpedo room); <see cref="AfterDrain"/> makes it empty when done.</summary>
         public static void DrainEmpty(TorpedoLauncher l)
         {
             if (!CanDrainEmpty(l)) return;
-            Of(l, false).WetEmpty = false;
-            if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " fired tube drained: " + l.name);
+            l.Drain(false);
+            if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " draining fired tube: " + l.name);
         }
 
         /// <summary>A torpedo left the tube (any launch: the levers, the game's fire key, the crew).</summary>
@@ -194,8 +292,7 @@ namespace ScopeTdcControls
             if (!Enabled)
             {
                 // doors not modelled: let the game's launch animation (just restarted) run as usual
-                if (t.Anim != null) { try { t.Anim.speed = 1f; } catch { } }
-                t.Posed = -1f;
+                Release(l, t, false); // the game's launch animation (just restarted) runs as usual
                 return;
             }
             t.WetEmpty = true; // the game makes the tube dry and empty at once; it stays flooded here
@@ -294,15 +391,35 @@ namespace ScopeTdcControls
             return 0.5f;
         }
 
+        /// <summary>
+        /// Hand the tube's animator back to the game (its breech door and launch animations need
+        /// it running): the launch animation set to its end (door shut, as after a launch) and its
+        /// speed back to normal. toEnd false: leave the animation where the game just put it.
+        /// </summary>
+        static void Release(TorpedoLauncher l, Tube t, bool toEnd)
+        {
+            t.Posed = -1f;
+            if (!t.Held) return;
+            t.Held = false;
+            if (t.Anim == null) return;
+            try
+            {
+                if (toEnd && t.AnimOk) t.Anim.Play(t.StateHash, 0, 1f);
+                t.Anim.speed = 1f;
+            }
+            catch (Exception e) { Debug.LogWarning(ScopeTdcControlsMod.Tag + " tube door animation: " + e.Message); }
+        }
+
         /// <summary>Hold the launch animation with the door at <paramref name="open"/> (0 shut .. 1 open).</summary>
         static void Pose(TorpedoLauncher l, Tube t, float open)
         {
-            if (Mathf.Abs(open - t.Posed) < 0.0005f) return;
+            if (t.Held && Mathf.Abs(open - t.Posed) < 0.0005f) return;
             ResolveAnim(l, t);
             t.Posed = open;
             if (!t.AnimOk || t.Anim == null) return;
             try
             {
+                t.Held = true;
                 t.Anim.speed = 0f;
                 t.Anim.Play(t.StateHash, 0, t.OpenNorm * open);
             }
@@ -321,19 +438,46 @@ namespace ScopeTdcControls
                 var l = kv.Key;
                 var t = kv.Value;
                 if (l == null) { gone.Add(l); continue; }
+                var state = l.CurrentState;
                 if (!Enabled)
                 {
+                    // option off: a tube held flooded and empty is simply dry and empty again
+                    if (t.WetEmpty && state != TorpedoLauncher.State.Draining && GameFloodedEmpty(l)) MakeDryEmpty(l);
                     t.WetEmpty = false;
-                    if (t.Door != DoorState.Shut) { t.Door = DoorState.Shut; Pose(l, t, 0f); }
+                    if (t.Door != DoorState.Shut) t.Door = DoorState.Shut;
+                    if (t.Held) Release(l, t, true);
                     continue;
                 }
                 // the crew loaded it anyway (an order to this tube): it was drained for that
-                if (t.WetEmpty && (l.Torpedo != null || l.CurrentState == TorpedoLauncher.State.Loading)) t.WetEmpty = false;
+                if (t.WetEmpty && (state == TorpedoLauncher.State.Loading || state == TorpedoLauncher.State.Preheating
+                                   || (state == TorpedoLauncher.State.Loaded && l.Torpedo != null))) t.WetEmpty = false;
+                // the launch is complete (the game made the tube dry and empty): flooded again, as it is
+                if (t.WetEmpty && state == TorpedoLauncher.State.Empty && l.Torpedo == null) MakeFloodedEmpty(l);
+                // drained by other means (the game's panel, the crew's valve) that ended as "loaded"
+                if (t.WetEmpty && state == TorpedoLauncher.State.Loaded && l.Torpedo == null && !l.IsFlooded) AfterDrain(l);
                 // no water in the tube any more: the door can't be open
                 if (!l.IsFlooded && !t.WetEmpty && t.Door != DoorState.Shut && l.CurrentState != TorpedoLauncher.State.Launching)
                     t.Door = DoorState.Shut;
+                // a game drain waiting for the door: go ahead once it is shut; dropped if it is opened again
+                if (t.PendingDrain != 0)
+                {
+                    Settle(t);
+                    if (t.Door == DoorState.Opening || t.Door == DoorState.Open) t.PendingDrain = 0;
+                    else if (t.Door == DoorState.Shut)
+                    {
+                        int how = t.PendingDrain;
+                        t.PendingDrain = 0;
+                        if (l.IsFlooded && l.CurrentState != TorpedoLauncher.State.Draining)
+                        {
+                            if (how == 2) l.DrainInstantly();
+                            else l.Drain(t.PendingSilent);
+                        }
+                    }
+                }
                 float open = Settle(t);
-                if (t.AnimResolved || t.Door != DoorState.Shut || t.Posed >= 0f) Pose(l, t, open);
+                // the animator is the door's only while it is not shut; shut, the game has it back
+                if (t.Door != DoorState.Shut) Pose(l, t, open);
+                else if (t.Held) Release(l, t, true);
             }
             foreach (var l in gone) tubes.Remove(l);
         }
@@ -397,7 +541,10 @@ namespace ScopeTdcControls
         {
             try
             {
-                if (!FireCommand.InSequence || !TubeDoors.Enabled || TubeDoors.DoorReady(l) || !TubeDoors.IsPlayerTube(l)) return true;
+                if (!TubeDoors.Enabled || l == null || !TubeDoors.IsPlayerTube(l)) return true; // option off: the game's own launch
+                if (l.Torpedo == null) return false;                       // flooded after a shot, nothing in it to fire
+                if (l.Torpedo is StoredMinePacket) return true;            // mines are laid as the game does it
+                if (TubeDoors.DoorReady(l)) return true;
                 if (!loggedHeld || GyroConfig.DebugLog)
                 {
                     loggedHeld = true;
@@ -429,23 +576,91 @@ namespace ScopeTdcControls
     [HarmonyPatch(typeof(TorpedoLauncher), "Drain", new Type[] { typeof(bool) })]
     static class TorpedoLauncher_Drain_DoorPatch
     {
-        static bool Prefix(TorpedoLauncher __instance) { return DoorDrainHook.Allow(__instance); }
+        static bool Prefix(TorpedoLauncher __instance, bool silent) { return DoorDrainHook.Allow(__instance, false, silent); }
     }
 
     [HarmonyPatch(typeof(TorpedoLauncher), "DrainInstantly")]
     static class TorpedoLauncher_DrainInstantly_DoorPatch
     {
-        static bool Prefix(TorpedoLauncher __instance) { return DoorDrainHook.Allow(__instance); }
+        static bool Prefix(TorpedoLauncher __instance) { return DoorDrainHook.Allow(__instance, true, false); }
+    }
+
+    [HarmonyPatch(typeof(TorpedoLauncher), "DrainingUpdate")]
+    static class TorpedoLauncher_DrainingUpdate_EmptyPatch
+    {
+        static void Postfix(TorpedoLauncher __instance) { TubeDoors.AfterDrain(__instance); }
+    }
+
+    [HarmonyPatch(typeof(TorpedoLauncher), "DrainInstantly")]
+    static class TorpedoLauncher_DrainInstantly_EmptyPatch
+    {
+        static void Postfix(TorpedoLauncher __instance) { TubeDoors.AfterDrain(__instance); }
+    }
+
+    /// <summary>A flooded tube with nothing in it (fired, still flooded) can't be selected for a shot.</summary>
+    [HarmonyPatch(typeof(ExtendedTorpedoLauncher), "IsMarkedForLaunch", MethodType.Setter)]
+    static class ExtendedTorpedoLauncher_MarkEmpty_Patch
+    {
+        static bool Prefix(ExtendedTorpedoLauncher __instance, bool value)
+        {
+            try { return !(value && TubeDoors.Enabled && __instance.IsFlooded && __instance.Torpedo == null); }
+            catch { return true; }
+        }
+    }
+
+    /// <summary>
+    /// The crew's launch lever in the torpedo room: with the option on, it can't be pulled until
+    /// the tube's outer door is fully open (it would fire into a shut door); its tooltip says why.
+    /// </summary>
+    [HarmonyPatch(typeof(UBOAT.Game.Scene.Characters.Actions.UseTorpedoLauncherLaunchLever), "GetState")]
+    static class UseTorpedoLauncherLaunchLever_GetState_DoorPatch
+    {
+        static void Postfix(UBOAT.Game.Scene.Characters.Activators.Activator activator,
+                            ref UBOAT.Game.Scene.Characters.Actions.ActionStateData __result)
+        {
+            try
+            {
+                if (__result.ActionState != UBOAT.Game.Scene.Characters.Actions.ActionState.Enabled || !TubeDoors.Enabled) return;
+                var lever = activator != null ? activator.GetComponent<TorpedoLauncherLaunchLever>() : null;
+                var l = lever != null ? lever.Launcher : null;
+                if (l == null || !TubeDoors.IsPlayerTube(l) || l.Torpedo is StoredMinePacket || TubeDoors.DoorReady(l)) return;
+                __result = new UBOAT.Game.Scene.Characters.Actions.ActionStateData(UBOAT.Game.Scene.Characters.Actions.ActionState.Disabled);
+            }
+            catch { }
+        }
+    }
+
+    [HarmonyPatch(typeof(UBOAT.Game.Scene.Characters.Actions.UseTorpedoLauncherLaunchLever), "GetTooltipContents")]
+    static class UseTorpedoLauncherLaunchLever_Tooltip_DoorPatch
+    {
+        static void Postfix(UBOAT.Game.Scene.Characters.Actions.UseTorpedoLauncherLaunchLever __instance, ref string __result)
+        {
+            try
+            {
+                if (!TubeDoors.Enabled) return;
+                var lever = Traverse.Create(__instance).Field("hoveredActivator").GetValue<Component>(); // the lever the tooltip is for
+                var tl = lever != null ? lever.GetComponent<TorpedoLauncherLaunchLever>() : null;
+                var l = tl != null ? tl.Launcher : null;
+                if (l == null || l.Torpedo is StoredMinePacket || TubeDoors.DoorReady(l)) return;
+                __result = (__result ?? "") + "\n" + Strings.LeverDoorNotOpen;
+            }
+            catch { }
+        }
     }
 
     static class DoorDrainHook
     {
-        public static bool Allow(TorpedoLauncher l)
+        /// <summary>
+        /// A drain with the outer door not shut: held, the door shut, and the drain started again
+        /// once it is (the game, which has no outer doors, asked for it: its panel or the crew).
+        /// </summary>
+        public static bool Allow(TorpedoLauncher l, bool instant, bool silent)
         {
             try
             {
                 if (!TubeDoors.Enabled || TubeDoors.DoorShut(l) || !TubeDoors.IsPlayerTube(l)) return true;
-                if (GyroConfig.DebugLog) Debug.Log(ScopeTdcControlsMod.Tag + " drain held: outer door of " + l.name + " not shut");
+                if (!l.IsFlooded) return true; // nothing to drain: the game returns at once anyway
+                TubeDoors.DrainAfterClosing(l, instant, silent);
                 return false;
             }
             catch { return true; }

@@ -28,7 +28,15 @@ react on their round faces, so drags beside them move the window). With
 "Ctrl+drag to move" on in the settings, hold Ctrl to move instead. The TDC
 dials, both selector windows and the launch lever can be resized with the grip
 in their bottom-right corner; RESET WINDOW SIZES on the panel sets them back.
+RESET WINDOW POSITIONS puts every window, the gyro angle counters and the
+torpedo run timers back where a new install has them, anchoring included (sizes
+stay); the counters are placed under the bearing tape again.
 Positions and sizes are saved automatically.
+A window that ends up off screen (a smaller resolution or UI scale than when it
+was placed, for instance) is brought back: a few seconds after entering the
+scope, and after the screen size changes, any window not fully on screen is
+moved just far enough to be (and saved there); in between, one shown entirely
+off screen is brought back within a few seconds.
 
 A button in the periscope / UZO screen's left sidebar (counter icon, next to
 the chronometer) shows or hides the control panel, its windows and the gyro
@@ -144,8 +152,8 @@ three switches of the Schaltkasten T-Abf.-Anl.:
   fire command given while the launch lever lamp was green. While it is lit
   the three switches can't be turned; hover it for its state.
   Anchor icon at the top right: dark = anchored to the direction selector
-  (sits left of it, bottom level with it, and follows it), faint = free (the
-  default); switching keeps it where it is.
+  (sits right of it, bottom level with it, and follows it; the default),
+  faint = free; switching keeps it where it is.
   Shown or hidden with the Schusswahl (Firing selector) check box on the control
   panel.
 
@@ -161,17 +169,26 @@ Torpedo tubes (Rohranzeige): a compact window, by default above the bottom
   Open outer door: the door opens in 3 seconds (the + is swept away and the
   tube's door opens on the boat) and stays open. A tube fires only with its
   door fully open. After the shot the tube stays flooded and empty with its
-  door open: blue with a grey X. The game no longer treats it as dry at once:
-  the crew won't reload it until you shut the door (right-click, Shut outer
-  door, 3 s) and drain it (double-click or right-click, Drain). No tube can be
-  drained with its door open, here, on the game's torpedo panel or by the crew.
+  door open: blue with a grey X. The game itself keeps it flooded too (its
+  torpedo panel and the torpedo room show it flooded, and it is saved that
+  way): the crew won't reload it until you shut the door (right-click, Shut
+  outer door, 3 s) and drain it (double-click or right-click, Drain, or the
+  game's panel or the crew's valve). Draining is the game's own, with its time
+  and sound, the water level falling in the circle; then the tube is empty. A
+  flooded empty tube can't be selected or fired. No tube drains with its door
+  open: here, shut it first (the menu offers Drain only then); a drain from
+  the game itself (its torpedo panel, or the crew at the torpedo-room flood
+  valve), which knows nothing of the outer doors, shuts the door first (3 s)
+  and then drains.
   With the doors already open, a fire command (the launch lever or the game's
   fire key) launches the first torpedo after 0.25 s instead of the game's
   1.5 s; the 4 s between salvo tubes is unchanged.
   The door state isn't saved with the game: after loading, all doors are shut.
   The game's own fire key skips a selected tube whose door isn't fully open
-  (the others still fire). Fired by the crew at the lever in the torpedo room
-  with the door shut, the tube still fires and its door counts as open after.
+  (the others still fire). The crew's launch lever in the torpedo room can't
+  be pulled either until the door is fully open (its tooltip says why).
+  Mines are laid as the game does it, doors or not. With the option off,
+  none of this applies: no doors, and the game's own launch and drain.
   Click a flooded tube to select it for a single shot: the Einzelschuss switch
   turns to it and Faecherschuss to Aus, as on the switch box (not while the
   firing circuit lamp is lit). Double-click a loaded tube to flood it, or to
@@ -179,6 +196,10 @@ Torpedo tubes (Rohranzeige): a compact window, by default above the bottom
   the selected tube again, or draining it, deselects it (Einzelschuss to Aus).
   Launch from the tube's menu (or Ctrl+click) and the commander calls "Los!"
   ("Launch!"), as with the game's fire key.
+  The right-click menu offers only what can be done with the tube right now,
+  as buttons, top to bottom: Launch, Open / Shut outer door, Flood / Drain
+  (Drain above the door on a fired tube still flooded); select a tube with a
+  left click, or on the firing selector.
   Hover a tube for its state and what a click / double-click does. Drag to
   move, resize with the corner grip. Shown or hidden with the Rohranzeige (Torpedo
   tubes) check box.
@@ -198,7 +219,8 @@ Torpedo settings (Torpedoeinstellung): appears at the bottom, right of the
   launch) and shows the first one's.
   Shown or hidden with the Torpedoeinstellung (Torpedo settings) check box.
 
-Launch lever (T-Abf.-Schalter): a narrow window at the bottom right with a
+Launch lever (T-Abf.-Schalter): a narrow window right of the firing selector
+  (LeverBesideSwitches=false in the settings file: at LeverX / LeverY) with a
   spring-loaded lever, Aus (Off) / Schuß (Fire). It rests at Aus; press on
   it (grip, slot or plates) to throw it to Schuß and fire the selected tubes;
   it stays down while the mouse button is held and springs back when you let
@@ -229,7 +251,10 @@ Launch lever (T-Abf.-Schalter): a narrow window at the bottom right with a
 
 Torpedo run timers (setting "Torpedo run timers", on by default): each
   torpedo launched gets a row near the top of the screen with a torpedo and a
-  clock counting down (m:ss) from the time to impact at launch. Several stack,
+  clock counting down (m:ss) from its time to impact, worked out at launch for
+  that torpedo: the TDC's entries at that moment, the torpedo's own speed and
+  the gyro angle its tube was set to, whether or not the tube was selected
+  (if that can't be done, the drums' value). Several stack,
   newest at the bottom; at 0:00 a row fades out over a minute. Shown in every
   view, counted in game time (time compression speeds them up). Drag to move
   (TimersX / TimersY in the settings file).
@@ -256,6 +281,30 @@ Version history
        "Los!" callout when launching from the tube indicator.
        The value boxes under the controls and the launch lever's plates have
        small rounded corners.
+       Windows that end up off screen (e.g. after a resolution change) are
+       moved back on screen by themselves.
+       RESET WINDOW POSITIONS button on the panel, under RESET WINDOW SIZES.
+       The sidebar button glows on hover while off too, like the stock ones.
+       Fixes from 1.6.1 (enhanced tube handling): a tube whose outer door had
+       been opened kept its animator frozen, which stopped its breech door
+       from opening and let a launch from the torpedo room fire into the shut
+       door and explode against the boat. The animator is now the game's
+       again whenever the door is shut, and the torpedo-room lever can't be
+       pulled until the door is fully open. A fired tube can be drained by the
+       game's panel or the crew (it could only be drained here before, so the
+       crew wouldn't reload it).
+       A fired tube left flooded is flooded to the game too (its torpedo
+       panel, the torpedo room, saves), and drains with the game's own drain.
+       A drain from the game's panel or the crew's valve with the outer door
+       open shuts the door first, then drains (it was refused before).
+       Tube right-click menu: rounded slate-blue buttons, only the actions
+       possible right now (the launch button red); Select left it (a left
+       click or the firing selector selects a tube).
+       New default layout along the bottom: direction selector, firing
+       selector (anchored to it, now on its right), launch lever beside the
+       firing selector. Existing setups keep their places until RESET WINDOW
+       POSITIONS, which also puts the gyro angle counters back under the
+       bearing tape.
   1.6.1 Launch lever range check: uses the selected torpedoes' own run at
        their set speed (the shortest one), as the game's salvo preview does,
        instead of the TDC's range knob (5000 m unless turned), which could

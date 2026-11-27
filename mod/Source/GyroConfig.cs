@@ -51,7 +51,7 @@ namespace ScopeTdcControls
         public static bool SingleTorpedoLaunchFix = true; // fire only the tubes selected when fire was pressed
         public static bool AutoSelectFloodedTube = false; // true = the game checks a tube when it floods (base game)
         public static bool TorpedoTimers = true;          // a countdown per torpedo launched, near the top of the screen
-        public static float TimersX = 0.5f, TimersY = 0.9f; // top centre of the timer stack, 0..1 of the screen from bottom-left
+        public static float TimersX = 0.75f, TimersY = 0.9f; // top centre of the timer stack, 0..1 of the screen from bottom-left
         public static bool EnhancedTubeHandling = true;   // tube outer doors by hand, fire only when open, tube stays flooded after a shot
         public static bool TdcOperatorRequired = true;    // false = TDC works without a crew member at it
         public static bool CtrlDragToMove = false;        // false = plain drag on a window background moves it (default for new installs)
@@ -73,7 +73,8 @@ namespace ScopeTdcControls
         public static float TurnRateOffsetX = 0f, TurnRateOffsetY = 0f; // from its place right of the TDC dials, bottom level with theirs
         // anchoring (the anchor icon on the window): anchored windows follow another window,
         // using their *Offset; free windows use their *Free position (canvas units)
-        public static bool SpreadAnchored = true, TurnRateAnchored = true, SwitchesAnchored = false;
+        public static bool SpreadAnchored = true, TurnRateAnchored = true, SwitchesAnchored = true;
+        public static bool LeverBesideSwitches = true;   // the launch lever right of the firing selector (false: at LeverX/LeverY)
         public static float SpreadFreeX = 0f, SpreadFreeY = 0f, TurnRateFreeX = 0f, TurnRateFreeY = 0f;
         public static float SwitchesAnchorOffsetX = 0f, SwitchesAnchorOffsetY = 0f; // from its place left of the direction selector
         public static bool ShowTubes = true;              // SH3-style torpedo tube indicator
@@ -231,7 +232,7 @@ EnhancedTubeHandling=true
 #        from the time-to-impact counter (drag the timers to move them)
 TorpedoTimers=true
 # Top centre of the torpedo timers, 0..1 of screen width/height from bottom-left
-TimersX=0.5
+TimersX=0.75
 TimersY=0.9
 # true = the TDC only works with a crew member at it (base game)
 # false = the TDC calculates and can be opened from the station bar unmanned
@@ -276,7 +277,7 @@ TurnRateOffsetY=0
 # selector follows the direction selector (sitting left of it)
 SpreadAnchored=true
 TurnRateAnchored=true
-SwitchesAnchored=false
+SwitchesAnchored=true
 SpreadFreeX=0
 SpreadFreeY=0
 TurnRateFreeX=0
@@ -365,7 +366,10 @@ SwitchesOffsetY=0
 # ---- Launch lever (Aus / Gesichert / Schuß) ----
 # Shown and hidden together with the control panel (sidebar button)
 ShowLever=true
-# Centre of the window, 0..1 of screen width/height from bottom-left
+# true = right of the firing selector, bottom level with it (the offset counts from there);
+# false = centred at LeverX / LeverY
+LeverBesideSwitches=true
+# Centre of the window, 0..1 of screen width/height from bottom-left (LeverBesideSwitches=false)
 LeverX=0.80
 LeverY=0.17
 # Extra offset in 1080p pixels. Ctrl+drag updates these.
@@ -374,7 +378,7 @@ LeverOffsetY=0
 
 # ---- Direction selector (Zielrichtung / Schußrichtung: bearing source, gyro receiver) ----
 ShowDirections=true
-DirectionsX=0.285
+DirectionsX=0.10
 DirectionsY=0.11
 DirectionsOffsetX=0
 DirectionsOffsetY=0
@@ -428,6 +432,14 @@ DebugLog=false
                 }
 
                 AppendMissingDefaults(path, present);
+
+                // 1.6.2 puts the launch lever beside the firing selector; a lever already placed
+                // (a file from before) stays where it is
+                if (!present.Contains("LeverBesideSwitches"))
+                {
+                    LeverBesideSwitches = false;
+                    SaveText("LeverBesideSwitches", "false");
+                }
 
                 // 1.2 test builds put the switch box at the bottom centre; move an untouched one to its new home
                 if (SwitchesX == 0.5f && SwitchesY == 0.13f && SwitchesOffsetX == 0f && SwitchesOffsetY == 0f)
@@ -508,6 +520,30 @@ DebugLog=false
         }
 
         /// <summary>Writes key=value back into the file, replacing an existing line or appending.</summary>
+        static readonly System.Text.RegularExpressions.Regex PositionKey = new System.Text.RegularExpressions.Regex(
+            @"^(\w*Offset[XY]|\w*Free[XY]|(Torpedo|Tubes|GyroSet|SternSet|Bearing|Controls|Dials|Switches|Lever|Directions|Timers|TapeAnchor)[XY]|\w*Anchored|LeverBesideSwitches)$");
+
+        /// <summary>
+        /// Every window's position back to the defaults of a new install: the drag offsets, the
+        /// screen points they are measured from, which windows follow which, and the gyro angle
+        /// counters' spot (cleared, so they are placed under the bearing tape again). Sizes stay.
+        /// </summary>
+        public static void ResetPositions()
+        {
+            foreach (string raw in DefaultFile.Split('\n'))
+            {
+                string line = raw.Trim();
+                if (line.Length == 0 || line[0] == '#') continue;
+                int eq = line.IndexOf('=');
+                if (eq <= 0) continue;
+                string key = line.Substring(0, eq).Trim();
+                if (!PositionKey.IsMatch(key)) continue;
+                string v = line.Substring(eq + 1).Trim();
+                Apply(key.ToLowerInvariant(), v);
+                SaveText(key, v);
+            }
+        }
+
         static void SaveText(string key, string text)
         {
             try
@@ -594,6 +630,7 @@ DebugLog=false
                 case "spreadanchored": SpreadAnchored = Bool(v, SpreadAnchored); break;
                 case "turnrateanchored": TurnRateAnchored = Bool(v, TurnRateAnchored); break;
                 case "switchesanchored": SwitchesAnchored = Bool(v, SwitchesAnchored); break;
+                case "leverbesideswitches": LeverBesideSwitches = Bool(v, LeverBesideSwitches); break;
                 case "spreadfreex": SpreadFreeX = Num(v, SpreadFreeX); break;
                 case "spreadfreey": SpreadFreeY = Num(v, SpreadFreeY); break;
                 case "turnratefreex": TurnRateFreeX = Num(v, TurnRateFreeX); break;

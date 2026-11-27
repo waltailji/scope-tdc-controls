@@ -64,7 +64,7 @@ namespace ScopeTdcControls
         public static bool Ready(TorpedoLauncher l)
         {
             var s = l.CurrentState;
-            return s == TorpedoLauncher.State.Flooding || s == TorpedoLauncher.State.Flooded;
+            return (s == TorpedoLauncher.State.Flooding || s == TorpedoLauncher.State.Flooded) && l.Torpedo != null; // not a fired tube left flooded
         }
 
         public static bool IsStern(TorpedoFireControlBoxes boxes, TorpedoLauncherGroup group)

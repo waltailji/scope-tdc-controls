@@ -214,8 +214,39 @@ namespace ScopeTdcControls
         static bool TryImpactTime(TorpedoCalculator tdc, PlayerShip ship, out float seconds)
         {
             seconds = 0f;
+            float run, tdcSpeed;
+            if (!TryImpactRun(tdc, float.NaN, out run, out tdcSpeed)) return false;
+            float speed = SelectedTorpedoSpeed(ship);
+            if (!(speed > 0.5f)) speed = tdcSpeed;
+            seconds = run / speed;
+            return !float.IsNaN(seconds) && !float.IsInfinity(seconds);
+        }
+
+        /// <summary>
+        /// The time for one torpedo just launched: the TDC's entries as they are now, timed at that
+        /// torpedo's own speed (m/s; the TDC's if not known), its turn worked out for gyroAngle
+        /// (the angle its tube group was set to; NaN = the TDC's).
+        /// </summary>
+        static bool TryImpactTimeFor(TorpedoCalculator tdc, float speed, float gyroAngle, out float seconds)
+        {
+            seconds = 0f;
+            float run, tdcSpeed;
+            if (!TryImpactRun(tdc, gyroAngle, out run, out tdcSpeed)) return false;
+            if (!(speed > 0.5f)) speed = tdcSpeed;
+            seconds = run / speed;
+            return !float.IsNaN(seconds) && !float.IsInfinity(seconds);
+        }
+
+        /// <summary>
+        /// The torpedo's run in metres from launch to the TDC's aim point, and the TDC's torpedo speed
+        /// (m/s) it was worked out with. gyroAngle: for the turn after launch (NaN = the TDC's).
+        /// </summary>
+        static bool TryImpactRun(TorpedoCalculator tdc, float gyroAngle, out float run, out float tdcSpeed)
+        {
+            run = 0f;
+            tdcSpeed = 0f;
             if (tdc == null) return false;
-            float tdcSpeed = tdc.TorpedoSpeed * KnotsToMs;   // what the gyro angle was worked out for
+            tdcSpeed = tdc.TorpedoSpeed * KnotsToMs;   // what the gyro angle was worked out for
             float dist = tdc.DistanceToTarget;
             if (!(tdcSpeed > 0.5f) || !(dist > 0f) || float.IsInfinity(dist)) return false;
 
@@ -230,7 +261,8 @@ namespace ScopeTdcControls
             ResolveImpactMembers();
             if (idealStartPoint != null && tdcLauncherDistance != null && tdcParallaxMultiplier != null)
             {
-                try { start = idealStartPoint(tdc.GyroAngle, tdcParallaxMultiplier(tdc), tdcLauncherDistance(tdc)); }
+                float gyro = float.IsNaN(gyroAngle) ? tdc.GyroAngle : gyroAngle;
+                try { start = idealStartPoint(gyro, tdcParallaxMultiplier(tdc), tdcLauncherDistance(tdc)); }
                 catch { start = Vector2.zero; }
                 if (float.IsNaN(start.x) || float.IsNaN(start.y) || start.sqrMagnitude > dist * dist) start = Vector2.zero;
             }
@@ -257,12 +289,8 @@ namespace ScopeTdcControls
                 if (t2 > 0f && t2 < meet) meet = t2;
                 if (float.IsInfinity(meet)) return false;
             }
-            float run = meet * tdcSpeed;   // metres, from launch (the start point counts the straight bit and the turn)
-
-            float speed = SelectedTorpedoSpeed(ship);
-            if (!(speed > 0.5f)) speed = tdcSpeed;
-            seconds = run / speed;
-            return !float.IsNaN(seconds) && !float.IsInfinity(seconds);
+            run = meet * tdcSpeed;   // metres, from launch (the start point counts the straight bit and the turn)
+            return !float.IsNaN(run) && !float.IsInfinity(run) && run > 0f;
         }
 
         /// <summary>
