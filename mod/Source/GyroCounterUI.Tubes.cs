@@ -360,6 +360,9 @@ namespace ScopeTdcControls
             else if (l.IsFlooded) state = l.IsMarkedForLaunch ? Strings.TubeFloodedSelected : Strings.TubeFlooded;
             else state = Strings.TubeLoaded;
             sb.Append(state);
+            var stored = l.Torpedo;
+            string kind = stored != null ? TorpedoTypeName(stored.name) : "";
+            if (kind.Length > 0) sb.Append('\n').Append(Strings.TorpedoWord).Append(": ").Append(kind);
             if (TubeDoors.Enabled && TubeDoors.Wet(l))
             {
                 var door = TubeDoors.Door(l);

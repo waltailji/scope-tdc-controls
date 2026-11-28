@@ -670,6 +670,8 @@ namespace ScopeTdcControls
         public static string TubeFired { get { return T("Schuss – Torpedo läuft", "Fired – torpedo running"); } }
         public static string TubeWetEmpty { get { return T("Leer, noch geflutet (lenzen vor dem Nachladen)", "Empty, still flooded (drain before reloading)"); } }
         public static string TubeDoorLabel { get { return T("Mündungsklappe", "Outer door"); } }
+        public static string TorpedoWord { get { return T("Torpedo", "Torpedo"); } }
+        public static string TimerDoubleClick { get { return T("Doppelklick: Kamera auf diesen Torpedo", "Double-click: camera on this torpedo"); } }
         public static string DoorShut { get { return T("zu", "shut"); } }
         public static string DoorOpening { get { return T("öffnet …", "opening …"); } }
         public static string DoorOpen { get { return T("offen", "open"); } }

@@ -1,4 +1,4 @@
-Scope TDC Controls  v1.6.2 (UBOAT 2026.1 patch 21)
+Scope TDC Controls  v1.6.3 (UBOAT 2026.1 patch 21)
 ===================================================
 
 SH3-style TDC readouts and controls in the periscope and UZO views.
@@ -254,7 +254,8 @@ Torpedo run timers (setting "Torpedo run timers", on by default): each
   clock counting down (m:ss) from its time to impact, worked out at launch for
   that torpedo: the TDC's entries at that moment, the torpedo's own speed and
   the gyro angle its tube was set to, whether or not the tube was selected
-  (if that can't be done, the drums' value). Several stack,
+  (if that can't be done, the drums' value). Hover a row for the torpedo's
+  type (G7a T1, G7e T3 FAT, G7es T5...). Several stack,
   newest at the bottom; at 0:00 a row fades out over a minute. Shown in every
   view, counted in game time (time compression speeds them up). Drag to move
   (TimersX / TimersY in the settings file).
@@ -273,6 +274,10 @@ game's raise/lower control and these buttons; the keys still raise and lower
 the periscope.
 
 Version history
+  1.6.3 The torpedo's type (G7a T1, G7e T3 FAT, G7es T5...): in a pop-up when
+       hovering a torpedo run timer, and in the tube indicator's pop-up.
+       Fix: a tube's outer door saved part open (a save made while a torpedo
+       was leaving) is closed again when the game loads.
   1.6.2 Time to impact (LAUFZEIT) drums at the bottom of the TDC dials: the
        torpedo's run time to the TDC's aim point, from the TDC's entries.
        Torpedo run timers near the top of the screen, one per torpedo, counting
@@ -490,6 +495,17 @@ Fixes to the base game
        selection is put back on reopening. The fire-control box tube selector
        is also kept in step with the scope selection, so mods that read the
        selection from the box (e.g. Torpedo Room) keep your choice.
+
+  Torpedo tube outer door stuck part open
+       The game saves each tube's outer door angle but not its launch
+       animation, so a save made while a torpedo was leaving keeps that door
+       part open in every later save (the tube's animation takes the loaded
+       angle as its resting pose and keeps putting it back). A few seconds
+       after a game loads, the door angles of your tubes (which share a model)
+       are compared; one that differs from the angle most of them share is
+       held at theirs whenever no launch is playing, so your next save has it
+       right and it stays fixed from then on. The log says which. Works with
+       or without enhanced tube handling; needs at least three tubes.
 
 Counters
 --------

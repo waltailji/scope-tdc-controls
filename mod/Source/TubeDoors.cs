@@ -48,6 +48,7 @@ namespace ScopeTdcControls
             public bool AnimResolved, AnimOk;
             public Animator Anim;
             public int StateHash;
+            public AnimationClip Clip;   // the launch clip
             public float OpenNorm;       // normalized time in the launch animation where the door is fully open
             public float Posed = -1f;    // last door position applied to the animation
             public bool Held;            // the tube's animator is held by the door (speed 0); else the game's
@@ -337,6 +338,7 @@ namespace ScopeTdcControls
                         if (c != null && c.name.IndexOf("launch", StringComparison.OrdinalIgnoreCase) >= 0) { clip = c; break; }
                     if (clip == null && clips.Length == 1) clip = clips[0];
                 }
+                t.Clip = clip;
                 t.OpenNorm = clip != null ? FindOpenTime(a, clip) : 0.5f;
                 t.AnimOk = true;
                 if (GyroConfig.DebugLog)
@@ -430,8 +432,226 @@ namespace ScopeTdcControls
 
         static readonly List<TorpedoLauncher> gone = new List<TorpedoLauncher>();
 
+        // ------------------------------------------------------------------ stuck doors from a save
+
+        // Base game bug: a tube's outer door ("Shutter") is a 3D part whose angle is saved, but the
+        // launch animation's progress isn't. Saved while a launch was playing, the door is part open
+        // after loading, and the tube's animator takes that loaded angle as its default: whenever
+        // the launch animation isn't playing it writes it back every frame, so it is in every later
+        // save too. A few seconds after the tubes appear (a load), the angle of each part the launch
+        // animation moves is compared across the boat's tubes (they share a model): one that differs
+        // from the angle most tubes share is held at theirs after the animators run each frame,
+        // and moved by as much as its own launch animation moves it between the stuck angle and
+        // that one (the door swings on a hinge, so it moves as well as turns),
+        // whenever no launch (or door movement of this mod) is playing. The next save then has the
+        // right angle, so after reloading the animator's default is right and nothing is needed.
+        const float DoorCheckDelay = 5f;      // after the last tube appears: the save has been applied
+        const float SameAngle = 0.5f, SameDist = 0.005f;
+        static float doorCheckAt = -1f;
+
+        sealed class DoorFix
+        {
+            public TorpedoLauncher Tube;
+            public Transform Part;
+            public Quaternion Rot;
+            public Vector3 Pos;
+            public bool HasPos;
+        }
+        static readonly List<DoorFix> doorFixes = new List<DoorFix>();
+        static readonly int LaunchState = Animator.StringToHash("Launch");
+
+        /// <summary>
+        /// After the animators (LateUpdate): the repaired doors to their angle, unless the tube's
+        /// launch animation is playing or this mod is moving / holding its door (they set it then).
+        /// </summary>
+        static void HoldRepairedDoors()
+        {
+            for (int i = doorFixes.Count - 1; i >= 0; i--)
+            {
+                var f = doorFixes[i];
+                if (f.Tube == null || f.Part == null) { doorFixes.RemoveAt(i); continue; }
+                try
+                {
+                    var t = Of(f.Tube, false);
+                    if (t != null && t.Held) continue;                                 // our door animation has it
+                    if (f.Tube.CurrentState == TorpedoLauncher.State.Launching) continue;
+                    var a = t != null ? t.Anim : null;
+                    if (a != null && a.isActiveAndEnabled && a.layerCount > 0)
+                    {
+                        var st = a.GetCurrentAnimatorStateInfo(0);
+                        if (st.shortNameHash == LaunchState && st.normalizedTime < 1f) continue; // a launch is playing
+                    }
+                    if (Quaternion.Angle(f.Part.localRotation, f.Rot) > 0.01f) f.Part.localRotation = f.Rot;
+                    if (f.HasPos && (f.Part.localPosition - f.Pos).sqrMagnitude > 1e-8f) f.Part.localPosition = f.Pos;
+                }
+                catch { doorFixes.RemoveAt(i); }
+            }
+        }
+
+        /// <summary>A tube appeared (TorpedoLauncher.Start): check the boat's doors once things have settled.</summary>
+        internal static void ScheduleDoorCheck(TorpedoLauncher l)
+        {
+            if (l == null) return;
+            doorCheckAt = Time.unscaledTime + DoorCheckDelay;
+            EnsureDriver();
+        }
+
+        static void RunDoorChecks()
+        {
+            float now = Time.unscaledTime;
+            if (doorCheckAt >= 0f && now >= doorCheckAt)
+            {
+                doorCheckAt = -1f;
+                try { CheckAllDoors(); }
+                catch (Exception e) { Debug.LogWarning(ScopeTdcControlsMod.Tag + " door check: " + e.Message); }
+            }
+        }
+
+        /// <summary>Path of a part below the animator (matching the same part in every tube).</summary>
+        static string PartPath(Transform part, Transform root)
+        {
+            var sb = new System.Text.StringBuilder();
+            for (var x = part; x != null && x != root; x = x.parent) sb.Insert(0, "/" + x.name);
+            return sb.ToString();
+        }
+
+        static void CheckAllDoors()
+        {
+            var ship = ReceiverOverride.Ship();
+            var launchers = ship != null ? ship.TorpedoLaunchers : null;
+            if (launchers == null) return;
+            // every part each tube's launch animation moves, by its path below the tube's animator
+            var byPath = new Dictionary<string, List<KeyValuePair<TorpedoLauncher, Transform>>>();
+            var tubeOf = new Dictionary<TorpedoLauncher, Tube>();
+            foreach (var l in launchers)
+            {
+                if (l == null || l.CurrentState == TorpedoLauncher.State.Launching) continue;
+                var t = Of(l, true);
+                if (t.Held || t.Door != DoorState.Shut) continue; // our own door is open: meant to be
+                ResolveAnim(l, t);
+                if (!t.AnimOk || t.Anim == null || t.Clip == null) continue;
+                tubeOf[l] = t;
+                foreach (var part in MovingParts(t.Anim, t.Clip, t.OpenNorm))
+                {
+                    string path = PartPath(part, t.Anim.transform);
+                    List<KeyValuePair<TorpedoLauncher, Transform>> list;
+                    if (!byPath.TryGetValue(path, out list)) byPath[path] = list = new List<KeyValuePair<TorpedoLauncher, Transform>>();
+                    list.Add(new KeyValuePair<TorpedoLauncher, Transform>(l, part));
+                }
+            }
+            foreach (var kv in byPath)
+            {
+                var list = kv.Value;
+                if (list.Count < 3) continue; // too few tubes to tell which is right
+                // the pose most tubes share
+                int best = -1, bestCount = 0;
+                for (int i = 0; i < list.Count; i++)
+                {
+                    int same = 0;
+                    for (int j = 0; j < list.Count; j++)
+                        if (Same(list[i].Value, list[j].Value)) same++;
+                    if (same > bestCount) { bestCount = same; best = i; }
+                }
+                if (best < 0 || bestCount < 2 || bestCount * 2 <= list.Count) continue; // no clear majority
+                var refPart = list[best].Value;
+                foreach (var e in list)
+                {
+                    if (Same(e.Value, refPart)) continue;
+                    float off = Quaternion.Angle(e.Value.localRotation, refPart.localRotation);
+                    Vector3 pos = e.Value.localPosition;
+                    string why = "no animation";
+                    Tube tt;
+                    bool hasPos = tubeOf.TryGetValue(e.Key, out tt)
+                                  && ClipMove(tt.Anim, tt.Clip, e.Value, refPart.localRotation, out pos, out why);
+                    float moved = hasPos ? Vector3.Distance(pos, e.Value.localPosition) : 0f;
+                    e.Value.localRotation = refPart.localRotation;
+                    if (hasPos) e.Value.localPosition = pos;
+                    doorFixes.RemoveAll(f => f.Part == e.Value);
+                    doorFixes.Add(new DoorFix { Tube = e.Key, Part = e.Value, Rot = refPart.localRotation, Pos = pos, HasPos = hasPos });
+                    Debug.Log(ScopeTdcControlsMod.Tag + " tube '" + e.Key.name + "': outer door part '" + kv.Key + "' was " + off.ToString("0.0")
+                              + " deg off the other " + bestCount + " tubes (stuck from a save); held at theirs, "
+                              + (hasPos ? "moved " + (moved * 100f).ToString("0.0") + " cm" : "not moved (" + why + ")") + " (fixed in your next save)");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Where the part should be at angle <paramref name="goodRot"/>: its place now, moved by as much
+        /// as its launch animation moves it between the angle it has now and that one (sampled; only
+        /// the animation's movement is used, not its absolute place). Every pose put back after.
+        /// </summary>
+        static bool ClipMove(Animator a, AnimationClip clip, Transform part, Quaternion goodRot, out Vector3 pos, out string why)
+        {
+            pos = part.localPosition;
+            why = null;
+            if (a == null || clip == null) { why = "no animation"; return false; }
+            Quaternion nowRot = part.localRotation;
+            Vector3 nowPos = part.localPosition;
+            var trs = a.GetComponentsInChildren<Transform>(true);
+            int n = trs.Length;
+            var keepPos = new Vector3[n]; var keepRot = new Quaternion[n]; var keepScale = new Vector3[n];
+            for (int i = 0; i < n; i++) { keepPos[i] = trs[i].localPosition; keepRot[i] = trs[i].localRotation; keepScale[i] = trs[i].localScale; }
+            const int Steps = 240;
+            float bestNow = float.MaxValue, bestGood = float.MaxValue;
+            Vector3 atNow = Vector3.zero, atGood = Vector3.zero;
+            try
+            {
+                for (int k = 0; k <= Steps; k++)
+                {
+                    clip.SampleAnimation(a.gameObject, clip.length * k / Steps);
+                    float dn = Quaternion.Angle(part.localRotation, nowRot);
+                    float dg = Quaternion.Angle(part.localRotation, goodRot);
+                    if (dn < bestNow) { bestNow = dn; atNow = part.localPosition; }
+                    if (dg < bestGood) { bestGood = dg; atGood = part.localPosition; }
+                }
+            }
+            finally
+            {
+                for (int i = 0; i < n; i++) { trs[i].localPosition = keepPos[i]; trs[i].localRotation = keepRot[i]; trs[i].localScale = keepScale[i]; }
+            }
+            if (bestNow > 1f || bestGood > 1f)
+            {
+                why = "animation angles don't match: " + bestNow.ToString("0.0") + " / " + bestGood.ToString("0.0") + " deg";
+                return false;
+            }
+            pos = nowPos + (atGood - atNow);
+            return true;
+        }
+
+        /// <summary>Same angle (each tube's door sits at its own place, so only the angle compares).</summary>
+        static bool Same(Transform a, Transform b)
+        {
+            return Quaternion.Angle(a.localRotation, b.localRotation) <= SameAngle;
+        }
+
+        /// <summary>The parts the launch animation moves: posed differently with the door open than shut (pose put back after).</summary>
+        static List<Transform> MovingParts(Animator a, AnimationClip clip, float openNorm)
+        {
+            var result = new List<Transform>();
+            var trs = a.GetComponentsInChildren<Transform>(true);
+            int n = trs.Length;
+            var nowPos = new Vector3[n]; var nowRot = new Quaternion[n]; var nowScale = new Vector3[n];
+            for (int i = 0; i < n; i++) { nowPos[i] = trs[i].localPosition; nowRot[i] = trs[i].localRotation; nowScale[i] = trs[i].localScale; }
+            try
+            {
+                clip.SampleAnimation(a.gameObject, clip.length * Mathf.Clamp01(openNorm));
+                var openRot = new Quaternion[n]; var openPos = new Vector3[n];
+                for (int i = 0; i < n; i++) { openRot[i] = trs[i].localRotation; openPos[i] = trs[i].localPosition; }
+                clip.SampleAnimation(a.gameObject, 0f);
+                for (int i = 0; i < n; i++)
+                    if (Quaternion.Angle(openRot[i], trs[i].localRotation) > SameAngle || Vector3.Distance(openPos[i], trs[i].localPosition) > SameDist)
+                        result.Add(trs[i]);
+            }
+            finally
+            {
+                for (int i = 0; i < n; i++) { trs[i].localPosition = nowPos[i]; trs[i].localRotation = nowRot[i]; trs[i].localScale = nowScale[i]; }
+            }
+            return result;
+        }
+
         static void Tick()
         {
+            RunDoorChecks();
             gone.Clear();
             foreach (var kv in tubes)
             {
@@ -496,6 +716,12 @@ namespace ScopeTdcControls
             void Update()
             {
                 try { Tick(); }
+                catch (Exception e) { Debug.LogException(e); }
+            }
+
+            void LateUpdate()
+            {
+                try { HoldRepairedDoors(); } // after the animators have written their pose
                 catch (Exception e) { Debug.LogException(e); }
             }
         }
@@ -583,6 +809,17 @@ namespace ScopeTdcControls
     static class TorpedoLauncher_DrainInstantly_DoorPatch
     {
         static bool Prefix(TorpedoLauncher __instance) { return DoorDrainHook.Allow(__instance, true, false); }
+    }
+
+    /// <summary>Each tube as it appears (a load): its door is checked for a stuck save angle a few seconds later.</summary>
+    [HarmonyPatch(typeof(TorpedoLauncher), "Start")]
+    static class TorpedoLauncher_Start_DoorCheckPatch
+    {
+        static void Postfix(TorpedoLauncher __instance)
+        {
+            try { TubeDoors.ScheduleDoorCheck(__instance); }
+            catch (Exception e) { Debug.LogException(e); }
+        }
     }
 
     [HarmonyPatch(typeof(TorpedoLauncher), "DrainingUpdate")]

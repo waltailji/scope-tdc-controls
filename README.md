@@ -53,6 +53,7 @@ Show gyro receiver angles · Show active receivers only · Show parallax angle �
 - The torpedo panel no longer forces the gyro receiver to **Bow** whenever a bow tube is flooded
 - **Not following** holds while a target is locked
 - Hiding/showing the torpedo panel no longer changes the tube selection; the fire-control box tube selector stays in step
+- A torpedo tube **outer door saved part open** (a save made while a torpedo was leaving) is closed again when the game loads
 
 English and German (follows the game's language), pop-up descriptions on every element, Ctrl+drag to reposition. See [`mod/README.txt`](mod/README.txt) for full details and all settings.
 

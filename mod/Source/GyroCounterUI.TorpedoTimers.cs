@@ -56,6 +56,33 @@ namespace ScopeTdcControls
             catch { return false; }
         }
 
+        /// <summary>
+        /// A short torpedo type from the game's name for it: the body (G7a, G7e, G7es), its T number
+        /// and a FAT / LUT program ("G7e Torpedo T3 - Pi2 - FAT" -> "G7e T3 FAT"; Zaunkoenig -> "G7es T5").
+        /// Anything else (mines): the name itself, tidied. Empty for none.
+        /// </summary>
+        public static string TorpedoTypeName(string name)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(name)) return "";
+                name = name.Replace("(Clone)", "").Trim();
+                var parts = name.Split(new[] { ' ', '-' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0) return "";
+                string body = parts[0], tNum = null, program = null;
+                foreach (var p in parts)
+                {
+                    if (tNum == null && p.Length >= 2 && (p[0] == 'T' || p[0] == 't') && char.IsDigit(p[1])) tNum = p.ToUpperInvariant();
+                    string u = p.ToUpperInvariant();
+                    if (u == "FAT" || u == "LUT") program = u;
+                }
+                if (tNum == null && name.IndexOf("Zaunk", StringComparison.OrdinalIgnoreCase) >= 0) tNum = "T5";
+                if (!body.StartsWith("G7", StringComparison.OrdinalIgnoreCase) && tNum == null) return name; // mines and the like
+                return body + (tNum != null ? " " + tNum : "") + (program != null ? " " + program : "");
+            }
+            catch { return ""; }
+        }
+
         sealed class TorpedoTimerHud : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
         {
             const float RowH = 22f, RowGap = 3f, IconH = 13f, TextW = 46f, PadX = 6f;
@@ -75,6 +102,7 @@ namespace ScopeTdcControls
                 public CanvasGroup Group;
                 public Image Plate;
                 public Torpedo Torpedo;       // the running torpedo (null if it couldn't be found)
+                public string Type = "";      // its type (G7e T3 FAT...), for the hover popup
                 public bool Chased;
                 public TextMeshProUGUI Time;
                 public float EndsAt;          // game time of the expected hit
@@ -83,6 +111,9 @@ namespace ScopeTdcControls
             }
 
             readonly List<Row> rows = new List<Row>();
+            RectTransform tip;                 // hover popup: the torpedo's type
+            TextMeshProUGUI tipText;
+            Row tipRow;
             Canvas canvas;
             RectTransform stack;
             TMP_FontAsset font;
@@ -118,6 +149,21 @@ namespace ScopeTdcControls
                 var relay = stack.gameObject.AddComponent<DragForward>();
                 relay.Hud = this;
 
+                // hover popup (the panel's tooltips live on its own canvas, shown only at the scope)
+                tip = NewRect("Tip", transform);
+                tip.anchorMin = tip.anchorMax = new Vector2(0f, 0f);
+                tip.pivot = new Vector2(0f, 0.5f);
+                var tipBg = tip.gameObject.AddComponent<Image>();
+                tipBg.color = new Color(0.05f, 0.06f, 0.08f, 0.94f);
+                RoundValueBox(tipBg);
+                tipBg.raycastTarget = false;
+                tipText = NewText("Text", tip, ResolveFont(), "", 13f, TimeColor);
+                tipText.alignment = TextAlignmentOptions.MidlineLeft;
+                var ttr = tipText.rectTransform;
+                ttr.anchorMin = Vector2.zero; ttr.anchorMax = Vector2.one;
+                ttr.offsetMin = new Vector2(8f, 4f); ttr.offsetMax = new Vector2(-8f, -4f);
+                tip.gameObject.SetActive(false);
+
                 var panelFont = ResolveFont();
                 font = ImpactFont(panelFont);
                 try { if (font != null) fontMaterial = PlainMaterial(font, panelFont); } catch { fontMaterial = null; }
@@ -127,6 +173,7 @@ namespace ScopeTdcControls
             {
                 var r = new Row();
                 r.Torpedo = torpedo;
+                try { if (torpedo != null && torpedo) r.Type = TorpedoTypeName(torpedo.gameObject.name); } catch { }
                 r.Rect = NewRect("Torpedo", stack);
                 r.Group = r.Rect.gameObject.AddComponent<CanvasGroup>();
                 var plate = r.Rect.gameObject.AddComponent<Image>();
@@ -152,6 +199,7 @@ namespace ScopeTdcControls
                 PlaceH(r.Time.rectTransform, PadX + iconW + 6f, TextW, RowH);
 
                 float w = PadX + iconW + 6f + TextW + PadX;
+
                 r.Rect.anchorMin = r.Rect.anchorMax = new Vector2(0.5f, 1f);
                 r.Rect.pivot = new Vector2(0.5f, 1f);
                 r.Rect.sizeDelta = new Vector2(w, RowH);
@@ -202,6 +250,8 @@ namespace ScopeTdcControls
                     }
                 }
                 if (removed) Layout();
+                if (tipRow != null && (!rows.Contains(tipRow) || dragging)) HideTip();
+                if (tipRow != null) PlaceTip(tipRow);
                 TorpedoChaseCam.Tick();
                 foreach (var r in rows)
                 {
@@ -251,11 +301,45 @@ namespace ScopeTdcControls
                 GyroConfig.SavePrecise("TimersY", GyroConfig.TimersY);
             }
 
-            /// <summary>A timer row: double-click chases its torpedo with the camera; drags move the stack.</summary>
-            sealed class RowRelay : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+            void ShowTip(Row r)
+            {
+                if (tip == null || r == null) return;
+                string type = r.Type.Length > 0 ? "<b>" + r.Type + "</b>" : "<b>" + Strings.TorpedoWord + "</b>";
+                string text = type + "\n<size=11>" + Strings.TimerDoubleClick + "</size>";
+                tipText.text = text;
+                Vector2 pref = tipText.GetPreferredValues(text);
+                tip.sizeDelta = new Vector2(Mathf.Ceil(pref.x) + 16f, Mathf.Ceil(pref.y) + 8f);
+                tip.gameObject.SetActive(true);
+                tip.SetAsLastSibling();
+                tipRow = r;
+                PlaceTip(r);
+            }
+
+            void HideTip()
+            {
+                tipRow = null;
+                if (tip != null) tip.gameObject.SetActive(false);
+            }
+
+            /// <summary>Right of the row (left of it if that runs off the screen), level with it.</summary>
+            void PlaceTip(Row r)
+            {
+                var cr = ((RectTransform)transform).rect;
+                Vector2 top = stack.anchoredPosition + r.Rect.anchoredPosition;       // the row's top centre
+                float halfW = r.Rect.sizeDelta.x * 0.5f;
+                float y = top.y - RowH * 0.5f;
+                float x = top.x + halfW + 6f;
+                if (x + tip.sizeDelta.x > cr.width) x = top.x - halfW - 6f - tip.sizeDelta.x;
+                tip.anchoredPosition = new Vector2(Mathf.Max(0f, x), y);
+            }
+
+            /// <summary>A timer row: hover shows its type, double-click chases its torpedo with the camera; drags move the stack.</summary>
+            sealed class RowRelay : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler
             {
                 public TorpedoTimerHud Hud;
                 public Row Row;
+                public void OnPointerEnter(PointerEventData e) { if (Hud != null && !Hud.dragging) Hud.ShowTip(Row); }
+                public void OnPointerExit(PointerEventData e) { if (Hud != null && Hud.tipRow == Row) Hud.HideTip(); }
                 public void OnPointerClick(PointerEventData e)
                 {
                     if (e.button != PointerEventData.InputButton.Left || e.clickCount != 2 || Row == null) return;
